@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { Template } from "@shared/schema";
-import { CheckCircle, Loader2 } from "lucide-react";
+import { CheckCircle, Loader2, Sparkles, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -78,14 +78,19 @@ export function ExecutionModal({ template, open, onClose }: ExecutionModalProps)
   if (showSuccess) {
     return (
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-md">
-          <div className="flex flex-col items-center justify-center py-8">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 animate-in zoom-in">
-              <CheckCircle className="w-8 h-8 text-primary" />
+        <DialogContent className="sm:max-w-md border-0 shadow-2xl bg-gradient-to-br from-white to-slate-50">
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="relative mb-8">
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full blur-2xl opacity-30 animate-pulse" />
+              <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-2xl shadow-blue-500/50 animate-in zoom-in duration-500">
+                <CheckCircle className="w-12 h-12 text-white" />
+              </div>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Thực thi thành công!</h3>
-            <p className="text-muted-foreground text-center">
-              Tính năng đã được thực thi và ghi nhận vào lịch sử
+            <h3 className="text-2xl font-bold mb-3 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+              Thực thi thành công!
+            </h3>
+            <p className="text-slate-600 text-center max-w-sm">
+              Tính năng đã được thực thi và ghi nhận vào lịch sử của bạn
             </p>
           </div>
         </DialogContent>
@@ -95,18 +100,27 @@ export function ExecutionModal({ template, open, onClose }: ExecutionModalProps)
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{template.nameVi}</DialogTitle>
-          <DialogDescription>{template.descriptionVi}</DialogDescription>
+      <DialogContent className="sm:max-w-3xl border-0 shadow-2xl bg-gradient-to-br from-white to-slate-50/50 rounded-3xl">
+        <DialogHeader className="pb-6 border-b border-slate-200/60">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <Zap className="w-6 h-6 text-white" />
+            </div>
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+              {template.nameVi}
+            </DialogTitle>
+          </div>
+          <DialogDescription className="text-slate-600 text-base">
+            {template.descriptionVi}
+          </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-6 mt-6">
           {fields.map((field: any) => (
             <div key={field.name} className="space-y-2">
-              <Label htmlFor={field.name}>
+              <Label htmlFor={field.name} className="text-sm font-semibold text-slate-700">
                 {field.label}
-                {field.required && <span className="text-destructive ml-1">*</span>}
+                {field.required && <span className="text-red-500 ml-1">*</span>}
               </Label>
               
               {field.type === "textarea" ? (
@@ -117,6 +131,7 @@ export function ExecutionModal({ template, open, onClose }: ExecutionModalProps)
                   onChange={(e) => handleInputChange(field.name, e.target.value)}
                   required={field.required}
                   rows={4}
+                  className="border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all rounded-xl bg-white"
                   data-testid={`input-${field.name}`}
                 />
               ) : field.type === "file" ? (
@@ -125,6 +140,7 @@ export function ExecutionModal({ template, open, onClose }: ExecutionModalProps)
                   type="file"
                   onChange={(e) => handleInputChange(field.name, e.target.files?.[0]?.name || "")}
                   required={field.required}
+                  className="border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all rounded-xl h-12 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-gradient-to-r file:from-cyan-500 file:to-blue-600 file:text-white file:font-semibold"
                   data-testid={`input-${field.name}`}
                 />
               ) : (
@@ -135,17 +151,19 @@ export function ExecutionModal({ template, open, onClose }: ExecutionModalProps)
                   value={formData[field.name] || ""}
                   onChange={(e) => handleInputChange(field.name, e.target.value)}
                   required={field.required}
+                  className="border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all rounded-xl h-12 bg-white"
                   data-testid={`input-${field.name}`}
                 />
               )}
             </div>
           ))}
 
-          <div className="flex items-center justify-between pt-4 border-t">
-            <div className="text-sm">
-              <span className="text-muted-foreground">Chi phí: </span>
-              <span className="font-mono font-semibold text-primary">{template.creditCost}</span>
-              <span className="text-muted-foreground ml-1">credits</span>
+          <div className="flex items-center justify-between pt-6 border-t border-slate-200/60">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500/10 to-blue-600/10 border border-cyan-500/20">
+              <Sparkles className="w-4 h-4 text-blue-600" />
+              <span className="text-sm text-slate-600">Chi phí: </span>
+              <span className="font-mono font-bold text-blue-600">{template.creditCost}</span>
+              <span className="text-sm text-slate-500">credits</span>
             </div>
             
             <div className="flex gap-3">
@@ -154,6 +172,7 @@ export function ExecutionModal({ template, open, onClose }: ExecutionModalProps)
                 variant="outline"
                 onClick={onClose}
                 disabled={executeMutation.isPending}
+                className="rounded-xl border-2 hover:bg-slate-100"
                 data-testid="button-cancel"
               >
                 Hủy
@@ -161,6 +180,7 @@ export function ExecutionModal({ template, open, onClose }: ExecutionModalProps)
               <Button
                 type="submit"
                 disabled={executeMutation.isPending}
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105 rounded-xl"
                 data-testid="button-execute"
               >
                 {executeMutation.isPending ? (
@@ -169,7 +189,10 @@ export function ExecutionModal({ template, open, onClose }: ExecutionModalProps)
                     Đang thực thi...
                   </>
                 ) : (
-                  "Thực thi"
+                  <>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Thực thi
+                  </>
                 )}
               </Button>
             </div>

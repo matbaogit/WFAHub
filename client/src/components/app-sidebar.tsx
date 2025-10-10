@@ -1,4 +1,4 @@
-import { Home, Zap, History, User, LogOut, Wallet } from "lucide-react";
+import { Home, Zap, History, User, LogOut, Wallet, Sparkles } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -53,16 +53,18 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar>
+    <Sidebar className="border-r border-slate-200/60 bg-white/80 backdrop-blur-xl">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-base font-semibold px-4 py-3 flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
-              <Zap className="w-4 h-4 text-primary-foreground" />
+          <SidebarGroupLabel className="text-base font-bold px-4 py-4 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <Zap className="w-5 h-5 text-white" />
             </div>
-            WFA Hub
+            <span className="bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+              WFA Hub
+            </span>
           </SidebarGroupLabel>
-          <SidebarGroupContent>
+          <SidebarGroupContent className="px-3">
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
@@ -70,10 +72,19 @@ export function AppSidebar() {
                     asChild
                     isActive={location === item.url}
                     data-testid={`link-${item.url === '/' ? 'home' : item.url.slice(1)}`}
+                    className={`
+                      group relative mb-1 rounded-xl transition-all duration-200
+                      ${location === item.url 
+                        ? 'bg-gradient-to-r from-cyan-500/10 to-blue-600/10 text-blue-600 shadow-sm border-l-4 border-blue-600' 
+                        : 'hover:bg-slate-100/80 hover:scale-[1.02]'
+                      }
+                    `}
                   >
                     <Link href={item.url}>
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
+                      <item.icon className={`w-5 h-5 ${location === item.url ? 'text-blue-600' : 'text-slate-600'} transition-colors`} />
+                      <span className={`font-medium ${location === item.url ? 'text-blue-600' : 'text-slate-700'}`}>
+                        {item.title}
+                      </span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -84,16 +95,29 @@ export function AppSidebar() {
 
         {user && (
           <SidebarGroup className="mt-auto">
-            <SidebarGroupLabel className="text-xs uppercase text-muted-foreground px-4">
+            <SidebarGroupLabel className="text-xs uppercase tracking-wider text-slate-500 px-4 font-semibold">
               Số dư
             </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <div className="px-4 py-3">
-                <div className="flex items-center justify-between bg-card rounded-lg p-3 border">
-                  <div className="flex items-center gap-2">
-                    <Wallet className="w-4 h-4 text-primary" />
-                    <span className="font-mono font-semibold">{user.credits}</span>
-                    <span className="text-xs text-muted-foreground">credits</span>
+            <SidebarGroupContent className="px-3">
+              <div className="py-2">
+                <div className="relative overflow-hidden bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl p-[2px] shadow-xl shadow-blue-500/30">
+                  <div className="bg-white rounded-[14px] p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-600/10 flex items-center justify-center">
+                          <Wallet className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-2xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent" data-testid="text-credits">
+                              {user.credits}
+                            </span>
+                            <Sparkles className="w-4 h-4 text-blue-500" />
+                          </div>
+                          <span className="text-xs text-slate-500 font-medium">tín dụng</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -102,22 +126,27 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-slate-200/60 bg-slate-50/50">
         <SidebarMenu>
           <SidebarMenuItem>
-            <div className="px-4 py-3 flex items-center justify-between">
+            <div className="px-3 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={user?.profileImageUrl || undefined} style={{ objectFit: 'cover' }} />
-                  <AvatarFallback className="text-xs">{getUserInitials()}</AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className="w-10 h-10 ring-2 ring-blue-500/20">
+                    <AvatarImage src={user?.profileImageUrl || undefined} style={{ objectFit: 'cover' }} />
+                    <AvatarFallback className="text-sm font-semibold bg-gradient-to-br from-cyan-500 to-blue-600 text-white">
+                      {getUserInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />
+                </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
+                  <p className="text-sm font-semibold text-slate-900 truncate">
                     {user?.firstName && user?.lastName 
                       ? `${user.firstName} ${user.lastName}` 
                       : user?.email || "User"}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  <p className="text-xs text-slate-500 truncate">{user?.email}</p>
                 </div>
               </div>
               <Button
@@ -125,7 +154,7 @@ export function AppSidebar() {
                 size="icon"
                 onClick={() => window.location.href = '/api/logout'}
                 data-testid="button-logout"
-                className="flex-shrink-0"
+                className="flex-shrink-0 hover:bg-red-50 hover:text-red-600 transition-colors rounded-xl"
               >
                 <LogOut className="w-4 h-4" />
               </Button>
