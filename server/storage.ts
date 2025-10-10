@@ -24,6 +24,20 @@ export interface IStorage {
   // Execution log operations
   createExecutionLog(log: InsertExecutionLog): Promise<ExecutionLog>;
   getUserExecutionLogs(userId: string): Promise<ExecutionLog[]>;
+  
+  // Admin operations
+  getAllUsers(): Promise<User[]>;
+  updateUser(userId: string, data: Partial<User>): Promise<User>;
+  getAllTemplatesAdmin(): Promise<Template[]>;
+  createTemplate(template: Omit<Template, "id" | "createdAt">): Promise<Template>;
+  updateTemplate(templateId: string, data: Partial<Template>): Promise<Template>;
+  deleteTemplate(templateId: string): Promise<void>;
+  getStats(): Promise<{
+    totalUsers: number;
+    totalExecutions: number;
+    totalRevenue: number;
+    activeTemplates: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -82,6 +96,66 @@ export class DatabaseStorage implements IStorage {
       .from(executionLogs)
       .where(eq(executionLogs.userId, userId))
       .orderBy(desc(executionLogs.executedAt));
+  }
+
+  // Admin operations
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async updateUser(userId: string, data: Partial<User>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async getAllTemplatesAdmin(): Promise<Template[]> {
+    return await db.select().from(templates).orderBy(desc(templates.createdAt));
+  }
+
+  async createTemplate(template: Omit<Template, "id" | "createdAt">): Promise<Template> {
+    const [newTemplate] = await db
+      .insert(templates)
+      .values(template as any)
+      .returning();
+    return newTemplate;
+  }
+
+  async updateTemplate(templateId: string, data: Partial<Template>): Promise<Template> {
+    const [template] = await db
+      .update(templates)
+      .set(data)
+      .where(eq(templates.id, templateId))
+      .returning();
+    return template;
+  }
+
+  async deleteTemplate(templateId: string): Promise<void> {
+    await db.delete(templates).where(eq(templates.id, templateId));
+  }
+
+  async getStats(): Promise<{
+    totalUsers: number;
+    totalExecutions: number;
+    totalRevenue: number;
+    activeTemplates: number;
+  }> {
+    const [userCount] = await db.select().from(users);
+    const allUsers = await db.select().from(users);
+    const allExecutions = await db.select().from(executionLogs);
+    const activeTemplates = await db.select().from(templates).where(eq(templates.isActive, 1));
+    
+    const totalRevenue = allExecutions.reduce((sum, log) => sum + log.creditsUsed, 0);
+    
+    return {
+      totalUsers: allUsers.length,
+      totalExecutions: allExecutions.length,
+      totalRevenue,
+      activeTemplates: activeTemplates.length,
+    };
   }
 }
 

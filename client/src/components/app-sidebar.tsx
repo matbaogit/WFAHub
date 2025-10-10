@@ -1,4 +1,4 @@
-import { Home, Zap, History, User, LogOut, Wallet, Sparkles } from "lucide-react";
+import { Home, Zap, History, User, LogOut, Wallet, Sparkles, Shield, Users, BarChart3 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -35,6 +35,29 @@ const menuItems = [
     title: "Tài khoản",
     url: "/account",
     icon: User,
+  },
+];
+
+const adminMenuItems = [
+  {
+    title: "Admin Dashboard",
+    url: "/admin",
+    icon: Shield,
+  },
+  {
+    title: "Quản lý Users",
+    url: "/admin/users",
+    icon: Users,
+  },
+  {
+    title: "Quản lý Templates",
+    url: "/admin/templates",
+    icon: Zap,
+  },
+  {
+    title: "Thống kê",
+    url: "/admin/stats",
+    icon: BarChart3,
   },
 ];
 
@@ -92,6 +115,42 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {user?.role === "admin" && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-xs uppercase tracking-wider text-orange-600 px-4 font-bold flex items-center gap-2">
+              <Shield className="w-3.5 h-3.5" />
+              Admin Panel
+            </SidebarGroupLabel>
+            <SidebarGroupContent className="px-3">
+              <SidebarMenu>
+                {adminMenuItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton 
+                      asChild
+                      isActive={location === item.url}
+                      data-testid={`link-admin-${item.url.split('/').pop()}`}
+                      className={`
+                        group relative mb-1 rounded-xl transition-all duration-200
+                        ${location === item.url 
+                          ? 'bg-gradient-to-r from-orange-500/10 to-red-600/10 text-orange-600 shadow-sm border-l-4 border-orange-600' 
+                          : 'hover:bg-orange-50/80 hover:scale-[1.02]'
+                        }
+                      `}
+                    >
+                      <Link href={item.url}>
+                        <item.icon className={`w-5 h-5 ${location === item.url ? 'text-orange-600' : 'text-slate-600'} transition-colors`} />
+                        <span className={`font-medium ${location === item.url ? 'text-orange-600' : 'text-slate-700'}`}>
+                          {item.title}
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {user && (
           <SidebarGroup className="mt-auto">

@@ -12,6 +12,9 @@ import Dashboard from "@/pages/dashboard";
 import Templates from "@/pages/templates";
 import Logs from "@/pages/logs";
 import Account from "@/pages/account";
+import AdminDashboard from "@/pages/admin/dashboard";
+import AdminUsers from "@/pages/admin/users";
+import AdminTemplates from "@/pages/admin/templates";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -26,6 +29,10 @@ function Router() {
           <Route path="/templates" component={Templates} />
           <Route path="/logs" component={Logs} />
           <Route path="/account" component={Account} />
+          <Route path="/admin" component={AdminDashboard} />
+          <Route path="/admin/users" component={AdminUsers} />
+          <Route path="/admin/templates" component={AdminTemplates} />
+          <Route path="/admin/stats" component={AdminDashboard} />
         </>
       )}
       <Route component={NotFound} />
