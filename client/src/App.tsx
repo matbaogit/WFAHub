@@ -6,6 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { useAuth } from "@/hooks/useAuth";
+import { ViewModeProvider, useViewMode } from "@/contexts/ViewModeContext";
+import { Button } from "@/components/ui/button";
+import { Eye, EyeOff } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
@@ -47,12 +50,15 @@ function Router() {
 }
 
 function AppContent() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const { viewMode, toggleViewMode } = useViewMode();
   
   const sidebarStyle = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
   };
+
+  const isAdmin = user?.role === "admin";
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -71,6 +77,28 @@ function AppContent() {
           <div className="flex flex-col flex-1">
             <header className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
+              
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleViewMode}
+                  className="gap-2"
+                  data-testid="button-toggle-view"
+                >
+                  {viewMode === "admin" ? (
+                    <>
+                      <EyeOff className="w-4 h-4" />
+                      Chế độ Người dùng
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-4 h-4" />
+                      Chế độ Admin
+                    </>
+                  )}
+                </Button>
+              )}
             </header>
             <main className="flex-1 overflow-auto">
               <Router />
@@ -87,7 +115,9 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AppContent />
+        <ViewModeProvider>
+          <AppContent />
+        </ViewModeProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

@@ -4,6 +4,14 @@ import { storage } from "./storage";
 import { setupLocalAuth } from "./localAuth";
 import { insertExecutionLogSchema, registerUserSchema, loginUserSchema } from "@shared/schema";
 import passport from "passport";
+import type { User } from "@shared/schema";
+
+// Sanitize user object by removing sensitive fields
+const sanitizeUser = (user: User | null): Omit<User, 'passwordHash'> | null => {
+  if (!user) return null;
+  const { passwordHash, ...safeUser } = user;
+  return safeUser;
+};
 
 // Auth middleware
 const isAuthenticated = (req: any, res: any, next: any) => {
@@ -55,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (err) {
           return res.status(500).json({ message: "Đăng ký thành công nhưng đăng nhập thất bại" });
         }
-        res.json(user);
+        res.json(sanitizeUser(user));
       });
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -78,7 +86,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (err) {
           return res.status(500).json({ message: "Lỗi đăng nhập" });
         }
-        res.json(user);
+        res.json(sanitizeUser(user));
       });
     })(req, res, next);
   });
@@ -98,7 +106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
-      res.json(user);
+      res.json(sanitizeUser(user));
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -204,7 +212,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
-      res.json(users);
+      const sanitizedUsers = users.map(user => sanitizeUser(user));
+      res.json(sanitizedUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ message: "Failed to fetch users" });
@@ -231,7 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const user = await storage.updateUser(id, updates);
-      res.json(user);
+      res.json(sanitizeUser(user));
     } catch (error) {
       console.error("Error updating user:", error);
       res.status(500).json({ message: "Failed to update user" });

@@ -14,6 +14,10 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { useViewMode } from "@/contexts/ViewModeContext";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 const menuItems = [
   {
@@ -62,15 +66,32 @@ const adminMenuItems = [
 ];
 
 export function AppSidebar() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user } = useAuth();
+  const { viewMode } = useViewMode();
+  const { toast } = useToast();
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/auth/logout");
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.clear();
+      setLocation("/");
+      toast({
+        title: "Đã đăng xuất",
+        description: "Hẹn gặp lại bạn!",
+      });
+    },
+  });
 
   const getUserInitials = () => {
     if (user?.firstName && user?.lastName) {
       return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
     }
-    if (user?.email) {
-      return user.email.slice(0, 2).toUpperCase();
+    if (user?.username) {
+      return user.username.slice(0, 2).toUpperCase();
     }
     return "U";
   };
@@ -116,7 +137,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {user?.role === "admin" && (
+        {user?.role === "admin" && viewMode === "admin" && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-xs uppercase tracking-wider text-orange-600 px-4 font-bold flex items-center gap-2">
               <Shield className="w-3.5 h-3.5" />
@@ -211,8 +232,9 @@ export function AppSidebar() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => window.location.href = '/api/logout'}
-                data-testid="button-logout"
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+                data-testid="button-logout-sidebar"
                 className="flex-shrink-0 hover:bg-red-50 hover:text-red-600 transition-colors rounded-xl"
               >
                 <LogOut className="w-4 h-4" />
