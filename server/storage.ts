@@ -3,18 +3,20 @@ import {
   templates,
   executionLogs,
   type User,
-  type UpsertUser,
+  type RegisterUser,
   type Template,
   type ExecutionLog,
   type InsertExecutionLog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 export interface IStorage {
-  // User operations (required for Replit Auth)
+  // User operations
   getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  registerUser(userData: Omit<RegisterUser, "confirmPassword">): Promise<User>;
   updateUserCredits(userId: string, credits: number): Promise<User>;
   
   // Template operations
@@ -47,16 +49,23 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async registerUser(userData: Omit<RegisterUser, "confirmPassword">): Promise<User> {
+    const passwordHash = await bcrypt.hash(userData.password, 10);
     const [user] = await db
       .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
+      .values({
+        username: userData.username,
+        passwordHash,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email || null,
+        role: "user",
+        credits: 100,
       })
       .returning();
     return user;

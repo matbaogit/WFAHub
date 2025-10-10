@@ -1,13 +1,22 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertExecutionLogSchema } from "@shared/schema";
+import { setupLocalAuth } from "./localAuth";
+import { insertExecutionLogSchema, registerUserSchema, loginUserSchema } from "@shared/schema";
+import passport from "passport";
+
+// Auth middleware
+const isAuthenticated = (req: any, res: any, next: any) => {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ message: "Unauthorized - Please login" });
+};
 
 // Admin middleware
 const isAdmin = async (req: any, res: any, next: any) => {
   try {
-    const userId = req.user?.claims?.sub;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -25,13 +34,69 @@ const isAdmin = async (req: any, res: any, next: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
+  // Setup Local Auth
+  setupLocalAuth(app);
 
-  // Auth routes
+  // Register route
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const validatedData = registerUserSchema.parse(req.body);
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(validatedData.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username đã tồn tại" });
+      }
+
+      const user = await storage.registerUser(validatedData);
+      
+      // Auto login after registration
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Đăng ký thành công nhưng đăng nhập thất bại" });
+        }
+        res.json(user);
+      });
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      res.status(400).json({ 
+        message: error.errors?.[0]?.message || "Đăng ký thất bại" 
+      });
+    }
+  });
+
+  // Login route
+  app.post("/api/auth/login", (req, res, next) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) {
+        return res.status(500).json({ message: "Lỗi đăng nhập" });
+      }
+      if (!user) {
+        return res.status(401).json({ message: info?.message || "Đăng nhập thất bại" });
+      }
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Lỗi đăng nhập" });
+        }
+        res.json(user);
+      });
+    })(req, res, next);
+  });
+
+  // Logout route
+  app.post("/api/auth/logout", (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+
+  // Get current user
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       res.json(user);
     } catch (error) {
@@ -54,7 +119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Execute workflow
   app.post("/api/execute", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { templateId, inputData } = req.body;
 
       if (!templateId) {
@@ -112,7 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Execution logs
   app.get("/api/logs", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const logs = await storage.getUserExecutionLogs(userId);
       
       // Enrich logs with template data

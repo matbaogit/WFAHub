@@ -23,10 +23,12 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (required for Replit Auth)
+// User storage table
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
+  username: varchar("username").unique().notNull(),
+  passwordHash: varchar("password_hash").notNull(),
+  email: varchar("email"),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
@@ -83,12 +85,22 @@ export const executionLogsRelations = relations(executionLogs, ({ one }) => ({
 }));
 
 // Schemas
-export const upsertUserSchema = createInsertSchema(users).pick({
-  id: true,
-  email: true,
+export const registerUserSchema = createInsertSchema(users).pick({
+  username: true,
   firstName: true,
   lastName: true,
-  profileImageUrl: true,
+  email: true,
+}).extend({
+  password: z.string().min(6, "Password phải ít nhất 6 ký tự"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Password không khớp",
+  path: ["confirmPassword"],
+});
+
+export const loginUserSchema = z.object({
+  username: z.string().min(1, "Username là bắt buộc"),
+  password: z.string().min(1, "Password là bắt buộc"),
 });
 
 export const insertExecutionLogSchema = createInsertSchema(executionLogs).omit({
@@ -97,7 +109,8 @@ export const insertExecutionLogSchema = createInsertSchema(executionLogs).omit({
 });
 
 // Types
-export type UpsertUser = z.infer<typeof upsertUserSchema>;
+export type RegisterUser = z.infer<typeof registerUserSchema>;
+export type LoginUser = z.infer<typeof loginUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Template = typeof templates.$inferSelect;
 export type ExecutionLog = typeof executionLogs.$inferSelect;
