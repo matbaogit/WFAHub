@@ -1,0 +1,116 @@
+You are an expert full-stack developer and UI/UX designer.  
+Build an MVP web app called **WFA Hub** — a central platform where business users can access and run automation features instantly (no coding required).
+
+---
+
+### 🧩 Core Concept:
+WFA Hub is a feature hub containing ready-made automation templates such as:
+- Send Email with Attachment
+- Send Quotation
+- Schedule Reminder
+- Leave Approval
+- Contract Signing
+
+Users can log in, view templates, configure quick settings, and execute each workflow with one click.
+
+---
+
+### 🔐 Authentication:
+Include pages for:
+- Login (Email + Password)
+- Register (Email, Password, Confirm Password)
+- Simple mock API for authentication
+- After login → redirect to Dashboard
+
+Use localStorage or a fake API service for session handling (for now).
+
+---
+
+### 🏠 Dashboard Layout:
+- Top navigation bar: logo “WFA Hub”, user avatar dropdown (Profile, Logout)
+- Sidebar menu: 
+  - Dashboard (Trang chủ)
+  - Templates (Tính năng)
+  - Usage Logs (Lịch sử)
+  - Account (Tài khoản)
+- Main content area: responsive grid layout of feature cards
+
+Each **Feature Card** shows:
+- Icon
+- Feature name
+- Short description
+- “Run Now” button
+
+---
+
+### ⚙️ Run Feature Flow:
+When user clicks **Run Now**:
+1. Open modal with a few input fields (like email, subject, attachment upload, message)
+2. Button **“Execute”**
+3. After click, show mock “Success” result + deduct credits (simulate credit balance)
+
+---
+
+### 💳 Account & Credits:
+- Display credit balance at top-right corner (mock data)
+- Each workflow deducts credits (simulate deduction visually)
+- Option to “Top up credits” (dummy button for now)
+
+---
+
+### 🧾 Usage Logs Page:
+- List all executed workflows with columns:
+  - Date/time
+  - Feature name
+  - Status
+  - Credits used
+
+Use mock data, allow sorting or filtering.
+
+---
+
+### 🧠 API / Data (Mockup Level):
+- Simulate API with local JSON or localStorage:
+  - `/api/login`
+  - `/api/register`
+  - `/api/features`
+  - `/api/run-feature`
+  - `/api/logs`
+- Show how to structure data for easy later integration with **ID Portal** via real API.
+
+---
+
+### 🎨 UX/UI Design Style:
+- Clean, modern interface like **Linear.app** or **Framer dashboard**
+- White background, blue primary color (`#1E88E5`)
+- Rounded corners (16px), soft shadows
+- Smooth transitions for modal and hover effects (Framer Motion style)
+- Consistent spacing (use grid or flex)
+- Responsive layout for both desktop and tablet
+
+Use **Vietnamese** for all button labels and visible text, e.g.:
+- “Đăng nhập”, “Đăng ký”, “Chạy ngay”, “Thực thi”, “Lịch sử”, “Tài khoản”, “Tính năng”
+
+---
+
+### 🔁 User Flow Summary:
+1. User visits → Login/Register
+2. Redirect to Dashboard
+3. Sees all WFA templates (feature cards)
+4. Click “Chạy ngay” → config modal → Execute → show result
+5. Credits update & log saved
+6. User can view “Lịch sử sử dụng” and “Tài khoản”
+
+---
+
+### 🧰 Technical Suggestion:
+- Frontend: React + TailwindCSS + Framer Motion
+- State: useContext or Redux Toolkit
+- Backend (mock): local JSON or simple Node/Express mock server
+- Later integration: prepare `/api/auth` and `/api/credits` endpoints for real use
+
+---
+
+Goal: Build a functional MVP with full UX flow and clean UI — ready for future API integration.
+Start with the frontend (React + TailwindCSS) UI mock first, then we’ll connect mock APIs.
+
