@@ -44,10 +44,12 @@ Preferred communication style: Simple, everyday language.
 - **Neon Serverless PostgreSQL** for database hosting
 
 **Authentication & Session Management:**
-- **Replit Auth** integration using OpenID Connect (OIDC)
-- **Passport.js** strategy for authentication flow
+- **Username/Password Authentication** using Passport Local Strategy
+- **bcrypt** password hashing (10 rounds) for security
+- **Passport.js** for authentication flow management
 - **PostgreSQL-backed sessions** using connect-pg-simple
 - Session storage with 1-week TTL
+- Sanitized API responses (passwordHash stripped from all user endpoints)
 
 **API Design:**
 - RESTful endpoints with `/api` prefix
@@ -72,9 +74,10 @@ Preferred communication style: Simple, everyday language.
 **Core Tables:**
 
 1. **users** - User profiles and credit balances
-   - Stores Replit OIDC user information (id, email, name, profile image)
+   - Username/password authentication (unique username, bcrypt hashed password)
+   - User information (id, username, email, firstName, lastName, profileImageUrl)
+   - Role-based access control (role: 'user' | 'admin')
    - Credits system (default 100) for usage tracking
-   - Soft integration with Replit Auth user data
 
 2. **templates** - Automation workflow definitions
    - Bilingual naming (English/Vietnamese)
@@ -103,13 +106,13 @@ Preferred communication style: Simple, everyday language.
 
 **Core Services:**
 - **Neon Serverless PostgreSQL** - Managed database with WebSocket support
-- **Replit Auth (OIDC)** - Authentication service using OpenID Connect protocol
 - **Replit Deployments** - Hosting platform with automatic HTTPS and domain management
 
 **Key NPM Packages:**
 - **@neondatabase/serverless** - PostgreSQL client with WebSocket support
 - **drizzle-orm** & **drizzle-kit** - ORM and migration tools
-- **passport** & **openid-client** - Authentication infrastructure
+- **passport** & **passport-local** - Authentication infrastructure
+- **bcryptjs** - Password hashing for security
 - **@tanstack/react-query** - Server state management
 - **@radix-ui/** components - Accessible UI primitives
 - **react-hook-form** & **@hookform/resolvers** - Form handling with Zod validation
@@ -121,7 +124,8 @@ Preferred communication style: Simple, everyday language.
 
 **Design Rationale:**
 - Neon Serverless chosen for PostgreSQL with minimal ops overhead and WebSocket support
-- Replit Auth provides zero-config authentication for Replit deployments
+- Username/password auth for flexibility and control over user management
+- bcrypt hashing ensures secure password storage
 - React Query eliminates need for Redux/complex state management
 - shadcn/ui provides customizable components without package lock-in
 - Drizzle ORM offers better TypeScript integration than Prisma with lighter runtime
@@ -135,14 +139,19 @@ Preferred communication style: Simple, everyday language.
 - Built design system with Linear/Framer inspiration (#1E88E5 primary blue)
 
 ### Phase 2: Authentication & Backend (Completed)
-- Integrated Replit Auth (OIDC) for user authentication
+- Implemented username/password authentication with Passport Local Strategy
+- bcrypt password hashing (10 rounds) for security
 - Implemented session-based auth with PostgreSQL session storage
 - Created API endpoints:
+  - POST /api/auth/register - User registration with auto-login
+  - POST /api/auth/login - Username/password login
+  - POST /api/auth/logout - Session logout
   - GET /api/auth/user - User profile and session validation
   - GET /api/templates - Active template list
   - POST /api/execute - Workflow execution with credit deduction
   - GET /api/logs - Execution history with template enrichment
 - Added comprehensive error handling and logging
+- Security: sanitizeUser() helper strips passwordHash from all API responses
 
 ### Phase 3: Frontend & UX (Completed)
 - Built all pages with Vietnamese language:
@@ -159,7 +168,7 @@ Preferred communication style: Simple, everyday language.
 ### Phase 4: Testing & Polish (Completed)
 - Fixed QueryClientProvider wrapping issue in App.tsx
 - Conducted comprehensive end-to-end testing:
-  - Login flow via Replit Auth (OIDC)
+  - Registration and login flow with username/password
   - Template execution with credit deduction
   - Log creation and display
   - Account page verification
@@ -204,10 +213,39 @@ Preferred communication style: Simple, everyday language.
   - All CRUD operations working correctly
   - Proper validation and error states
 
+### Phase 7: Auth Migration & View Toggle (Completed)
+- **Migrated from Replit Auth to Username/Password Authentication:**
+  - Replaced OIDC authentication with Passport Local Strategy
+  - Added `username` and `passwordHash` fields to users table
+  - Implemented bcrypt password hashing (10 rounds)
+  - Created user registration and login pages with gradient cyan-blue theme
+  - Updated all authentication flows (register, login, logout)
+  - Migrated existing users with default password "123456"
+- **Security Hardening:**
+  - Implemented `sanitizeUser()` helper to strip passwordHash from all API responses
+  - Applied sanitization to all user-returning endpoints (register, login, get user, admin endpoints)
+  - Ensured no sensitive fields leak to client
+- **Admin View Toggle Feature:**
+  - Created ViewModeContext for managing user/admin view state
+  - Added toggle button in header for admin users (data-testid="button-toggle-view")
+  - Conditional rendering of Admin Panel based on view mode
+  - Admin users can switch between user and admin interfaces seamlessly
+  - Maintains admin capabilities while allowing "user perspective" testing
+- **Updated UI Components:**
+  - Register page: username, password, confirm password, first name, last name, email
+  - Login page: username and password inputs with gradient design
+  - Logout functionality in both sidebar and account page
+  - Landing page redirects to new login page instead of OIDC
+- **E2E Testing Verified:**
+  - User registration and login flow working correctly
+  - Admin view toggle functioning as expected
+  - All logout flows operational
+  - No passwordHash leakage in API responses
+
 ## Production Status
 
-✅ **MVP Complete + Admin Panel** - All core features implemented and tested:
-- User authentication via Replit Auth
+✅ **MVP Complete + Admin Panel + Custom Auth** - All core features implemented and tested:
+- **Username/Password Authentication** with secure bcrypt hashing
 - 5 ready-made workflow templates (Email, Quotation, Reminder, Leave Approval, Contract)
 - Credit-based execution system (100 credits default)
 - Execution logs with complete history
@@ -215,8 +253,9 @@ Preferred communication style: Simple, everyday language.
 - Modern Linear/Framer-inspired UI with gradient design system
 - **Role-Based Access Control (Admin/User)**
 - **Full-featured Admin Panel** for system management
+- **Admin View Toggle** - Admins can switch between user and admin interfaces
 - Comprehensive error handling and retry logic
 - Responsive design with collapsible sidebar navigation
-- Production-grade security with input validation and field whitelisting
+- Production-grade security with bcrypt hashing, sanitized responses, and input validation
 
-**Ready for deployment** - Application is stable, tested, and production-ready with admin capabilities.
+**Ready for deployment** - Application is stable, tested, and production-ready with complete authentication and admin capabilities.
