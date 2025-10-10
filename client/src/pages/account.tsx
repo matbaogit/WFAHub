@@ -2,19 +2,38 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Mail, User, Wallet, CreditCard } from "lucide-react";
+import { Mail, User, Wallet, CreditCard, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 
 export default function Account() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/auth/logout");
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.clear();
+      setLocation("/");
+      toast({
+        title: "Đã đăng xuất",
+        description: "Hẹn gặp lại bạn!",
+      });
+    },
+  });
 
   const getUserInitials = () => {
     if (user?.firstName && user?.lastName) {
       return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
     }
-    if (user?.email) {
-      return user.email.slice(0, 2).toUpperCase();
+    if (user?.username) {
+      return user.username.slice(0, 2).toUpperCase();
     }
     return "U";
   };
@@ -106,6 +125,23 @@ export default function Account() {
               Nạp thêm credits để tiếp tục sử dụng các tính năng.
             </p>
           </div>
+        </Card>
+
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Đăng xuất</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Đăng xuất khỏi tài khoản của bạn
+          </p>
+          <Button 
+            variant="destructive"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+            className="gap-2"
+            data-testid="button-logout"
+          >
+            <LogOut className="w-4 h-4" />
+            {logoutMutation.isPending ? "Đang đăng xuất..." : "Đăng xuất"}
+          </Button>
         </Card>
       </div>
     </div>

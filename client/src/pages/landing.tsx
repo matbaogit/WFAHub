@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Zap, Mail, FileText, Bell, CheckCircle, FileSignature, ArrowRight, Sparkles } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function Landing() {
+  const [, setLocation] = useLocation();
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
       <header className="border-b border-slate-200/50 sticky top-0 z-50 backdrop-blur-xl bg-white/80">
@@ -15,7 +18,7 @@ export default function Landing() {
             </span>
           </div>
           <Button 
-            onClick={() => window.location.href = '/api/login'}
+            onClick={() => setLocation('/login')}
             data-testid="button-login"
             className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300"
           >
@@ -48,7 +51,7 @@ export default function Landing() {
             <div className="flex items-center justify-center gap-4">
               <Button 
                 size="lg" 
-                onClick={() => window.location.href = '/api/login'}
+                onClick={() => setLocation('/register')}
                 className="gap-2 h-14 px-10 text-base bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-2xl shadow-blue-500/40 hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300"
                 data-testid="button-get-started"
               >
