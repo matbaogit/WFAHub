@@ -4,6 +4,7 @@ import { vi } from "date-fns/locale";
 import type { ExecutionLog, Template } from "@shared/schema";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Clock } from "lucide-react";
 
 interface LogWithTemplate extends ExecutionLog {
@@ -11,7 +12,7 @@ interface LogWithTemplate extends ExecutionLog {
 }
 
 export default function Logs() {
-  const { data: logs, isLoading } = useQuery<LogWithTemplate[]>({
+  const { data: logs, isLoading, isError, error, refetch } = useQuery<LogWithTemplate[]>({
     queryKey: ["/api/logs"],
   });
 
@@ -50,7 +51,20 @@ export default function Logs() {
         </p>
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <div className="text-center py-12 bg-card rounded-xl border border-destructive/20">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 mx-auto mb-4 flex items-center justify-center">
+            <Clock className="w-8 h-8 text-destructive" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">Không thể tải lịch sử</h3>
+          <p className="text-muted-foreground mb-4">
+            {error instanceof Error ? error.message : "Đã xảy ra lỗi khi tải lịch sử thực thi"}
+          </p>
+          <Button onClick={() => refetch()} variant="outline" data-testid="button-retry-logs">
+            Thử lại
+          </Button>
+        </div>
+      ) : isLoading ? (
         <div className="space-y-3">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="h-16 bg-card rounded-lg animate-pulse" />

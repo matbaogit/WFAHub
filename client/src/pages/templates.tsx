@@ -3,6 +3,7 @@ import { Mail, FileText, Bell, CheckCircle, FileSignature } from "lucide-react";
 import type { Template } from "@shared/schema";
 import { TemplateCard } from "@/components/template-card";
 import { ExecutionModal } from "@/components/execution-modal";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 const iconMap: Record<string, any> = {
@@ -16,7 +17,7 @@ const iconMap: Record<string, any> = {
 export default function Templates() {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   
-  const { data: templates, isLoading } = useQuery<Template[]>({
+  const { data: templates, isLoading, isError, error, refetch } = useQuery<Template[]>({
     queryKey: ["/api/templates"],
   });
 
@@ -29,7 +30,20 @@ export default function Templates() {
         </p>
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <div className="text-center py-12 bg-card rounded-xl border border-destructive/20">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 mx-auto mb-4 flex items-center justify-center">
+            <FileText className="w-8 h-8 text-destructive" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">Không thể tải tính năng</h3>
+          <p className="text-muted-foreground mb-4">
+            {error instanceof Error ? error.message : "Đã xảy ra lỗi khi tải danh sách tính năng"}
+          </p>
+          <Button onClick={() => refetch()} variant="outline" data-testid="button-retry-templates">
+            Thử lại
+          </Button>
+        </div>
+      ) : isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <div 
