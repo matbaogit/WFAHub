@@ -2,14 +2,23 @@ import {
   users,
   templates,
   executionLogs,
+  customers,
+  quotations,
+  quotationItems,
   type User,
   type RegisterUser,
   type Template,
   type ExecutionLog,
   type InsertExecutionLog,
+  type Customer,
+  type InsertCustomer,
+  type Quotation,
+  type InsertQuotation,
+  type QuotationItem,
+  type InsertQuotationItem,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
@@ -40,6 +49,28 @@ export interface IStorage {
     totalRevenue: number;
     activeTemplates: number;
   }>;
+  
+  // Customer operations
+  createCustomer(customer: InsertCustomer): Promise<Customer>;
+  getCustomer(id: string): Promise<Customer | undefined>;
+  getUserCustomers(userId: string): Promise<Customer[]>;
+  updateCustomer(customerId: string, data: Partial<Customer>): Promise<Customer>;
+  deleteCustomer(customerId: string): Promise<void>;
+  
+  // Quotation operations
+  createQuotation(quotation: InsertQuotation): Promise<Quotation>;
+  getQuotation(id: string): Promise<Quotation | undefined>;
+  getUserQuotations(userId: string): Promise<Quotation[]>;
+  updateQuotation(quotationId: string, data: Partial<Quotation>): Promise<Quotation>;
+  deleteQuotation(quotationId: string): Promise<void>;
+  generateQuotationNumber(): Promise<string>;
+  
+  // Quotation items operations
+  createQuotationItem(item: InsertQuotationItem): Promise<QuotationItem>;
+  getQuotationItems(quotationId: string): Promise<QuotationItem[]>;
+  updateQuotationItem(itemId: string, data: Partial<QuotationItem>): Promise<QuotationItem>;
+  deleteQuotationItem(itemId: string): Promise<void>;
+  deleteQuotationItems(quotationId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -165,6 +196,123 @@ export class DatabaseStorage implements IStorage {
       totalRevenue,
       activeTemplates: activeTemplates.length,
     };
+  }
+  
+  // Customer operations
+  async createCustomer(customer: InsertCustomer): Promise<Customer> {
+    const [newCustomer] = await db
+      .insert(customers)
+      .values(customer as any)
+      .returning();
+    return newCustomer;
+  }
+
+  async getCustomer(id: string): Promise<Customer | undefined> {
+    const [customer] = await db.select().from(customers).where(eq(customers.id, id));
+    return customer;
+  }
+
+  async getUserCustomers(userId: string): Promise<Customer[]> {
+    return await db
+      .select()
+      .from(customers)
+      .where(and(eq(customers.userId, userId), eq(customers.isActive, 1)))
+      .orderBy(desc(customers.createdAt));
+  }
+
+  async updateCustomer(customerId: string, data: Partial<Customer>): Promise<Customer> {
+    const [customer] = await db
+      .update(customers)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(customers.id, customerId))
+      .returning();
+    return customer;
+  }
+
+  async deleteCustomer(customerId: string): Promise<void> {
+    await db
+      .update(customers)
+      .set({ isActive: 0, updatedAt: new Date() })
+      .where(eq(customers.id, customerId));
+  }
+  
+  // Quotation operations
+  async generateQuotationNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const allQuotations = await db.select().from(quotations);
+    const currentYearQuotations = allQuotations.filter(q => 
+      q.quotationNumber.startsWith(`BG-${year}`)
+    );
+    const nextNumber = currentYearQuotations.length + 1;
+    return `BG-${year}-${String(nextNumber).padStart(4, '0')}`;
+  }
+
+  async createQuotation(quotation: InsertQuotation): Promise<Quotation> {
+    const [newQuotation] = await db
+      .insert(quotations)
+      .values(quotation as any)
+      .returning();
+    return newQuotation;
+  }
+
+  async getQuotation(id: string): Promise<Quotation | undefined> {
+    const [quotation] = await db.select().from(quotations).where(eq(quotations.id, id));
+    return quotation;
+  }
+
+  async getUserQuotations(userId: string): Promise<Quotation[]> {
+    return await db
+      .select()
+      .from(quotations)
+      .where(eq(quotations.userId, userId))
+      .orderBy(desc(quotations.createdAt));
+  }
+
+  async updateQuotation(quotationId: string, data: Partial<Quotation>): Promise<Quotation> {
+    const [quotation] = await db
+      .update(quotations)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(quotations.id, quotationId))
+      .returning();
+    return quotation;
+  }
+
+  async deleteQuotation(quotationId: string): Promise<void> {
+    await db.delete(quotations).where(eq(quotations.id, quotationId));
+  }
+  
+  // Quotation items operations
+  async createQuotationItem(item: InsertQuotationItem): Promise<QuotationItem> {
+    const [newItem] = await db
+      .insert(quotationItems)
+      .values(item as any)
+      .returning();
+    return newItem;
+  }
+
+  async getQuotationItems(quotationId: string): Promise<QuotationItem[]> {
+    return await db
+      .select()
+      .from(quotationItems)
+      .where(eq(quotationItems.quotationId, quotationId))
+      .orderBy(quotationItems.sortOrder);
+  }
+
+  async updateQuotationItem(itemId: string, data: Partial<QuotationItem>): Promise<QuotationItem> {
+    const [item] = await db
+      .update(quotationItems)
+      .set(data)
+      .where(eq(quotationItems.id, itemId))
+      .returning();
+    return item;
+  }
+
+  async deleteQuotationItem(itemId: string): Promise<void> {
+    await db.delete(quotationItems).where(eq(quotationItems.id, itemId));
+  }
+
+  async deleteQuotationItems(quotationId: string): Promise<void> {
+    await db.delete(quotationItems).where(eq(quotationItems.quotationId, quotationId));
   }
 }
 

@@ -17,6 +17,8 @@ import Dashboard from "@/pages/dashboard";
 import Templates from "@/pages/templates";
 import Logs from "@/pages/logs";
 import Account from "@/pages/account";
+import Customers from "@/pages/customers";
+import Quotations from "@/pages/quotations";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminTemplates from "@/pages/admin/templates";
@@ -37,6 +39,8 @@ function Router() {
         <>
           <Route path="/" component={Dashboard} />
           <Route path="/templates" component={Templates} />
+          <Route path="/customers" component={Customers} />
+          <Route path="/quotations" component={Quotations} />
           <Route path="/logs" component={Logs} />
           <Route path="/account" component={Account} />
           <Route path="/admin" component={AdminDashboard} />

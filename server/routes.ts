@@ -325,6 +325,303 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ QUOTATION MODULE ROUTES ============
+  
+  // Customer routes
+  app.post("/api/customers", isAuthenticated, async (req: any, res) => {
+    try {
+      const customerData = {
+        ...req.body,
+        userId: req.user.id,
+      };
+      const customer = await storage.createCustomer(customerData);
+      res.json(customer);
+    } catch (error) {
+      console.error("Error creating customer:", error);
+      res.status(500).json({ message: "Failed to create customer" });
+    }
+  });
+
+  app.get("/api/customers", isAuthenticated, async (req: any, res) => {
+    try {
+      const customers = await storage.getUserCustomers(req.user.id);
+      res.json(customers);
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      res.status(500).json({ message: "Failed to fetch customers" });
+    }
+  });
+
+  app.get("/api/customers/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const customer = await storage.getCustomer(req.params.id);
+      if (!customer || customer.userId !== req.user.id) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      res.json(customer);
+    } catch (error) {
+      console.error("Error fetching customer:", error);
+      res.status(500).json({ message: "Failed to fetch customer" });
+    }
+  });
+
+  app.patch("/api/customers/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const customer = await storage.getCustomer(req.params.id);
+      if (!customer || customer.userId !== req.user.id) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      
+      // Whitelist mutable fields only
+      const { name, email, phone, address, company, taxCode, notes } = req.body;
+      const updates: any = {};
+      if (name !== undefined) updates.name = name;
+      if (email !== undefined) updates.email = email;
+      if (phone !== undefined) updates.phone = phone;
+      if (address !== undefined) updates.address = address;
+      if (company !== undefined) updates.company = company;
+      if (taxCode !== undefined) updates.taxCode = taxCode;
+      if (notes !== undefined) updates.notes = notes;
+      
+      const updatedCustomer = await storage.updateCustomer(req.params.id, updates);
+      res.json(updatedCustomer);
+    } catch (error) {
+      console.error("Error updating customer:", error);
+      res.status(500).json({ message: "Failed to update customer" });
+    }
+  });
+
+  app.delete("/api/customers/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const customer = await storage.getCustomer(req.params.id);
+      if (!customer || customer.userId !== req.user.id) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      
+      await storage.deleteCustomer(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting customer:", error);
+      res.status(500).json({ message: "Failed to delete customer" });
+    }
+  });
+
+  // Quotation routes
+  app.post("/api/quotations", isAuthenticated, async (req: any, res) => {
+    try {
+      const quotationNumber = await storage.generateQuotationNumber();
+      const { items, ...data } = req.body;
+      
+      // Validate customer ownership
+      if (!data.customerId) {
+        return res.status(400).json({ message: "Customer ID is required" });
+      }
+      const customer = await storage.getCustomer(data.customerId);
+      if (!customer || customer.userId !== req.user.id) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      
+      // Validate and compute totals server-side from items
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ message: "Quotation must have at least one item" });
+      }
+      
+      let subtotal = 0;
+      for (const item of items) {
+        if (!item.name || typeof item.quantity !== 'number' || typeof item.unitPrice !== 'number') {
+          return res.status(400).json({ message: "Invalid item data" });
+        }
+        subtotal += item.quantity * item.unitPrice;
+      }
+      
+      const discount = Math.max(0, data.discount || 0);
+      const vatRate = Math.max(0, data.vatRate || 10);
+      const discountAmount = subtotal * (discount / 100);
+      const taxableAmount = subtotal - discountAmount;
+      const vatAmount = Math.round(taxableAmount * (vatRate / 100));
+      const total = Math.round(taxableAmount + vatAmount);
+      
+      const quotationData = {
+        userId: req.user.id,
+        quotationNumber,
+        customerId: data.customerId,
+        templateId: data.templateId || null,
+        emailTemplateId: data.emailTemplateId || null,
+        title: data.title,
+        validUntil: data.validUntil,
+        status: data.status || 'draft',
+        notes: data.notes || null,
+        terms: data.terms || null,
+        watermarkType: data.watermarkType || 'none',
+        watermarkText: data.watermarkText || null,
+        autoExpire: data.autoExpire !== undefined ? data.autoExpire : 1,
+        subtotal,
+        discount,
+        vatRate,
+        vatAmount,
+        total,
+      };
+      
+      const quotation = await storage.createQuotation(quotationData);
+      
+      // Create quotation items with server-computed values
+      for (const item of items) {
+        await storage.createQuotationItem({
+          name: item.name,
+          description: item.description || null,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.quantity * item.unitPrice,
+          sortOrder: item.sortOrder || 0,
+          quotationId: quotation.id,
+        });
+      }
+      
+      res.json(quotation);
+    } catch (error) {
+      console.error("Error creating quotation:", error);
+      res.status(500).json({ message: "Failed to create quotation" });
+    }
+  });
+
+  app.get("/api/quotations", isAuthenticated, async (req: any, res) => {
+    try {
+      const quotations = await storage.getUserQuotations(req.user.id);
+      res.json(quotations);
+    } catch (error) {
+      console.error("Error fetching quotations:", error);
+      res.status(500).json({ message: "Failed to fetch quotations" });
+    }
+  });
+
+  app.get("/api/quotations/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const quotation = await storage.getQuotation(req.params.id);
+      if (!quotation || quotation.userId !== req.user.id) {
+        return res.status(404).json({ message: "Quotation not found" });
+      }
+      
+      const items = await storage.getQuotationItems(quotation.id);
+      const customer = await storage.getCustomer(quotation.customerId);
+      
+      res.json({
+        ...quotation,
+        items,
+        customer,
+      });
+    } catch (error) {
+      console.error("Error fetching quotation:", error);
+      res.status(500).json({ message: "Failed to fetch quotation" });
+    }
+  });
+
+  app.patch("/api/quotations/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const quotation = await storage.getQuotation(req.params.id);
+      if (!quotation || quotation.userId !== req.user.id) {
+        return res.status(404).json({ message: "Quotation not found" });
+      }
+      
+      const { items, ...data } = req.body;
+      
+      // Validate customer ownership if customerId is being updated
+      if (data.customerId !== undefined && data.customerId !== quotation.customerId) {
+        const customer = await storage.getCustomer(data.customerId);
+        if (!customer || customer.userId !== req.user.id) {
+          return res.status(404).json({ message: "Customer not found" });
+        }
+      }
+      
+      // Whitelist mutable fields
+      const updates: any = {};
+      if (data.customerId !== undefined) updates.customerId = data.customerId;
+      if (data.templateId !== undefined) updates.templateId = data.templateId;
+      if (data.emailTemplateId !== undefined) updates.emailTemplateId = data.emailTemplateId;
+      if (data.title !== undefined) updates.title = data.title;
+      if (data.validUntil !== undefined) updates.validUntil = data.validUntil;
+      if (data.status !== undefined) updates.status = data.status;
+      if (data.notes !== undefined) updates.notes = data.notes;
+      if (data.terms !== undefined) updates.terms = data.terms;
+      if (data.watermarkType !== undefined) updates.watermarkType = data.watermarkType;
+      if (data.watermarkText !== undefined) updates.watermarkText = data.watermarkText;
+      if (data.autoExpire !== undefined) updates.autoExpire = data.autoExpire;
+      
+      // Re-compute totals if items are provided
+      if (items && Array.isArray(items) && items.length > 0) {
+        let subtotal = 0;
+        for (const item of items) {
+          if (!item.name || typeof item.quantity !== 'number' || typeof item.unitPrice !== 'number') {
+            return res.status(400).json({ message: "Invalid item data" });
+          }
+          subtotal += item.quantity * item.unitPrice;
+        }
+        
+        const discount = Math.max(0, data.discount !== undefined ? data.discount : quotation.discount);
+        const vatRate = Math.max(0, data.vatRate !== undefined ? data.vatRate : quotation.vatRate);
+        const discountAmount = subtotal * (discount / 100);
+        const taxableAmount = subtotal - discountAmount;
+        const vatAmount = Math.round(taxableAmount * (vatRate / 100));
+        const total = Math.round(taxableAmount + vatAmount);
+        
+        updates.subtotal = subtotal;
+        updates.discount = discount;
+        updates.vatRate = vatRate;
+        updates.vatAmount = vatAmount;
+        updates.total = total;
+        
+        // Delete existing items and create new ones
+        await storage.deleteQuotationItems(req.params.id);
+        
+        for (const item of items) {
+          await storage.createQuotationItem({
+            name: item.name,
+            description: item.description || null,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.quantity * item.unitPrice,
+            sortOrder: item.sortOrder || 0,
+            quotationId: req.params.id,
+          });
+        }
+      } else if (data.discount !== undefined || data.vatRate !== undefined) {
+        // If only discount/vatRate changed, re-compute from existing subtotal
+        const discount = Math.max(0, data.discount !== undefined ? data.discount : quotation.discount);
+        const vatRate = Math.max(0, data.vatRate !== undefined ? data.vatRate : quotation.vatRate);
+        const subtotal = quotation.subtotal;
+        const discountAmount = subtotal * (discount / 100);
+        const taxableAmount = subtotal - discountAmount;
+        const vatAmount = Math.round(taxableAmount * (vatRate / 100));
+        const total = Math.round(taxableAmount + vatAmount);
+        
+        updates.discount = discount;
+        updates.vatRate = vatRate;
+        updates.vatAmount = vatAmount;
+        updates.total = total;
+      }
+      
+      const updatedQuotation = await storage.updateQuotation(req.params.id, updates);
+      res.json(updatedQuotation);
+    } catch (error) {
+      console.error("Error updating quotation:", error);
+      res.status(500).json({ message: "Failed to update quotation" });
+    }
+  });
+
+  app.delete("/api/quotations/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const quotation = await storage.getQuotation(req.params.id);
+      if (!quotation || quotation.userId !== req.user.id) {
+        return res.status(404).json({ message: "Quotation not found" });
+      }
+      
+      await storage.deleteQuotation(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting quotation:", error);
+      res.status(500).json({ message: "Failed to delete quotation" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
