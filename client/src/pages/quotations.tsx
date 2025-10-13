@@ -196,15 +196,13 @@ export default function Quotations() {
         watermarkType: editingQuotation.watermarkType || "none",
         watermarkText: editingQuotation.watermarkText || "",
         autoExpire: editingQuotation.autoExpire !== undefined ? editingQuotation.autoExpire : 1,
-        items: editingQuotation.items || [
-          {
-            name: "",
-            description: "",
-            quantity: 1,
-            unitPrice: 0,
-            sortOrder: 0,
-          },
-        ],
+        items: (editingQuotation.items || []).map((item: any) => ({
+          name: item.name,
+          description: item.description || "",
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          sortOrder: item.sortOrder || 0,
+        })),
       });
     } else {
       form.reset({
@@ -282,7 +280,7 @@ export default function Quotations() {
     const variants: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
       draft: { label: "Nháp", variant: "secondary" },
       sent: { label: "Đã gửi", variant: "default" },
-      approved: { label: "Đã duyệt", variant: "default" },
+      accepted: { label: "Đã chấp nhận", variant: "default" },
       rejected: { label: "Từ chối", variant: "destructive" },
       expired: { label: "Hết hạn", variant: "outline" },
     };
@@ -332,17 +330,20 @@ export default function Quotations() {
         }}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Tạo báo giá mới</DialogTitle>
+              <DialogTitle>{editingQuotation ? "Chỉnh sửa báo giá" : "Tạo báo giá mới"}</DialogTitle>
               <DialogDescription>
-                Điền thông tin báo giá và thêm sản phẩm/dịch vụ
+                {editingQuotation ? "Cập nhật thông tin báo giá" : "Điền thông tin báo giá và thêm sản phẩm/dịch vụ"}
               </DialogDescription>
             </DialogHeader>
             <QuotationForm
               form={form}
               onSubmit={onSubmit}
               customers={customers || []}
-              isPending={createMutation.isPending}
-              onCancel={() => setIsCreateOpen(false)}
+              isPending={createMutation.isPending || updateMutation.isPending}
+              onCancel={() => {
+                setIsCreateOpen(false);
+                setEditingQuotation(null);
+              }}
               items={items}
               addItem={addItem}
               removeItem={removeItem}
@@ -543,19 +544,44 @@ function QuotationForm({
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tiêu đề báo giá *</FormLabel>
-              <FormControl>
-                <Input {...field} data-testid="input-title" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tiêu đề báo giá *</FormLabel>
+                <FormControl>
+                  <Input {...field} data-testid="input-title" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Trạng thái *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger data-testid="select-status">
+                      <SelectValue placeholder="Chọn trạng thái" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="draft">Nháp</SelectItem>
+                    <SelectItem value="sent">Đã gửi</SelectItem>
+                    <SelectItem value="accepted">Đã chấp nhận</SelectItem>
+                    <SelectItem value="rejected">Từ chối</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <div>
           <div className="flex items-center justify-between mb-4">
