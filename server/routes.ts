@@ -687,6 +687,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Email template routes
+  app.post("/api/email-templates", isAuthenticated, async (req: any, res) => {
+    try {
+      const templateData = {
+        ...req.body,
+        createdBy: req.user.id,
+      };
+      const template = await storage.createEmailTemplate(templateData);
+      res.json(template);
+    } catch (error) {
+      console.error("Error creating email template:", error);
+      res.status(500).json({ message: "Failed to create email template" });
+    }
+  });
+
+  app.get("/api/email-templates", isAuthenticated, async (req: any, res) => {
+    try {
+      const templates = await storage.getUserEmailTemplates(req.user.id);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching email templates:", error);
+      res.status(500).json({ message: "Failed to fetch email templates" });
+    }
+  });
+
+  app.get("/api/email-templates/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const template = await storage.getEmailTemplate(req.params.id);
+      if (!template || template.createdBy !== req.user.id) {
+        return res.status(404).json({ message: "Email template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching email template:", error);
+      res.status(500).json({ message: "Failed to fetch email template" });
+    }
+  });
+
+  app.patch("/api/email-templates/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const template = await storage.getEmailTemplate(req.params.id);
+      if (!template || template.createdBy !== req.user.id) {
+        return res.status(404).json({ message: "Email template not found" });
+      }
+
+      const updatedTemplate = await storage.updateEmailTemplate(req.params.id, req.body);
+      res.json(updatedTemplate);
+    } catch (error) {
+      console.error("Error updating email template:", error);
+      res.status(500).json({ message: "Failed to update email template" });
+    }
+  });
+
+  app.delete("/api/email-templates/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const template = await storage.getEmailTemplate(req.params.id);
+      if (!template || template.createdBy !== req.user.id) {
+        return res.status(404).json({ message: "Email template not found" });
+      }
+
+      await storage.deleteEmailTemplate(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting email template:", error);
+      res.status(500).json({ message: "Failed to delete email template" });
+    }
+  });
+
+  // SMTP config routes
+  app.post("/api/smtp-config", isAuthenticated, async (req: any, res) => {
+    try {
+      // Check if user already has SMTP config
+      const existing = await storage.getSmtpConfig(req.user.id);
+      if (existing) {
+        return res.status(400).json({ message: "SMTP config already exists. Use PATCH to update." });
+      }
+
+      const configData = {
+        ...req.body,
+        userId: req.user.id,
+      };
+      const config = await storage.createSmtpConfig(configData);
+      res.json(config);
+    } catch (error) {
+      console.error("Error creating SMTP config:", error);
+      res.status(500).json({ message: "Failed to create SMTP config" });
+    }
+  });
+
+  app.get("/api/smtp-config", isAuthenticated, async (req: any, res) => {
+    try {
+      const config = await storage.getSmtpConfig(req.user.id);
+      if (!config) {
+        return res.status(404).json({ message: "SMTP config not found" });
+      }
+      res.json(config);
+    } catch (error) {
+      console.error("Error fetching SMTP config:", error);
+      res.status(500).json({ message: "Failed to fetch SMTP config" });
+    }
+  });
+
+  app.patch("/api/smtp-config", isAuthenticated, async (req: any, res) => {
+    try {
+      const existing = await storage.getSmtpConfig(req.user.id);
+      if (!existing) {
+        return res.status(404).json({ message: "SMTP config not found. Create one first." });
+      }
+
+      const updatedConfig = await storage.updateSmtpConfig(req.user.id, req.body);
+      res.json(updatedConfig);
+    } catch (error) {
+      console.error("Error updating SMTP config:", error);
+      res.status(500).json({ message: "Failed to update SMTP config" });
+    }
+  });
+
+  app.delete("/api/smtp-config", isAuthenticated, async (req: any, res) => {
+    try {
+      const existing = await storage.getSmtpConfig(req.user.id);
+      if (!existing) {
+        return res.status(404).json({ message: "SMTP config not found" });
+      }
+
+      await storage.deleteSmtpConfig(req.user.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting SMTP config:", error);
+      res.status(500).json({ message: "Failed to delete SMTP config" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

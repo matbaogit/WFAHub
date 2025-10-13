@@ -5,6 +5,8 @@ import {
   customers,
   quotations,
   quotationItems,
+  emailTemplates,
+  smtpConfigs,
   type User,
   type RegisterUser,
   type Template,
@@ -16,6 +18,10 @@ import {
   type InsertQuotation,
   type QuotationItem,
   type InsertQuotationItem,
+  type EmailTemplate,
+  type InsertEmailTemplate,
+  type SmtpConfig,
+  type InsertSmtpConfig,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -71,6 +77,19 @@ export interface IStorage {
   updateQuotationItem(itemId: string, data: Partial<QuotationItem>): Promise<QuotationItem>;
   deleteQuotationItem(itemId: string): Promise<void>;
   deleteQuotationItems(quotationId: string): Promise<void>;
+  
+  // Email template operations
+  createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
+  getEmailTemplate(id: string): Promise<EmailTemplate | undefined>;
+  getUserEmailTemplates(userId: string): Promise<EmailTemplate[]>;
+  updateEmailTemplate(templateId: string, data: Partial<EmailTemplate>): Promise<EmailTemplate>;
+  deleteEmailTemplate(templateId: string): Promise<void>;
+  
+  // SMTP config operations
+  createSmtpConfig(config: InsertSmtpConfig): Promise<SmtpConfig>;
+  getSmtpConfig(userId: string): Promise<SmtpConfig | undefined>;
+  updateSmtpConfig(userId: string, data: Partial<SmtpConfig>): Promise<SmtpConfig>;
+  deleteSmtpConfig(userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -313,6 +332,68 @@ export class DatabaseStorage implements IStorage {
 
   async deleteQuotationItems(quotationId: string): Promise<void> {
     await db.delete(quotationItems).where(eq(quotationItems.quotationId, quotationId));
+  }
+  
+  // Email template operations
+  async createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate> {
+    const [newTemplate] = await db
+      .insert(emailTemplates)
+      .values(template as any)
+      .returning();
+    return newTemplate;
+  }
+
+  async getEmailTemplate(id: string): Promise<EmailTemplate | undefined> {
+    const [template] = await db.select().from(emailTemplates).where(eq(emailTemplates.id, id));
+    return template;
+  }
+
+  async getUserEmailTemplates(userId: string): Promise<EmailTemplate[]> {
+    return await db
+      .select()
+      .from(emailTemplates)
+      .where(eq(emailTemplates.createdBy, userId))
+      .orderBy(desc(emailTemplates.createdAt));
+  }
+
+  async updateEmailTemplate(templateId: string, data: Partial<EmailTemplate>): Promise<EmailTemplate> {
+    const [template] = await db
+      .update(emailTemplates)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(emailTemplates.id, templateId))
+      .returning();
+    return template;
+  }
+
+  async deleteEmailTemplate(templateId: string): Promise<void> {
+    await db.delete(emailTemplates).where(eq(emailTemplates.id, templateId));
+  }
+  
+  // SMTP config operations
+  async createSmtpConfig(config: InsertSmtpConfig): Promise<SmtpConfig> {
+    const [newConfig] = await db
+      .insert(smtpConfigs)
+      .values(config as any)
+      .returning();
+    return newConfig;
+  }
+
+  async getSmtpConfig(userId: string): Promise<SmtpConfig | undefined> {
+    const [config] = await db.select().from(smtpConfigs).where(eq(smtpConfigs.userId, userId));
+    return config;
+  }
+
+  async updateSmtpConfig(userId: string, data: Partial<SmtpConfig>): Promise<SmtpConfig> {
+    const [config] = await db
+      .update(smtpConfigs)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(smtpConfigs.userId, userId))
+      .returning();
+    return config;
+  }
+
+  async deleteSmtpConfig(userId: string): Promise<void> {
+    await db.delete(smtpConfigs).where(eq(smtpConfigs.userId, userId));
   }
 }
 
