@@ -108,6 +108,11 @@ export const insertExecutionLogSchema = createInsertSchema(executionLogs).omit({
   executedAt: true,
 });
 
+export const insertTemplateSchema = createInsertSchema(templates).omit({
+  id: true,
+  createdAt: true,
+});
+
 // ============ QUOTATION MANAGEMENT MODULE ============
 
 // Customer management
@@ -355,6 +360,7 @@ export type RegisterUser = z.infer<typeof registerUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
 export type User = typeof users.$inferSelect;
 export type Template = typeof templates.$inferSelect;
+export type InsertTemplate = z.infer<typeof insertTemplateSchema>;
 export type ExecutionLog = typeof executionLogs.$inferSelect;
 export type InsertExecutionLog = z.infer<typeof insertExecutionLogSchema>;
 

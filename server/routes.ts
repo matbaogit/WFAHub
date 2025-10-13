@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupLocalAuth } from "./localAuth";
-import { insertExecutionLogSchema, registerUserSchema, loginUserSchema } from "@shared/schema";
+import { insertExecutionLogSchema, registerUserSchema, loginUserSchema, insertTemplateSchema } from "@shared/schema";
 import passport from "passport";
 import type { User } from "@shared/schema";
 
@@ -261,10 +261,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create template (admin only)
   app.post("/api/admin/templates", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const template = await storage.createTemplate(req.body);
+      const validatedData = insertTemplateSchema.parse(req.body);
+      const template = await storage.createTemplate(validatedData);
       res.json(template);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating template:", error);
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
       res.status(500).json({ message: "Failed to create template" });
     }
   });
@@ -273,22 +277,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/admin/templates/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { id } = req.params;
-      const { isActive, creditCost, nameVi, descriptionVi } = req.body;
       
-      // Validate and whitelist allowed fields
+      // Allow all template fields except id and createdAt
+      const allowedFields = ['name', 'nameVi', 'description', 'descriptionVi', 'icon', 'creditCost', 'inputSchema', 'isActive'];
       const updates: any = {};
-      if (isActive !== undefined && (isActive === 0 || isActive === 1)) {
-        updates.isActive = isActive;
-      }
-      if (creditCost !== undefined && typeof creditCost === 'number' && creditCost >= 0) {
-        updates.creditCost = creditCost;
-      }
-      if (nameVi !== undefined && typeof nameVi === 'string') {
-        updates.nameVi = nameVi;
-      }
-      if (descriptionVi !== undefined && typeof descriptionVi === 'string') {
-        updates.descriptionVi = descriptionVi;
-      }
+      
+      allowedFields.forEach(field => {
+        if (req.body[field] !== undefined) {
+          updates[field] = req.body[field];
+        }
+      });
       
       if (Object.keys(updates).length === 0) {
         return res.status(400).json({ message: "No valid fields to update" });
