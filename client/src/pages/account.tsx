@@ -20,7 +20,7 @@ export default function Account() {
     },
     onSuccess: () => {
       queryClient.clear();
-      setLocation("/");
+      setLocation("/login");
       toast({
         title: "Đã đăng xuất",
         description: "Hẹn gặp lại bạn!",
