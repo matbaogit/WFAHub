@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -53,6 +53,7 @@ function Router() {
 function AppContent() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const { viewMode, toggleViewMode } = useViewMode();
+  const [location] = useLocation();
   
   const sidebarStyle = {
     "--sidebar-width": "16rem",
@@ -60,8 +61,12 @@ function AppContent() {
   };
 
   const isAdmin = user?.role === "admin";
+  
+  // Routes that should not show sidebar/topbar
+  const isAuthRoute = location === "/login" || location === "/register";
+  const shouldShowLayout = !isLoading && isAuthenticated && !isAuthRoute;
 
-  if (isLoading || !isAuthenticated) {
+  if (!shouldShowLayout) {
     return (
       <>
         <Toaster />
