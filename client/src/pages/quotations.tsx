@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -179,6 +179,56 @@ export default function Quotations() {
     },
   });
 
+  // Populate form when editing
+  useEffect(() => {
+    if (editingQuotation) {
+      form.reset({
+        customerId: editingQuotation.customerId,
+        title: editingQuotation.title,
+        validUntil: new Date(editingQuotation.validUntil),
+        notes: editingQuotation.notes || "",
+        terms: editingQuotation.terms || "",
+        discount: editingQuotation.discount,
+        vatRate: editingQuotation.vatRate,
+        status: editingQuotation.status,
+        templateId: editingQuotation.templateId,
+        emailTemplateId: editingQuotation.emailTemplateId,
+        watermarkType: editingQuotation.watermarkType || "none",
+        watermarkText: editingQuotation.watermarkText || "",
+        autoExpire: editingQuotation.autoExpire !== undefined ? editingQuotation.autoExpire : 1,
+        items: editingQuotation.items || [
+          {
+            name: "",
+            description: "",
+            quantity: 1,
+            unitPrice: 0,
+            sortOrder: 0,
+          },
+        ],
+      });
+    } else {
+      form.reset({
+        customerId: "",
+        title: "",
+        validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        notes: "",
+        terms: "",
+        discount: 0,
+        vatRate: 10,
+        status: "draft",
+        items: [
+          {
+            name: "",
+            description: "",
+            quantity: 1,
+            unitPrice: 0,
+            sortOrder: 0,
+          },
+        ],
+      });
+    }
+  }, [editingQuotation, form]);
+
   const items = form.watch("items") || [];
   const discount = form.watch("discount") || 0;
   const vatRate = form.watch("vatRate") || 0;
@@ -262,13 +312,24 @@ export default function Quotations() {
             Tạo và quản lý các báo giá của bạn
           </p>
         </div>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2" data-testid="button-create-quotation">
-              <Plus className="w-4 h-4" />
-              Tạo báo giá
-            </Button>
-          </DialogTrigger>
+        <Button 
+          className="gap-2" 
+          data-testid="button-create-quotation"
+          onClick={() => {
+            setEditingQuotation(null);
+            setIsCreateOpen(true);
+          }}
+        >
+          <Plus className="w-4 h-4" />
+          Tạo báo giá
+        </Button>
+
+        <Dialog open={isCreateOpen || !!editingQuotation} onOpenChange={(open) => {
+          if (!open) {
+            setIsCreateOpen(false);
+            setEditingQuotation(null);
+          }
+        }}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Tạo báo giá mới</DialogTitle>
@@ -345,9 +406,13 @@ export default function Quotations() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => {
-                        setEditingQuotation(quotation);
-                        // TODO: Load full quotation with items
+                      onClick={async () => {
+                        // Fetch full quotation with items
+                        const response = await fetch(`/api/quotations/${quotation.id}`);
+                        if (response.ok) {
+                          const fullQuotation = await response.json();
+                          setEditingQuotation(fullQuotation);
+                        }
                       }}
                       data-testid={`button-edit-quotation-${quotation.id}`}
                     >
@@ -457,8 +522,18 @@ function QuotationForm({
                 <FormControl>
                   <Input
                     type="date"
-                    value={field.value instanceof Date ? field.value.toISOString().split('T')[0] : ''}
-                    onChange={(e) => field.onChange(new Date(e.target.value))}
+                    value={field.value instanceof Date && !isNaN(field.value.getTime()) ? field.value.toISOString().split('T')[0] : ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value) {
+                        const date = new Date(value);
+                        if (!isNaN(date.getTime())) {
+                          field.onChange(date);
+                        }
+                      } else {
+                        field.onChange(undefined);
+                      }
+                    }}
                     data-testid="input-valid-until"
                   />
                 </FormControl>

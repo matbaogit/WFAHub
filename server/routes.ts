@@ -448,7 +448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         templateId: data.templateId || null,
         emailTemplateId: data.emailTemplateId || null,
         title: data.title,
-        validUntil: data.validUntil,
+        validUntil: data.validUntil ? (data.validUntil instanceof Date ? data.validUntil : new Date(data.validUntil)) : new Date(),
         status: data.status || 'draft',
         notes: data.notes || null,
         terms: data.terms || null,
@@ -538,7 +538,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (data.templateId !== undefined) updates.templateId = data.templateId;
       if (data.emailTemplateId !== undefined) updates.emailTemplateId = data.emailTemplateId;
       if (data.title !== undefined) updates.title = data.title;
-      if (data.validUntil !== undefined) updates.validUntil = data.validUntil;
+      if (data.validUntil !== undefined) {
+        updates.validUntil = data.validUntil instanceof Date ? data.validUntil : new Date(data.validUntil);
+      }
       if (data.status !== undefined) updates.status = data.status;
       if (data.notes !== undefined) updates.notes = data.notes;
       if (data.terms !== undefined) updates.terms = data.terms;
