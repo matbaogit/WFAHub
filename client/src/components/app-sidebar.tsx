@@ -1,4 +1,4 @@
-import { Home, Zap, History, User, LogOut, Wallet, Sparkles, Shield, Users, BarChart3, FileText, UserCheck } from "lucide-react";
+import { Home, Zap, History, User, LogOut, Wallet, Sparkles, Shield, Users, BarChart3, FileText, UserCheck, Mail } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -34,6 +34,11 @@ const menuItems = [
     title: "Báo giá",
     url: "/quotations",
     icon: FileText,
+  },
+  {
+    title: "Mẫu Email",
+    url: "/email-templates",
+    icon: Mail,
   },
   {
     title: "Khách hàng",
