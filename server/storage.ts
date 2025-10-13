@@ -90,6 +90,11 @@ export interface IStorage {
   getSmtpConfig(userId: string): Promise<SmtpConfig | undefined>;
   updateSmtpConfig(userId: string, data: Partial<SmtpConfig>): Promise<SmtpConfig>;
   deleteSmtpConfig(userId: string): Promise<void>;
+
+  // Quotation email sending
+  getQuotationWithDetails(quotationId: string): Promise<any | undefined>;
+  getUserSettings(userId: string): Promise<any | undefined>;
+  updateQuotationSentAt(quotationId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -394,6 +399,50 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSmtpConfig(userId: string): Promise<void> {
     await db.delete(smtpConfigs).where(eq(smtpConfigs.userId, userId));
+  }
+
+  // Quotation email sending operations
+  async getQuotationWithDetails(quotationId: string): Promise<any | undefined> {
+    const [quotation] = await db
+      .select()
+      .from(quotations)
+      .where(eq(quotations.id, quotationId));
+
+    if (!quotation) return undefined;
+
+    // Get customer
+    const [customer] = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.id, quotation.customerId));
+
+    // Get items
+    const items = await db
+      .select()
+      .from(quotationItems)
+      .where(eq(quotationItems.quotationId, quotationId))
+      .orderBy(quotationItems.sortOrder);
+
+    return {
+      ...quotation,
+      customer,
+      items,
+    };
+  }
+
+  async getUserSettings(userId: string): Promise<any | undefined> {
+    const [settings] = await db
+      .select()
+      .from(userSettings)
+      .where(eq(userSettings.userId, userId));
+    return settings;
+  }
+
+  async updateQuotationSentAt(quotationId: string): Promise<void> {
+    await db
+      .update(quotations)
+      .set({ sentAt: new Date() })
+      .where(eq(quotations.id, quotationId));
   }
 }
 

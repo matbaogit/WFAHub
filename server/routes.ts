@@ -6,6 +6,7 @@ import { insertExecutionLogSchema, registerUserSchema, loginUserSchema, insertTe
 import passport from "passport";
 import type { User } from "@shared/schema";
 import { z } from "zod";
+import { sendQuotationEmail } from "./emailService";
 
 // Sanitize user object by removing sensitive fields
 const sanitizeUser = (user: User | null): Omit<User, 'passwordHash'> | null => {
@@ -835,6 +836,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting SMTP config:", error);
       res.status(500).json({ message: "Failed to delete SMTP config" });
+    }
+  });
+
+  // Send quotation email
+  app.post("/api/quotations/:id/send-email", isAuthenticated, async (req: any, res) => {
+    try {
+      const quotationId = req.params.id;
+
+      // Get quotation with customer and items
+      const quotation = await storage.getQuotationWithDetails(quotationId);
+      if (!quotation) {
+        return res.status(404).json({ message: "Quotation not found" });
+      }
+
+      // Check ownership
+      if (quotation.userId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      // Get SMTP config
+      const smtpConfig = await storage.getSmtpConfig(req.user.id);
+      if (!smtpConfig) {
+        return res.status(400).json({ message: "SMTP configuration not found. Please configure SMTP settings first." });
+      }
+
+      // Get email template (default or specified)
+      const emailTemplates = await storage.getEmailTemplates(req.user.id);
+      const template = emailTemplates.find(t => t.isDefault === 1) || emailTemplates[0];
+      if (!template) {
+        return res.status(400).json({ message: "Email template not found. Please create an email template first." });
+      }
+
+      // Get user settings for company name
+      const userSettings = await storage.getUserSettings(req.user.id);
+      const companyName = userSettings?.companyName || undefined;
+
+      // Send email
+      await sendQuotationEmail({
+        quotation: quotation as any,
+        template,
+        smtpConfig,
+        companyName,
+      });
+
+      // Update quotation sentAt timestamp
+      await storage.updateQuotationSentAt(quotationId);
+
+      res.json({ success: true, message: "Email sent successfully" });
+    } catch (error: any) {
+      console.error("Error sending quotation email:", error);
+      res.status(500).json({ message: error.message || "Failed to send email" });
     }
   });
 
