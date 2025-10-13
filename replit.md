@@ -242,13 +242,65 @@ Preferred communication style: Simple, everyday language.
   - All logout flows operational
   - No passwordHash leakage in API responses
 
+### Phase 8: Quotation Management - Phase 1 Core Foundation (Completed)
+- **Database Schema Expansion:**
+  - Added 7 new tables: customers, quotations, quotationItems, quotationTemplates, emailTemplates, smtpConfigs, storageConfigs, userSettings
+  - Encryption utilities (AES-256-GCM) for SMTP password security with ENCRYPTION_KEY in Replit Secrets
+  - Multi-tenant architecture with userId foreign keys on all user-owned entities
+  
+- **Backend Implementation:**
+  - Customer CRUD operations in storage layer with ownership validation
+  - Quotation CRUD with auto-generated quotation numbers (QUO-YYYY-MM-NNNN format)
+  - QuotationItem management with parent quotation relationship
+  - API endpoints:
+    - POST/GET/PATCH/DELETE /api/customers - Full customer management
+    - POST/GET/PATCH/DELETE /api/quotations - Quotation lifecycle with items
+  
+- **Security Hardening (Critical Fixes):**
+  - **Field Whitelisting:** Customer PATCH only allows name, email, phone, address, company, taxCode, notes
+  - **Server-side Totals:** Quotation POST/PATCH compute subtotal, VAT, totals from items (never trust client)
+  - **Cross-tenant Protection:** Customer ownership validated before quotation create/update
+  - **Ownership Guards:** All endpoints verify userId before allowing access/modifications
+  - **Input Validation:** Item data validated (name, quantity, unitPrice) before processing
+  
+- **Frontend Pages:**
+  - Customer Management (/customers):
+    - List view with search, create/edit dialog, delete confirmation
+    - Form fields: name, email, phone, address, company, taxCode, notes
+    - Real-time React Query cache invalidation
+  - Quotation Management (/quotations):
+    - List view with status badges (draft/sent/accepted/rejected/expired)
+    - Create/edit dialog with dynamic item rows
+    - Auto-calculated subtotals, discount, VAT (10%), totals
+    - Customer selection dropdown from user's customers
+    - Vietnamese currency formatting (VND)
+  
+- **UI/UX Enhancements:**
+  - Sidebar navigation updated with "Báo Giá" and "Khách Hàng" menu items
+  - Gradient design consistency with existing premium UI
+  - Loading skeletons for all async operations
+  - Toast notifications for success/error states
+  - Proper data-testid attributes for testing
+  
+- **Architecture Verified:**
+  - Tenant isolation enforced across all quotation/customer operations
+  - Server-driven financial calculations prevent tampering
+  - Type-safe schema alignment between frontend and backend
+  - No security vulnerabilities in cross-tenant access or data modification
+
 ## Production Status
 
-✅ **MVP Complete + Admin Panel + Custom Auth** - All core features implemented and tested:
+✅ **MVP Complete + Admin Panel + Quotation Management (Phase 1)** - All core features implemented and tested:
 - **Username/Password Authentication** with secure bcrypt hashing
 - 5 ready-made workflow templates (Email, Quotation, Reminder, Leave Approval, Contract)
 - Credit-based execution system (100 credits default)
 - Execution logs with complete history
+- **Quotation Management System:**
+  - Customer database with full CRUD operations
+  - Quotation creation with line items and auto-calculations
+  - Server-side financial validation and totals computation
+  - Cross-tenant security with ownership validation
+  - Vietnamese currency (VND) formatting
 - Vietnamese language interface throughout
 - Modern Linear/Framer-inspired UI with gradient design system
 - **Role-Based Access Control (Admin/User)**
@@ -256,6 +308,6 @@ Preferred communication style: Simple, everyday language.
 - **Admin View Toggle** - Admins can switch between user and admin interfaces
 - Comprehensive error handling and retry logic
 - Responsive design with collapsible sidebar navigation
-- Production-grade security with bcrypt hashing, sanitized responses, and input validation
+- Production-grade security: bcrypt hashing, field whitelisting, tenant isolation, sanitized responses
 
-**Ready for deployment** - Application is stable, tested, and production-ready with complete authentication and admin capabilities.
+**Phase 1 Complete** - Customer & quotation CRUD fully functional with security hardening verified. Ready for Phase 2 (Templates & Email) implementation.
