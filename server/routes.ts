@@ -2,9 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupLocalAuth } from "./localAuth";
-import { insertExecutionLogSchema, registerUserSchema, loginUserSchema, insertTemplateSchema } from "@shared/schema";
+import { insertExecutionLogSchema, registerUserSchema, loginUserSchema, insertTemplateSchema, insertSmtpConfigSchema } from "@shared/schema";
 import passport from "passport";
 import type { User } from "@shared/schema";
+import { z } from "zod";
 
 // Sanitize user object by removing sensitive fields
 const sanitizeUser = (user: User | null): Omit<User, 'passwordHash'> | null => {
@@ -755,24 +756,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // SMTP config routes
+  // SMTP config routes (UPSERT)
   app.post("/api/smtp-config", isAuthenticated, async (req: any, res) => {
     try {
+      // Validate and extract only mutable fields (exclude userId)
+      const updateSchema = insertSmtpConfigSchema.omit({ userId: true }).partial({ password: true });
+      const validatedData = updateSchema.parse(req.body);
+
       // Check if user already has SMTP config
       const existing = await storage.getSmtpConfig(req.user.id);
+
+      let config;
       if (existing) {
-        return res.status(400).json({ message: "SMTP config already exists. Use PATCH to update." });
+        // Update existing config (only mutable fields)
+        // If password is empty/undefined, remove it to preserve existing password
+        const updateData = { ...validatedData };
+        if (!updateData.password) {
+          delete updateData.password;
+        }
+        config = await storage.updateSmtpConfig(req.user.id, updateData);
+      } else {
+        // Create new config (add userId from auth)
+        const configData = {
+          ...validatedData,
+          userId: req.user.id,
+        };
+        config = await storage.createSmtpConfig(configData);
       }
 
-      const configData = {
-        ...req.body,
-        userId: req.user.id,
-      };
-      const config = await storage.createSmtpConfig(configData);
       res.json(config);
     } catch (error) {
-      console.error("Error creating SMTP config:", error);
-      res.status(500).json({ message: "Failed to create SMTP config" });
+      console.error("Error saving SMTP config:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Invalid SMTP config data", errors: error.errors });
+      } else {
+        res.status(500).json({ message: "Failed to save SMTP config" });
+      }
     }
   });
 

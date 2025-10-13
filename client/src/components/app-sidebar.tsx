@@ -1,4 +1,4 @@
-import { Home, Zap, History, User, LogOut, Wallet, Sparkles, Shield, Users, BarChart3, FileText, UserCheck, Mail } from "lucide-react";
+import { Home, Zap, History, User, LogOut, Wallet, Sparkles, Shield, Users, BarChart3, FileText, UserCheck, Mail, Server } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -39,6 +39,11 @@ const menuItems = [
     title: "Mẫu Email",
     url: "/email-templates",
     icon: Mail,
+  },
+  {
+    title: "Cấu hình SMTP",
+    url: "/smtp-config",
+    icon: Server,
   },
   {
     title: "Khách hàng",
