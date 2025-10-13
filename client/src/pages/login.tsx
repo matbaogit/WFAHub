@@ -10,10 +10,20 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
 import { Sparkles, LogIn } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      setLocation("/");
+    }
+  }, [isAuthenticated, isLoading, setLocation]);
 
   const form = useForm<LoginUser>({
     resolver: zodResolver(loginUserSchema),

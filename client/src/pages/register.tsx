@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,10 +11,19 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
 import { Sparkles, UserPlus } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function RegisterPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      setLocation("/");
+    }
+  }, [isAuthenticated, isLoading, setLocation]);
 
   const form = useForm<RegisterUser>({
     resolver: zodResolver(registerUserSchema),

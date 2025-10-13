@@ -26,12 +26,13 @@ function Router() {
 
   return (
     <Switch>
+      {/* Public routes - always accessible */}
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
+      
+      {/* Conditional routes based on auth */}
       {isLoading || !isAuthenticated ? (
-        <>
-          <Route path="/" component={Landing} />
-          <Route path="/login" component={Login} />
-          <Route path="/register" component={Register} />
-        </>
+        <Route path="/" component={Landing} />
       ) : (
         <>
           <Route path="/" component={Dashboard} />
