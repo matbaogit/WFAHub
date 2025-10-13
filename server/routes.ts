@@ -406,6 +406,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk import customers from CSV data
+  app.post("/api/customers/bulk-import", isAuthenticated, async (req: any, res) => {
+    try {
+      const { customers: customersData } = req.body;
+      
+      if (!Array.isArray(customersData) || customersData.length === 0) {
+        return res.status(400).json({ message: "Invalid data: customers array required" });
+      }
+
+      const results: {
+        success: Array<{ row: number; customer: any }>;
+        errors: Array<{ row: number; data: any; error: string }>;
+      } = {
+        success: [],
+        errors: [],
+      };
+
+      for (let i = 0; i < customersData.length; i++) {
+        const row = customersData[i];
+        try {
+          // Trim and normalize all string values
+          const trimmedRow = Object.keys(row).reduce((acc, key) => {
+            acc[key] = typeof row[key] === 'string' ? row[key].trim() : row[key];
+            return acc;
+          }, {} as any);
+
+          // Validate required fields (after trim)
+          if (!trimmedRow.name || !trimmedRow.email) {
+            results.errors.push({
+              row: i + 1,
+              data: trimmedRow,
+              error: "Missing required fields: name and email",
+            });
+            continue;
+          }
+
+          const customerData = {
+            userId: req.user.id,
+            name: trimmedRow.name,
+            email: trimmedRow.email,
+            phone: trimmedRow.phone || null,
+            address: trimmedRow.address || null,
+            company: trimmedRow.company || null,
+            taxCode: trimmedRow.taxCode || null,
+            notes: trimmedRow.notes || null,
+          };
+
+          const customer = await storage.createCustomer(customerData);
+          results.success.push({ row: i + 1, customer });
+        } catch (error: any) {
+          results.errors.push({
+            row: i + 1,
+            data: row,
+            error: error.message || "Failed to create customer",
+          });
+        }
+      }
+
+      res.json(results);
+    } catch (error) {
+      console.error("Error bulk importing customers:", error);
+      res.status(500).json({ message: "Failed to import customers" });
+    }
+  });
+
   // Quotation routes
   app.post("/api/quotations", isAuthenticated, async (req: any, res) => {
     try {

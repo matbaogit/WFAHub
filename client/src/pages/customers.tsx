@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertCustomerSchema, type Customer } from "@shared/schema";
-import { Plus, UserCheck, Mail, Phone, Building, MapPin, Pencil, Trash2 } from "lucide-react";
+import { Plus, UserCheck, Mail, Phone, Building, MapPin, Pencil, Trash2, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -41,6 +41,8 @@ export default function Customers() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [importResults, setImportResults] = useState<{ success: any[]; errors: any[] } | null>(null);
   const { toast } = useToast();
 
   const { data: customers, isLoading } = useQuery<Customer[]>({
@@ -126,6 +128,100 @@ export default function Customers() {
     },
   });
 
+  const importMutation = useMutation({
+    mutationFn: async (customersData: any[]) => {
+      const response = await fetch("/api/customers/bulk-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customers: customersData }),
+      });
+      if (!response.ok) throw new Error("Failed to import customers");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
+      setImportResults(data);
+      setIsImportDialogOpen(true);
+      if (data.errors.length === 0) {
+        toast({
+          title: "Thành công",
+          description: `Đã import ${data.success.length} khách hàng`,
+        });
+      } else {
+        toast({
+          title: "Import hoàn tất",
+          description: `${data.success.length} thành công, ${data.errors.length} lỗi`,
+          variant: data.success.length > 0 ? "default" : "destructive",
+        });
+      }
+    },
+    onError: () => {
+      toast({
+        title: "Lỗi",
+        description: "Không thể import khách hàng",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      if (lines.length < 2) {
+        toast({
+          title: "Lỗi",
+          description: "File CSV phải có ít nhất 2 dòng (header + data)",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Parse CSV header and normalize to lowercase
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      
+      // Map common header variants to canonical field names
+      const headerMap: Record<string, string> = {
+        'name': 'name',
+        'tên': 'name',
+        'email': 'email',
+        'phone': 'phone',
+        'điện thoại': 'phone',
+        'sđt': 'phone',
+        'address': 'address',
+        'địa chỉ': 'address',
+        'company': 'company',
+        'công ty': 'company',
+        'taxcode': 'taxCode',
+        'mã số thuế': 'taxCode',
+        'notes': 'notes',
+        'ghi chú': 'notes',
+      };
+      
+      // Map CSV rows to customer objects
+      const customers = lines.slice(1).map(line => {
+        const values = line.split(',').map(v => v.trim());
+        const customer: any = {};
+        headers.forEach((header, index) => {
+          const fieldName = headerMap[header] || header;
+          customer[fieldName] = values[index]?.trim() || '';
+        });
+        return customer;
+      });
+
+      importMutation.mutate(customers);
+    };
+    reader.readAsText(file);
+    
+    // Reset input so same file can be selected again
+    event.target.value = '';
+  };
+
   const form = useForm({
     resolver: zodResolver(insertCustomerSchema.omit({ userId: true })),
     defaultValues: {
@@ -170,28 +266,48 @@ export default function Customers() {
             Quản lý danh sách khách hàng của bạn
           </p>
         </div>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2" data-testid="button-create-customer">
-              <Plus className="w-4 h-4" />
-              Thêm khách hàng
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Thêm khách hàng mới</DialogTitle>
-              <DialogDescription>
-                Điền thông tin khách hàng vào form dưới đây
-              </DialogDescription>
-            </DialogHeader>
-            <CustomerForm
-              form={form}
-              onSubmit={onSubmit}
-              isPending={createMutation.isPending}
-              onCancel={() => setIsCreateOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleFileImport}
+            className="hidden"
+            id="csv-upload"
+            data-testid="input-csv-upload"
+          />
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => document.getElementById('csv-upload')?.click()}
+            disabled={importMutation.isPending}
+            data-testid="button-import-csv"
+          >
+            <Upload className="w-4 h-4" />
+            {importMutation.isPending ? "Đang import..." : "Import CSV"}
+          </Button>
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2" data-testid="button-create-customer">
+                <Plus className="w-4 h-4" />
+                Thêm khách hàng
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Thêm khách hàng mới</DialogTitle>
+                <DialogDescription>
+                  Điền thông tin khách hàng vào form dưới đây
+                </DialogDescription>
+              </DialogHeader>
+              <CustomerForm
+                form={form}
+                onSubmit={onSubmit}
+                isPending={createMutation.isPending}
+                onCancel={() => setIsCreateOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {customers && customers.length === 0 ? (
@@ -324,6 +440,68 @@ export default function Customers() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Kết quả Import CSV</DialogTitle>
+            <DialogDescription>
+              Chi tiết kết quả import khách hàng từ file CSV
+            </DialogDescription>
+          </DialogHeader>
+          {importResults && (
+            <div className="space-y-4">
+              {importResults.success.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-green-600 mb-2">
+                    ✓ Thành công: {importResults.success.length} khách hàng
+                  </h4>
+                  <div className="space-y-1 text-sm">
+                    {importResults.success.slice(0, 5).map((item: any) => (
+                      <div key={item.row} className="text-muted-foreground">
+                        Dòng {item.row}: {item.customer.name}
+                      </div>
+                    ))}
+                    {importResults.success.length > 5 && (
+                      <div className="text-muted-foreground">
+                        ... và {importResults.success.length - 5} khách hàng khác
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {importResults.errors.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-destructive mb-2">
+                    ✗ Lỗi: {importResults.errors.length} dòng
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    {importResults.errors.map((error: any) => (
+                      <div key={error.row} className="border-l-2 border-destructive pl-3">
+                        <div className="font-medium">Dòng {error.row}:</div>
+                        <div className="text-muted-foreground">{error.error}</div>
+                        {error.data && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Dữ liệu: {JSON.stringify(error.data)}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex justify-end mt-4">
+            <Button onClick={() => {
+              setIsImportDialogOpen(false);
+              setImportResults(null);
+            }} data-testid="button-close-import-results">
+              Đóng
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
