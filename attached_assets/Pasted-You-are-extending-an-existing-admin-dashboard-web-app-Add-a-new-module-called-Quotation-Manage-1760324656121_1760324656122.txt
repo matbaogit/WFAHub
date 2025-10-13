@@ -1,0 +1,145 @@
+You are extending an existing admin dashboard web app.  
+Add a new module called **Quotation Management** with the feature:  
+**“Gửi Báo Giá – Tạo và gửi báo giá chuyên nghiệp tự động.”**
+
+---
+
+### 🧩 Overview:
+This module allows business users to create, manage, and send quotations to customers using pre-designed templates.  
+Do NOT rebuild the main dashboard — integrate this module under route `/quotations`.
+
+---
+
+### 🧱 Pages & Components:
+
+#### 1. Quotation List (`/quotations`)
+- Table showing:
+  - Mã báo giá (ID)
+  - Tên khách hàng
+  - Tiêu đề
+  - Tổng tiền
+  - Trạng thái (Nháp, Đã gửi, Đã duyệt)
+  - Ngày tạo
+- Filters: theo trạng thái, khách hàng, ngày.
+- Buttons:
+  - “+ Tạo Báo Giá Mới”
+  - “Xem chi tiết”
+  - “Xóa”
+- Use badges with color indicators for status.
+
+---
+
+#### 2. Quotation Creation (`/quotations/new`)
+- Form fields:
+  - Thông tin khách hàng:
+    - Họ tên
+    - Email
+    - Số điện thoại
+    - Địa chỉ
+  - Thông tin báo giá:
+    - Tiêu đề báo giá
+    - Ngày hiệu lực
+    - Ghi chú
+  - Bảng sản phẩm/dịch vụ:
+    | Tên mặt hàng | Mô tả | Số lượng | Đơn giá | Thành tiền |
+    - Auto-calculate subtotal, VAT (10%), and total.
+  - Dropdown “Chọn Mẫu Báo Giá” → load từ bảng template.
+  - Live Preview Panel bên phải (hiển thị báo giá theo template đang chọn).
+
+Buttons:
+- “Lưu Nháp”
+- “Gửi Báo Giá”
+
+---
+
+#### 3. Template Management (`/quotations/templates`)
+- Admin-only page.
+- CRUD for templates.
+- Fields:
+  - Tên mẫu
+  - Nội dung HTML có placeholders như:
+    - `{{customer_name}}`
+    - `{{quotation_title}}`
+    - `{{item_list}}`
+    - `{{total}}`
+    - `{{company_name}}`
+  - Allow WYSIWYG editor (like TinyMCE or ReactQuill).
+- User can pick a template when creating a quotation.
+
+---
+
+#### 4. Sending Flow
+- When clicking **“Gửi Báo Giá”**:
+  - Open modal:
+    - Recipient email (prefilled from customer email)
+    - Format: PDF / Public Link
+    - “Thực thi”
+  - Mock sending via fake API `/api/send-quotation`.
+  - Change status to “Đã gửi”.
+  - Save a record in usage logs.
+
+---
+
+#### 5. PDF Export & Public Link
+- Export PDF using **`jsPDF`** or **`html2pdf.js`**.
+- Generate a **public URL** like `/public/quotation/:id` (read-only page).
+- Public view shows:
+  - Logo công ty
+  - Thông tin khách hàng
+  - Danh sách sản phẩm/dịch vụ
+  - Tổng tiền
+  - Ghi chú
+  - Buttons: “Tải PDF” & “Chấp nhận Báo Giá”
+- Khi nhấn “Chấp nhận Báo Giá” → cập nhật trạng thái thành “Đã duyệt”.
+
+---
+
+### 💾 Mock API Structure:
+Simulate with local JSON or localStorage.
+
+Endpoints:
+- `POST /api/quotations` → create quotation
+- `GET /api/quotations` → list all
+- `GET /api/quotations/:id` → get detail
+- `POST /api/templates` → create template
+- `GET /api/templates` → list templates
+- `POST /api/send-quotation` → simulate email sending
+- `POST /api/approve/:id` → update status
+
+---
+
+### 💳 Integration Notes:
+- Mỗi lần gửi báo giá → trừ credits giả lập.
+- Cập nhật credit balance của người dùng hiển thị ở góc phải trên dashboard.
+- Ghi lại lịch sử vào bảng “Usage Logs”:
+  - `feature_name`: "Gửi Báo Giá"
+  - `status`: "Thành công"
+  - `credits_used`: 5 (mock)
+  - `datetime`: current time
+
+---
+
+### 🎨 UI/UX Guidelines:
+- Same dashboard color scheme (#1E88E5 primary, white background)
+- Rounded corners (16px), subtle shadows.
+- Smooth modal animations using **Framer Motion**.
+- Form layout: grid (2 columns → form left, live preview right)
+- Buttons & inputs labeled in **Vietnamese**:
+  - “Tạo Báo Giá Mới”, “Gửi Báo Giá”, “Lưu Nháp”, “Xem”, “Xóa”, “Chấp nhận Báo Giá”
+
+---
+
+### 🧰 Technical Stack:
+- React + TailwindCSS + Framer Motion
+- State: useContext or Redux Toolkit
+- PDF Export: `jsPDF` or `html2pdf.js`
+- Editor: `react-quill`
+- Mock backend: localStorage or static JSON (simulate API calls)
+
+---
+
+### ✅ Deliverables:
+1. Quotation list, creation, and public view pages.
+2. Template CRUD page (for admin).
+3. Working PDF export + mock email send + credit deduction.
+4. Integration with existing user session (no re-login needed).
