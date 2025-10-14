@@ -757,6 +757,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ QUOTATION TEMPLATE ROUTES ============
+  
+  app.post("/api/quotation-templates", isAuthenticated, async (req: any, res) => {
+    try {
+      const templateData = {
+        ...req.body,
+        createdBy: req.user.id,
+      };
+      const template = await storage.createQuotationTemplate(templateData);
+      res.json(template);
+    } catch (error) {
+      console.error("Error creating quotation template:", error);
+      res.status(500).json({ message: "Failed to create quotation template" });
+    }
+  });
+
+  app.get("/api/quotation-templates", isAuthenticated, async (req: any, res) => {
+    try {
+      const templates = await storage.getUserQuotationTemplates(req.user.id);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching quotation templates:", error);
+      res.status(500).json({ message: "Failed to fetch quotation templates" });
+    }
+  });
+
+  app.get("/api/quotation-templates/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const template = await storage.getQuotationTemplate(req.params.id);
+      if (!template || template.createdBy !== req.user.id) {
+        return res.status(404).json({ message: "Quotation template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching quotation template:", error);
+      res.status(500).json({ message: "Failed to fetch quotation template" });
+    }
+  });
+
+  app.patch("/api/quotation-templates/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const template = await storage.getQuotationTemplate(req.params.id);
+      if (!template || template.createdBy !== req.user.id) {
+        return res.status(404).json({ message: "Quotation template not found" });
+      }
+
+      const updatedTemplate = await storage.updateQuotationTemplate(req.params.id, req.body);
+      res.json(updatedTemplate);
+    } catch (error) {
+      console.error("Error updating quotation template:", error);
+      res.status(500).json({ message: "Failed to update quotation template" });
+    }
+  });
+
+  app.delete("/api/quotation-templates/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const template = await storage.getQuotationTemplate(req.params.id);
+      if (!template || template.createdBy !== req.user.id) {
+        return res.status(404).json({ message: "Quotation template not found" });
+      }
+
+      await storage.deleteQuotationTemplate(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting quotation template:", error);
+      res.status(500).json({ message: "Failed to delete quotation template" });
+    }
+  });
+
   // SMTP config routes (UPSERT)
   app.post("/api/smtp-config", isAuthenticated, async (req: any, res) => {
     try {
