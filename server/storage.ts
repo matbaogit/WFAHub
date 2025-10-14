@@ -6,6 +6,7 @@ import {
   quotations,
   quotationItems,
   emailTemplates,
+  quotationTemplates,
   smtpConfigs,
   userSettings,
   type User,
@@ -21,6 +22,8 @@ import {
   type InsertQuotationItem,
   type EmailTemplate,
   type InsertEmailTemplate,
+  type QuotationTemplate,
+  type InsertQuotationTemplate,
   type SmtpConfig,
   type InsertSmtpConfig,
 } from "@shared/schema";
@@ -85,6 +88,13 @@ export interface IStorage {
   getUserEmailTemplates(userId: string): Promise<EmailTemplate[]>;
   updateEmailTemplate(templateId: string, data: Partial<EmailTemplate>): Promise<EmailTemplate>;
   deleteEmailTemplate(templateId: string): Promise<void>;
+  
+  // Quotation template operations
+  createQuotationTemplate(template: InsertQuotationTemplate): Promise<QuotationTemplate>;
+  getQuotationTemplate(id: string): Promise<QuotationTemplate | undefined>;
+  getUserQuotationTemplates(userId: string): Promise<QuotationTemplate[]>;
+  updateQuotationTemplate(templateId: string, data: Partial<QuotationTemplate>): Promise<QuotationTemplate>;
+  deleteQuotationTemplate(templateId: string): Promise<void>;
   
   // SMTP config operations
   createSmtpConfig(config: InsertSmtpConfig): Promise<SmtpConfig>;
@@ -376,6 +386,41 @@ export class DatabaseStorage implements IStorage {
 
   async deleteEmailTemplate(templateId: string): Promise<void> {
     await db.delete(emailTemplates).where(eq(emailTemplates.id, templateId));
+  }
+  
+  // Quotation template operations
+  async createQuotationTemplate(template: InsertQuotationTemplate): Promise<QuotationTemplate> {
+    const [newTemplate] = await db
+      .insert(quotationTemplates)
+      .values(template as any)
+      .returning();
+    return newTemplate;
+  }
+
+  async getQuotationTemplate(id: string): Promise<QuotationTemplate | undefined> {
+    const [template] = await db.select().from(quotationTemplates).where(eq(quotationTemplates.id, id));
+    return template;
+  }
+
+  async getUserQuotationTemplates(userId: string): Promise<QuotationTemplate[]> {
+    return await db
+      .select()
+      .from(quotationTemplates)
+      .where(eq(quotationTemplates.createdBy, userId))
+      .orderBy(desc(quotationTemplates.createdAt));
+  }
+
+  async updateQuotationTemplate(templateId: string, data: Partial<QuotationTemplate>): Promise<QuotationTemplate> {
+    const [updated] = await db
+      .update(quotationTemplates)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(quotationTemplates.id, templateId))
+      .returning();
+    return updated;
+  }
+
+  async deleteQuotationTemplate(templateId: string): Promise<void> {
+    await db.delete(quotationTemplates).where(eq(quotationTemplates.id, templateId));
   }
   
   // SMTP config operations
