@@ -46,6 +46,11 @@ const menuItems = [
     icon: Server,
   },
   {
+    title: "Phân tích",
+    url: "/analytics",
+    icon: BarChart3,
+  },
+  {
     title: "Khách hàng",
     url: "/customers",
     icon: UserCheck,

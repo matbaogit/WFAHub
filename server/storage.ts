@@ -7,6 +7,7 @@ import {
   quotationItems,
   emailTemplates,
   smtpConfigs,
+  userSettings,
   type User,
   type RegisterUser,
   type Template,
@@ -95,6 +96,9 @@ export interface IStorage {
   getQuotationWithDetails(quotationId: string): Promise<any | undefined>;
   getUserSettings(userId: string): Promise<any | undefined>;
   updateQuotationSentAt(quotationId: string): Promise<void>;
+
+  // Analytics
+  getAnalytics(userId: string): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -443,6 +447,71 @@ export class DatabaseStorage implements IStorage {
       .update(quotations)
       .set({ sentAt: new Date() })
       .where(eq(quotations.id, quotationId));
+  }
+
+  // Analytics operations
+  async getAnalytics(userId: string): Promise<any> {
+    // Get total quotations
+    const allQuotations = await db
+      .select()
+      .from(quotations)
+      .where(eq(quotations.userId, userId));
+
+    // Get total customers
+    const allCustomers = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.userId, userId));
+
+    // Calculate totals
+    const totalQuotations = allQuotations.length;
+    const totalCustomers = allCustomers.length;
+    const totalRevenue = allQuotations.reduce((sum, q) => sum + (q.total || 0), 0);
+    const emailsSent = allQuotations.filter(q => q.sentAt).length;
+
+    // Group quotations by status
+    const quotationsByStatus = allQuotations.reduce((acc: any[], q) => {
+      const existing = acc.find(item => item.status === q.status);
+      if (existing) {
+        existing.count++;
+      } else {
+        acc.push({ status: q.status, count: 1 });
+      }
+      return acc;
+    }, []);
+
+    // Get top customers by total spent
+    const customerRevenue = new Map<string, { name: string; totalSpent: number }>();
+    
+    for (const quotation of allQuotations) {
+      const customer = allCustomers.find(c => c.id === quotation.customerId);
+      if (customer) {
+        const quotationTotal = quotation.total ?? 0;
+        const existing = customerRevenue.get(customer.id);
+        if (existing) {
+          existing.totalSpent += quotationTotal;
+        } else {
+          customerRevenue.set(customer.id, {
+            name: customer.name,
+            totalSpent: quotationTotal,
+          });
+        }
+      }
+    }
+
+    const topCustomers = Array.from(customerRevenue.values())
+      .sort((a, b) => b.totalSpent - a.totalSpent)
+      .slice(0, 10);
+
+    return {
+      totalQuotations,
+      totalCustomers,
+      totalRevenue,
+      emailsSent,
+      quotationsByStatus,
+      revenueByMonth: [], // TODO: Implement monthly revenue
+      topCustomers,
+    };
   }
 }
 

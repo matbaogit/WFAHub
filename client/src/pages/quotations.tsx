@@ -32,7 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertQuotationSchema, type Quotation, type Customer } from "@shared/schema";
-import { Plus, FileText, Calendar, DollarSign, Trash2, Pencil } from "lucide-react";
+import { Plus, FileText, Calendar, DollarSign, Trash2, Pencil, Mail, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import {
@@ -151,6 +151,33 @@ export default function Quotations() {
       toast({
         title: "Lỗi",
         description: "Không thể xóa báo giá",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const sendEmailMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/quotations/${id}/send-email`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to send email");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
+      toast({
+        title: "Thành công",
+        description: "Đã gửi email báo giá",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Lỗi gửi email",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -404,6 +431,28 @@ export default function Quotations() {
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    {quotation.sentAt && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-green-600"
+                        title={`Đã gửi: ${format(new Date(quotation.sentAt), "dd/MM/yyyy HH:mm")}`}
+                        disabled
+                        data-testid={`button-sent-indicator-${quotation.id}`}
+                      >
+                        <Check className="w-4 h-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => sendEmailMutation.mutate(quotation.id)}
+                      disabled={sendEmailMutation.isPending}
+                      data-testid={`button-send-email-${quotation.id}`}
+                      title="Gửi email báo giá"
+                    >
+                      <Mail className="w-4 h-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"

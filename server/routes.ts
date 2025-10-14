@@ -839,6 +839,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Analytics endpoint
+  app.get("/api/analytics", isAuthenticated, async (req: any, res) => {
+    try {
+      const analytics = await storage.getAnalytics(req.user.id);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
   // Send quotation email
   app.post("/api/quotations/:id/send-email", isAuthenticated, async (req: any, res) => {
     try {
@@ -862,8 +873,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get email template (default or specified)
-      const emailTemplates = await storage.getEmailTemplates(req.user.id);
-      const template = emailTemplates.find(t => t.isDefault === 1) || emailTemplates[0];
+      const emailTemplates = await storage.getUserEmailTemplates(req.user.id);
+      const template = emailTemplates.find((t: any) => t.isDefault === 1) || emailTemplates[0];
       if (!template) {
         return res.status(400).json({ message: "Email template not found. Please create an email template first." });
       }
