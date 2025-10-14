@@ -23,7 +23,7 @@ export async function sendQuotationEmail(data: EmailData): Promise<void> {
     quotationNumber: quotation.quotationNumber,
     companyName: companyName || "Công ty",
     customerName: quotation.customer.name,
-    total: formatCurrency(quotation.total),
+    total: formatCurrency(quotation.total ?? 0),
     items: renderQuotationItems(quotation.items),
   });
 
@@ -78,11 +78,13 @@ function renderQuotationItems(items: any[]): string {
   html += '</tr></thead><tbody>';
 
   for (const item of items) {
+    const unitPrice = item.unitPrice ?? 0;
+    const quantity = item.quantity ?? 0;
     html += '<tr>';
-    html += `<td style="padding: 12px; border: 1px solid #e5e7eb;">${item.description}</td>`;
-    html += `<td style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">${item.quantity}</td>`;
-    html += `<td style="padding: 12px; text-align: right; border: 1px solid #e5e7eb;">${formatCurrency(item.unitPrice)}</td>`;
-    html += `<td style="padding: 12px; text-align: right; border: 1px solid #e5e7eb;">${formatCurrency(item.quantity * item.unitPrice)}</td>`;
+    html += `<td style="padding: 12px; border: 1px solid #e5e7eb;">${item.description || ''}</td>`;
+    html += `<td style="padding: 12px; text-align: center; border: 1px solid #e5e7eb;">${quantity}</td>`;
+    html += `<td style="padding: 12px; text-align: right; border: 1px solid #e5e7eb;">${formatCurrency(unitPrice)}</td>`;
+    html += `<td style="padding: 12px; text-align: right; border: 1px solid #e5e7eb;">${formatCurrency(quantity * unitPrice)}</td>`;
     html += '</tr>';
   }
 
