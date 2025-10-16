@@ -15,13 +15,18 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, FileSpreadsheet, CheckCircle, HelpCircle, Search, X, Plus, Edit, ChevronRight, List } from "lucide-react";
+import { Trash2, FileSpreadsheet, CheckCircle, HelpCircle, Search, X, Plus, Edit, ChevronRight, List, ChevronLeft, Package } from "lucide-react";
 import type { ServiceCatalog, PriceList } from "@shared/schema";
 
 type ImportStep = "select-price-list" | "upload-and-map";
+type PriceListView = "list" | "detail";
 
 export default function ServiceCatalogPage() {
   const { toast } = useToast();
+  
+  // Price List View State
+  const [priceListView, setPriceListView] = useState<PriceListView>("list");
+  const [selectedPriceListForView, setSelectedPriceListForView] = useState<PriceList | null>(null);
   
   // Price List State
   const [priceListDialogOpen, setPriceListDialogOpen] = useState(false);
@@ -52,10 +57,9 @@ export default function ServiceCatalogPage() {
   const [priceFormat, setPriceFormat] = useState<"dot" | "comma">("dot");
   const [manualUnit, setManualUnit] = useState("");
   
-  // Catalog View State
+  // Catalog View State (for detail view)
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [priceListFilter, setPriceListFilter] = useState<string>("all");
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
   // Fetch Price Lists
@@ -68,23 +72,28 @@ export default function ServiceCatalogPage() {
     queryKey: ["/api/service-catalog"],
   });
 
-  // Get unique categories for filter
-  const categories = useMemo(() => {
-    const cats = new Set(catalog.map(item => item.category).filter(Boolean));
-    return Array.from(cats);
-  }, [catalog]);
+  // Get services for selected price list
+  const servicesForSelectedPriceList = useMemo(() => {
+    if (!selectedPriceListForView) return [];
+    return catalog.filter(item => item.priceListId === selectedPriceListForView.id);
+  }, [catalog, selectedPriceListForView]);
 
-  // Filter and search catalog
+  // Get unique categories for filter (from selected price list only)
+  const categories = useMemo(() => {
+    const cats = new Set(servicesForSelectedPriceList.map(item => item.category).filter(Boolean));
+    return Array.from(cats);
+  }, [servicesForSelectedPriceList]);
+
+  // Filter and search catalog (in detail view)
   const filteredCatalog = useMemo(() => {
-    return catalog.filter(item => {
+    return servicesForSelectedPriceList.filter(item => {
       const matchesSearch = !searchTerm || 
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.description?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = categoryFilter === "all" || item.category === categoryFilter;
-      const matchesPriceList = priceListFilter === "all" || item.priceListId === priceListFilter;
-      return matchesSearch && matchesCategory && matchesPriceList;
+      return matchesSearch && matchesCategory;
     });
-  }, [catalog, searchTerm, categoryFilter, priceListFilter]);
+  }, [servicesForSelectedPriceList, searchTerm, categoryFilter]);
 
   // Get price list name by ID
   const getPriceListName = (priceListId: string | null) => {
@@ -102,10 +111,10 @@ export default function ServiceCatalogPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists"] });
       setPriceListDialogOpen(false);
       setPriceListForm({ name: "", description: "" });
-      toast({ title: "Success", description: "Price list created successfully" });
+      toast({ title: "Thành công", description: "Đã tạo bảng giá mới" });
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Lỗi", description: error.message, variant: "destructive" });
     },
   });
 
@@ -118,10 +127,10 @@ export default function ServiceCatalogPage() {
       setEditingPriceList(null);
       setPriceListDialogOpen(false);
       setPriceListForm({ name: "", description: "" });
-      toast({ title: "Success", description: "Price list updated successfully" });
+      toast({ title: "Thành công", description: "Đã cập nhật bảng giá" });
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Lỗi", description: error.message, variant: "destructive" });
     },
   });
 
@@ -132,10 +141,10 @@ export default function ServiceCatalogPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists"] });
       queryClient.invalidateQueries({ queryKey: ["/api/service-catalog"] });
-      toast({ title: "Success", description: "Price list deleted successfully" });
+      toast({ title: "Thành công", description: "Đã xóa bảng giá và các dịch vụ liên quan" });
     },
     onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Lỗi", description: error.message, variant: "destructive" });
     },
   });
 
@@ -158,13 +167,13 @@ export default function ServiceCatalogPage() {
     onSuccess: (data) => {
       setUploadData(data);
       toast({
-        title: "File uploaded",
-        description: `Found ${data.totalRows} rows`,
+        title: "Đã tải file lên",
+        description: `Tìm thấy ${data.totalRows} dòng dữ liệu`,
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Upload failed",
+        title: "Tải file thất bại",
         description: error.message,
         variant: "destructive",
       });
@@ -173,7 +182,7 @@ export default function ServiceCatalogPage() {
 
   const importMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedFile) throw new Error("No file selected");
+      if (!selectedFile) throw new Error("Chưa chọn file");
       
       const formData = new FormData();
       formData.append("file", selectedFile);
@@ -201,14 +210,14 @@ export default function ServiceCatalogPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/service-catalog"] });
       toast({
-        title: "Import successful",
-        description: `Imported ${data.imported} items`,
+        title: "Import thành công",
+        description: `Đã import ${data.imported} dịch vụ`,
       });
       resetImportState();
     },
     onError: (error: Error) => {
       toast({
-        title: "Import failed",
+        title: "Import thất bại",
         description: error.message,
         variant: "destructive",
       });
@@ -223,8 +232,8 @@ export default function ServiceCatalogPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/service-catalog"] });
       toast({
-        title: "Item deleted",
-        description: "Service catalog item has been deleted",
+        title: "Đã xóa",
+        description: "Đã xóa dịch vụ khỏi danh mục",
       });
     },
   });
@@ -237,8 +246,8 @@ export default function ServiceCatalogPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/service-catalog"] });
       setSelectedItems(new Set());
       toast({
-        title: "Items deleted",
-        description: `Deleted ${selectedItems.size} items`,
+        title: "Đã xóa",
+        description: `Đã xóa ${selectedItems.size} dịch vụ`,
       });
     },
   });
@@ -268,8 +277,8 @@ export default function ServiceCatalogPage() {
     if (createNewPriceList) {
       if (!newPriceListName.trim()) {
         toast({
-          title: "Validation error",
-          description: "Please enter a price list name",
+          title: "Lỗi",
+          description: "Vui lòng nhập tên bảng giá",
           variant: "destructive",
         });
         return;
@@ -286,16 +295,16 @@ export default function ServiceCatalogPage() {
         setImportStep("upload-and-map");
       } catch (error: any) {
         toast({
-          title: "Error",
-          description: error.message || "Failed to create price list",
+          title: "Lỗi",
+          description: error.message || "Không thể tạo bảng giá",
           variant: "destructive",
         });
       }
     } else {
       if (!selectedPriceListId) {
         toast({
-          title: "Validation error",
-          description: "Please select a price list",
+          title: "Lỗi",
+          description: "Vui lòng chọn bảng giá",
           variant: "destructive",
         });
         return;
@@ -307,16 +316,16 @@ export default function ServiceCatalogPage() {
   const handleImport = () => {
     if (!columnMapping.name || columnMapping.unitPrice === undefined) {
       toast({
-        title: "Mapping incomplete",
-        description: "Please map at least Name and Unit Price columns",
+        title: "Chưa đủ thông tin",
+        description: "Vui lòng map ít nhất cột Tên và Đơn giá",
         variant: "destructive",
       });
       return;
     }
     if (columnMapping.unit === "manual" && !manualUnit.trim()) {
       toast({
-        title: "Unit required",
-        description: "Please enter a unit value",
+        title: "Thiếu thông tin",
+        description: "Vui lòng nhập đơn vị",
         variant: "destructive",
       });
       return;
@@ -338,8 +347,8 @@ export default function ServiceCatalogPage() {
   const handleSavePriceList = () => {
     if (!priceListForm.name.trim()) {
       toast({
-        title: "Validation error",
-        description: "Please enter a price list name",
+        title: "Lỗi",
+        description: "Vui lòng nhập tên bảng giá",
         variant: "destructive",
       });
       return;
@@ -354,6 +363,23 @@ export default function ServiceCatalogPage() {
     } else {
       createPriceListMutation.mutate(priceListForm);
     }
+  };
+
+  const handleViewPriceListDetail = (priceList: PriceList) => {
+    setSelectedPriceListForView(priceList);
+    setPriceListView("detail");
+    // Reset filters
+    setSearchTerm("");
+    setCategoryFilter("all");
+    setSelectedItems(new Set());
+  };
+
+  const handleBackToList = () => {
+    setPriceListView("list");
+    setSelectedPriceListForView(null);
+    setSearchTerm("");
+    setCategoryFilter("all");
+    setSelectedItems(new Set());
   };
 
   const toggleItemSelection = (id: string) => {
@@ -378,85 +404,253 @@ export default function ServiceCatalogPage() {
     <div className="container mx-auto p-4 max-w-7xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold" data-testid="text-catalog-title">Service Catalog</h1>
-          <p className="text-muted-foreground">Manage price lists and import service catalog from Excel/CSV</p>
+          <h1 className="text-3xl font-bold" data-testid="text-catalog-title">Danh mục Dịch vụ</h1>
+          <p className="text-muted-foreground">Quản lý bảng giá và import danh mục dịch vụ từ Excel/CSV</p>
         </div>
       </div>
 
-      <Tabs defaultValue="catalog" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-3" data-testid="tabs-catalog-main">
-          <TabsTrigger value="catalog" data-testid="tab-catalog">Catalog</TabsTrigger>
-          <TabsTrigger value="price-lists" data-testid="tab-price-lists">Price Lists</TabsTrigger>
-          <TabsTrigger value="import" data-testid="tab-import">Import Services</TabsTrigger>
+      <Tabs defaultValue="price-lists" className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2" data-testid="tabs-catalog-main">
+          <TabsTrigger value="price-lists" data-testid="tab-price-lists">Bảng Giá</TabsTrigger>
+          <TabsTrigger value="import" data-testid="tab-import">Import Dịch Vụ</TabsTrigger>
         </TabsList>
 
-        {/* Price Lists Management Tab */}
+        {/* Price Lists Tab - List & Detail View */}
         <TabsContent value="price-lists" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Manage Price Lists</CardTitle>
-                  <CardDescription>Create and manage your price lists</CardDescription>
+          {priceListView === "list" ? (
+            // List View - Show all price lists
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Quản lý Bảng Giá</CardTitle>
+                    <CardDescription>Tạo và quản lý các bảng giá của bạn</CardDescription>
+                  </div>
+                  <Button onClick={() => handleOpenPriceListDialog()} data-testid="button-create-price-list">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Tạo Bảng Giá
+                  </Button>
                 </div>
-                <Button onClick={() => handleOpenPriceListDialog()} data-testid="button-create-price-list">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Price List
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {priceListsLoading ? (
-                <p className="text-sm text-muted-foreground">Loading...</p>
-              ) : priceLists.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No price lists yet. Create one to get started.</p>
-              ) : (
-                <div className="space-y-2">
-                  {priceLists.map((priceList) => (
-                    <Card key={priceList.id} className="hover-elevate">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-semibold" data-testid={`text-price-list-name-${priceList.id}`}>
-                              {priceList.name}
-                            </h3>
-                            {priceList.description && (
-                              <p className="text-sm text-muted-foreground">{priceList.description}</p>
-                            )}
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {catalog.filter(item => item.priceListId === priceList.id).length} services
-                            </p>
+              </CardHeader>
+              <CardContent>
+                {priceListsLoading ? (
+                  <p className="text-sm text-muted-foreground">Đang tải...</p>
+                ) : priceLists.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Chưa có bảng giá. Tạo bảng giá đầu tiên để bắt đầu.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {priceLists.map((priceList) => (
+                      <Card 
+                        key={priceList.id} 
+                        className="hover-elevate cursor-pointer transition-all"
+                        onClick={() => handleViewPriceListDetail(priceList)}
+                        data-testid={`card-price-list-${priceList.id}`}
+                      >
+                        <CardContent className="p-6">
+                          <div className="space-y-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Package className="w-5 h-5 text-primary" />
+                                  <h3 className="font-semibold text-lg" data-testid={`text-price-list-name-${priceList.id}`}>
+                                    {priceList.name}
+                                  </h3>
+                                </div>
+                                {priceList.description && (
+                                  <p className="text-sm text-muted-foreground mb-3">{priceList.description}</p>
+                                )}
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary">
+                                    {catalog.filter(item => item.priceListId === priceList.id).length} dịch vụ
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex gap-2 pt-2 border-t" onClick={(e) => e.stopPropagation()}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenPriceListDialog(priceList);
+                                }}
+                                data-testid={`button-edit-price-list-${priceList.id}`}
+                                className="flex-1"
+                              >
+                                <Edit className="w-4 h-4 mr-2" />
+                                Sửa
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (confirm("Bạn có chắc? Thao tác này sẽ xóa tất cả dịch vụ liên quan.")) {
+                                    deletePriceListMutation.mutate(priceList.id);
+                                  }
+                                }}
+                                data-testid={`button-delete-price-list-${priceList.id}`}
+                                className="flex-1"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Xóa
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleOpenPriceListDialog(priceList)}
-                              data-testid={`button-edit-price-list-${priceList.id}`}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                if (confirm("Are you sure? This will delete all associated services.")) {
-                                  deletePriceListMutation.mutate(priceList.id);
-                                }
-                              }}
-                              data-testid={`button-delete-price-list-${priceList.id}`}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            // Detail View - Show catalog for selected price list
+            <div className="space-y-4">
+              <Button 
+                variant="outline" 
+                onClick={handleBackToList}
+                data-testid="button-back-to-price-lists"
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Quay lại Danh sách Bảng Giá
+              </Button>
+              
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <List className="w-5 h-5" />
+                        {selectedPriceListForView?.name} ({filteredCatalog.length})
+                      </CardTitle>
+                      <CardDescription>
+                        {selectedPriceListForView?.description || "Danh sách các dịch vụ trong bảng giá này"}
+                      </CardDescription>
+                    </div>
+                    {selectedItems.size > 0 && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => bulkDeleteMutation.mutate(Array.from(selectedItems))}
+                        disabled={bulkDeleteMutation.isPending}
+                        data-testid="button-bulk-delete"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Xóa {selectedItems.size} dịch vụ
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Tìm theo tên hoặc mô tả..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                        data-testid="input-search"
+                      />
+                      {searchTerm && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7"
+                          onClick={() => setSearchTerm("")}
+                          data-testid="button-clear-search"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                      <SelectTrigger className="w-[200px]" data-testid="select-category-filter">
+                        <SelectValue placeholder="Lọc danh mục" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tất cả Danh mục</SelectItem>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat} value={cat || ""}>
+                            {cat || "(Không có danh mục)"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {catalogLoading ? (
+                    <p className="text-sm text-muted-foreground">Đang tải...</p>
+                  ) : filteredCatalog.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      {searchTerm || categoryFilter !== "all" 
+                        ? "Không tìm thấy dịch vụ nào phù hợp" 
+                        : "Chưa có dịch vụ trong bảng giá này"}
+                    </p>
+                  ) : (
+                    <div className="border rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-12">
+                              <Checkbox
+                                checked={selectedItems.size === filteredCatalog.length && filteredCatalog.length > 0}
+                                onCheckedChange={toggleAllSelection}
+                                data-testid="checkbox-select-all"
+                              />
+                            </TableHead>
+                            <TableHead>Tên dịch vụ</TableHead>
+                            <TableHead>Mô tả</TableHead>
+                            <TableHead className="text-right">Đơn giá</TableHead>
+                            <TableHead>Đơn vị</TableHead>
+                            <TableHead>Danh mục</TableHead>
+                            <TableHead className="w-12"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredCatalog.map((item) => (
+                            <TableRow key={item.id} data-testid={`row-catalog-${item.id}`}>
+                              <TableCell>
+                                <Checkbox
+                                  checked={selectedItems.has(item.id)}
+                                  onCheckedChange={() => toggleItemSelection(item.id)}
+                                  data-testid={`checkbox-item-${item.id}`}
+                                />
+                              </TableCell>
+                              <TableCell className="font-medium">{item.name}</TableCell>
+                              <TableCell className="text-muted-foreground max-w-md truncate">
+                                {item.description || "-"}
+                              </TableCell>
+                              <TableCell className="text-right font-mono">
+                                {item.unitPrice.toLocaleString('vi-VN')} đ
+                              </TableCell>
+                              <TableCell>{item.unit || "-"}</TableCell>
+                              <TableCell>
+                                {item.category ? (
+                                  <Badge variant="outline">{item.category}</Badge>
+                                ) : "-"}
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => deleteMutation.mutate(item.id)}
+                                  data-testid={`button-delete-${item.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </TabsContent>
 
         {/* Import Services Tab */}
@@ -464,15 +658,15 @@ export default function ServiceCatalogPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                Multi-Step Import Workflow
+                Quy trình Import Nhiều Bước
                 <Badge variant="outline" data-testid="text-current-step">
-                  Step {importStep === "select-price-list" ? "1" : "2"} of 2
+                  Bước {importStep === "select-price-list" ? "1" : "2"} / 2
                 </Badge>
               </CardTitle>
               <CardDescription>
                 {importStep === "select-price-list" 
-                  ? "Select an existing price list or create a new one"
-                  : "Upload and map your CSV/Excel file"}
+                  ? "Chọn bảng giá hiện có hoặc tạo mới"
+                  : "Tải lên và map file CSV/Excel"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -483,16 +677,16 @@ export default function ServiceCatalogPage() {
                       1
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold">Select Price List</h3>
-                      <p className="text-sm text-muted-foreground">Choose where to import services</p>
+                      <h3 className="font-semibold">Chọn Bảng Giá</h3>
+                      <p className="text-sm text-muted-foreground">Chọn nơi import dịch vụ</p>
                     </div>
                     <ChevronRight className="w-5 h-5 text-muted-foreground" />
                     <div className="flex items-center justify-center w-8 h-8 rounded-full border">
                       2
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-muted-foreground">Upload & Map</h3>
-                      <p className="text-sm text-muted-foreground">Configure column mapping</p>
+                      <h3 className="font-semibold text-muted-foreground">Tải lên & Map</h3>
+                      <p className="text-sm text-muted-foreground">Cấu hình ánh xạ cột</p>
                     </div>
                   </div>
 
@@ -503,15 +697,15 @@ export default function ServiceCatalogPage() {
                     <div className="space-y-4">
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="existing" id="existing" data-testid="radio-select-existing" />
-                        <Label htmlFor="existing" className="font-semibold">Select Existing Price List</Label>
+                        <Label htmlFor="existing" className="font-semibold">Chọn Bảng Giá Hiện Có</Label>
                       </div>
 
                       {!createNewPriceList && (
                         <div className="ml-6 space-y-2">
                           {priceListsLoading ? (
-                            <p className="text-sm text-muted-foreground">Loading price lists...</p>
+                            <p className="text-sm text-muted-foreground">Đang tải bảng giá...</p>
                           ) : priceLists.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">No price lists available. Create one first.</p>
+                            <p className="text-sm text-muted-foreground">Chưa có bảng giá. Tạo mới trước.</p>
                           ) : (
                             <RadioGroup value={selectedPriceListId} onValueChange={setSelectedPriceListId}>
                               {priceLists.map((pl) => (
@@ -534,26 +728,26 @@ export default function ServiceCatalogPage() {
 
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="new" id="new" data-testid="radio-create-new" />
-                        <Label htmlFor="new" className="font-semibold">Create New Price List</Label>
+                        <Label htmlFor="new" className="font-semibold">Tạo Bảng Giá Mới</Label>
                       </div>
 
                       {createNewPriceList && (
                         <div className="ml-6 space-y-4">
                           <div className="space-y-2">
-                            <Label htmlFor="new-price-list-name">Name *</Label>
+                            <Label htmlFor="new-price-list-name">Tên *</Label>
                             <Input
                               id="new-price-list-name"
-                              placeholder="Enter price list name"
+                              placeholder="Nhập tên bảng giá"
                               value={newPriceListName}
                               onChange={(e) => setNewPriceListName(e.target.value)}
                               data-testid="input-new-price-list-name"
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="new-price-list-description">Description</Label>
+                            <Label htmlFor="new-price-list-description">Mô tả</Label>
                             <Textarea
                               id="new-price-list-description"
-                              placeholder="Enter description (optional)"
+                              placeholder="Nhập mô tả (tùy chọn)"
                               value={newPriceListDescription}
                               onChange={(e) => setNewPriceListDescription(e.target.value)}
                               data-testid="input-new-price-list-description"
@@ -565,8 +759,8 @@ export default function ServiceCatalogPage() {
                   </RadioGroup>
 
                   <div className="flex gap-2 pt-4">
-                    <Button onClick={handleProceedToMapping} data-testid="button-proceed-to-mapping">
-                      Continue to Upload & Mapping
+                    <Button onClick={handleProceedToMapping} data-testid="button-continue-to-upload">
+                      Tiếp tục đến Tải lên & Map
                       <ChevronRight className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
@@ -578,7 +772,7 @@ export default function ServiceCatalogPage() {
                       <CheckCircle className="w-5 h-5" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-muted-foreground">Select Price List</h3>
+                      <h3 className="font-semibold text-muted-foreground">Chọn Bảng Giá</h3>
                       <p className="text-sm text-muted-foreground">
                         {getPriceListName(selectedPriceListId)}
                       </p>
@@ -588,8 +782,8 @@ export default function ServiceCatalogPage() {
                       2
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold">Upload & Map</h3>
-                      <p className="text-sm text-muted-foreground">Configure column mapping</p>
+                      <h3 className="font-semibold">Tải lên & Map</h3>
+                      <p className="text-sm text-muted-foreground">Cấu hình ánh xạ cột</p>
                     </div>
                   </div>
 
@@ -604,18 +798,18 @@ export default function ServiceCatalogPage() {
                           data-testid="input-file-upload"
                         />
                         {uploadMutation.isPending && (
-                          <span className="text-sm text-muted-foreground">Uploading...</span>
+                          <span className="text-sm text-muted-foreground">Đang tải lên...</span>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        File should contain columns: Service Name, Description, Unit Price, Unit, Category
+                        File nên chứa các cột: Tên Dịch vụ, Mô tả, Đơn giá, Đơn vị, Danh mục
                       </p>
                       <Button
                         variant="outline"
                         onClick={() => setImportStep("select-price-list")}
-                        data-testid="button-back-to-step1"
+                        data-testid="button-back-step-1"
                       >
-                        Back to Price List Selection
+                        Quay lại Chọn Bảng Giá
                       </Button>
                     </div>
                   ) : (
@@ -623,13 +817,13 @@ export default function ServiceCatalogPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <Label>Service Name (required) *</Label>
+                            <Label>Tên dịch vụ (bắt buộc) *</Label>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <HelpCircle className="w-4 h-4 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Select column containing service/product name</p>
+                                <p>Chọn cột chứa tên dịch vụ/sản phẩm</p>
                               </TooltipContent>
                             </Tooltip>
                           </div>
@@ -638,7 +832,7 @@ export default function ServiceCatalogPage() {
                             onValueChange={(v) => setColumnMapping({ ...columnMapping, name: parseInt(v) })}
                           >
                             <SelectTrigger data-testid="select-name-column">
-                              <SelectValue placeholder="Select column..." />
+                              <SelectValue placeholder="Chọn cột..." />
                             </SelectTrigger>
                             <SelectContent>
                               {uploadData.headers.map((header, idx) => (
@@ -652,13 +846,13 @@ export default function ServiceCatalogPage() {
 
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <Label>Description</Label>
+                            <Label>Mô tả</Label>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <HelpCircle className="w-4 h-4 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Select column containing detailed description</p>
+                                <p>Chọn cột chứa mô tả chi tiết</p>
                               </TooltipContent>
                             </Tooltip>
                           </div>
@@ -667,7 +861,7 @@ export default function ServiceCatalogPage() {
                             onValueChange={(v) => setColumnMapping({ ...columnMapping, description: parseInt(v) })}
                           >
                             <SelectTrigger data-testid="select-description-column">
-                              <SelectValue placeholder="Select column..." />
+                              <SelectValue placeholder="Chọn cột..." />
                             </SelectTrigger>
                             <SelectContent>
                               {uploadData.headers.map((header, idx) => (
@@ -681,13 +875,13 @@ export default function ServiceCatalogPage() {
 
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <Label>Unit Price (required) *</Label>
+                            <Label>Đơn giá (bắt buộc) *</Label>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <HelpCircle className="w-4 h-4 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Select column containing price</p>
+                                <p>Chọn cột chứa giá</p>
                               </TooltipContent>
                             </Tooltip>
                           </div>
@@ -696,7 +890,7 @@ export default function ServiceCatalogPage() {
                             onValueChange={(v) => setColumnMapping({ ...columnMapping, unitPrice: parseInt(v) })}
                           >
                             <SelectTrigger data-testid="select-price-column">
-                              <SelectValue placeholder="Select column..." />
+                              <SelectValue placeholder="Chọn cột..." />
                             </SelectTrigger>
                             <SelectContent>
                               {uploadData.headers.map((header, idx) => (
@@ -710,42 +904,42 @@ export default function ServiceCatalogPage() {
 
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <Label>Price Format</Label>
+                            <Label>Định dạng giá</Label>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <HelpCircle className="w-4 h-4 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
-                                <p>Select number separator in file:</p>
-                                <p>• Dot: 1.000.000 or 1000000</p>
-                                <p>• Comma: 1,000,000</p>
+                                <p>Chọn dấu phân cách số trong file:</p>
+                                <p>• Dấu chấm: 1.000.000 hoặc 1000000</p>
+                                <p>• Dấu phẩy: 1,000,000</p>
                               </TooltipContent>
                             </Tooltip>
                           </div>
                           <RadioGroup value={priceFormat} onValueChange={(v: "dot" | "comma") => setPriceFormat(v)}>
                             <div className="flex items-center space-x-2">
                               <RadioGroupItem value="dot" id="dot" data-testid="radio-price-dot" />
-                              <Label htmlFor="dot">Dot (1.000.000)</Label>
+                              <Label htmlFor="dot">Dấu chấm (1.000.000)</Label>
                             </div>
                             <div className="flex items-center space-x-2">
                               <RadioGroupItem value="comma" id="comma" data-testid="radio-price-comma" />
-                              <Label htmlFor="comma">Comma (1,000,000)</Label>
+                              <Label htmlFor="comma">Dấu phẩy (1,000,000)</Label>
                             </div>
                           </RadioGroup>
                         </div>
 
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <Label>Unit</Label>
+                            <Label>Đơn vị</Label>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <HelpCircle className="w-4 h-4 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
-                                <p>Select unit source:</p>
-                                <p>• From column: Get from separate column</p>
-                                <p>• Extract from price: Auto extract (e.g., "49.000 đ/month" → "month")</p>
-                                <p>• Manual: Enter fixed unit for all</p>
+                                <p>Chọn nguồn đơn vị:</p>
+                                <p>• Từ cột: Lấy từ cột riêng</p>
+                                <p>• Trích xuất từ giá: Tự động (vd: "49.000 đ/tháng" → "tháng")</p>
+                                <p>• Thủ công: Nhập cố định cho tất cả</p>
                               </TooltipContent>
                             </Tooltip>
                           </div>
@@ -760,21 +954,21 @@ export default function ServiceCatalogPage() {
                             }}
                           >
                             <SelectTrigger data-testid="select-unit-source">
-                              <SelectValue placeholder="Select source..." />
+                              <SelectValue placeholder="Chọn nguồn..." />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="manual">Manual entry</SelectItem>
-                              <SelectItem value="extract">Extract from price</SelectItem>
+                              <SelectItem value="manual">Nhập thủ công</SelectItem>
+                              <SelectItem value="extract">Trích xuất từ giá</SelectItem>
                               {uploadData.headers.map((header, idx) => (
                                 <SelectItem key={idx} value={idx.toString()}>
-                                  From column: {header}
+                                  Từ cột: {header}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                           {columnMapping.unit === "manual" && (
                             <Input
-                              placeholder="Enter unit (e.g., hour, day, month, set...)"
+                              placeholder="Nhập đơn vị (vd: giờ, ngày, tháng, bộ...)"
                               value={manualUnit}
                               onChange={(e) => setManualUnit(e.target.value)}
                               data-testid="input-manual-unit"
@@ -784,13 +978,13 @@ export default function ServiceCatalogPage() {
 
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <Label>Category</Label>
+                            <Label>Danh mục</Label>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <HelpCircle className="w-4 h-4 text-muted-foreground" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Select column containing service category</p>
+                                <p>Chọn cột chứa danh mục dịch vụ</p>
                               </TooltipContent>
                             </Tooltip>
                           </div>
@@ -799,7 +993,7 @@ export default function ServiceCatalogPage() {
                             onValueChange={(v) => setColumnMapping({ ...columnMapping, category: parseInt(v) })}
                           >
                             <SelectTrigger data-testid="select-category-column">
-                              <SelectValue placeholder="Select column..." />
+                              <SelectValue placeholder="Chọn cột..." />
                             </SelectTrigger>
                             <SelectContent>
                               {uploadData.headers.map((header, idx) => (
@@ -814,8 +1008,8 @@ export default function ServiceCatalogPage() {
 
                       <Card>
                         <CardHeader>
-                          <CardTitle>Preview Data</CardTitle>
-                          <CardDescription>First 5 rows from your file</CardDescription>
+                          <CardTitle>Xem trước Dữ liệu</CardTitle>
+                          <CardDescription>5 dòng đầu tiên từ file của bạn</CardDescription>
                         </CardHeader>
                         <CardContent>
                           <div className="overflow-x-auto">
@@ -849,7 +1043,7 @@ export default function ServiceCatalogPage() {
                           data-testid="button-import"
                         >
                           <CheckCircle className="w-4 h-4" />
-                          {importMutation.isPending ? "Importing..." : "Import"}
+                          {importMutation.isPending ? "Đang import..." : "Import"}
                         </Button>
                         <Button
                           variant="outline"
@@ -861,7 +1055,7 @@ export default function ServiceCatalogPage() {
                           }}
                           data-testid="button-cancel-mapping"
                         >
-                          Cancel
+                          Hủy
                         </Button>
                         <Button
                           variant="outline"
@@ -872,167 +1066,13 @@ export default function ServiceCatalogPage() {
                             setManualUnit("");
                             setImportStep("select-price-list");
                           }}
-                          data-testid="button-back-to-step1-from-mapping"
+                          data-testid="button-back-step-1"
                         >
-                          Back to Step 1
+                          Quay lại Bước 1
                         </Button>
                       </div>
                     </div>
                   )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Catalog Tab */}
-        <TabsContent value="catalog" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <List className="w-5 h-5" />
-                    Service Catalog ({filteredCatalog.length})
-                  </CardTitle>
-                  <CardDescription>Browse and manage imported services</CardDescription>
-                </div>
-                {selectedItems.size > 0 && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => bulkDeleteMutation.mutate(Array.from(selectedItems))}
-                    disabled={bulkDeleteMutation.isPending}
-                    data-testid="button-bulk-delete"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete {selectedItems.size} items
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by name or description..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                    data-testid="input-search"
-                  />
-                  {searchTerm && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7"
-                      onClick={() => setSearchTerm("")}
-                      data-testid="button-clear-search"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-                <Select value={priceListFilter} onValueChange={setPriceListFilter}>
-                  <SelectTrigger className="w-[220px]" data-testid="select-price-list-filter">
-                    <SelectValue placeholder="Filter by price list" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Price Lists</SelectItem>
-                    {priceLists.map((pl) => (
-                      <SelectItem key={pl.id} value={pl.id}>
-                        {pl.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-[200px]" data-testid="select-category-filter">
-                    <SelectValue placeholder="Filter category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat} value={cat || ""}>
-                        {cat || "(No category)"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {catalogLoading ? (
-                <p className="text-sm text-muted-foreground">Loading...</p>
-              ) : filteredCatalog.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {catalog.length === 0 
-                    ? "No services yet. Import a file to get started."
-                    : "No matching results found."}
-                </p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">
-                          <Checkbox
-                            checked={selectedItems.size === filteredCatalog.length && filteredCatalog.length > 0}
-                            onCheckedChange={toggleAllSelection}
-                            data-testid="checkbox-select-all"
-                          />
-                        </TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Unit</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Price List</TableHead>
-                        <TableHead className="w-12"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredCatalog.map((item) => (
-                        <TableRow key={item.id} data-testid={`row-catalog-${item.id}`}>
-                          <TableCell>
-                            <Checkbox
-                              checked={selectedItems.has(item.id)}
-                              onCheckedChange={() => toggleItemSelection(item.id)}
-                              data-testid={`checkbox-select-${item.id}`}
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium" data-testid={`text-name-${item.id}`}>
-                            {item.name}
-                          </TableCell>
-                          <TableCell className="max-w-xs truncate" data-testid={`text-description-${item.id}`}>
-                            {item.description || "-"}
-                          </TableCell>
-                          <TableCell data-testid={`text-price-${item.id}`}>
-                            {item.unitPrice.toLocaleString()}
-                          </TableCell>
-                          <TableCell data-testid={`text-unit-${item.id}`}>
-                            {item.unit || "-"}
-                          </TableCell>
-                          <TableCell data-testid={`text-category-${item.id}`}>
-                            {item.category || "-"}
-                          </TableCell>
-                          <TableCell data-testid={`text-price-list-${item.id}`}>
-                            <Badge variant="outline">{getPriceListName(item.priceListId)}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteMutation.mutate(item.id)}
-                              data-testid={`button-delete-${item.id}`}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
                 </div>
               )}
             </CardContent>
@@ -1045,28 +1085,28 @@ export default function ServiceCatalogPage() {
         <DialogContent data-testid="dialog-price-list">
           <DialogHeader>
             <DialogTitle>
-              {editingPriceList ? "Edit Price List" : "Create Price List"}
+              {editingPriceList ? "Sửa Bảng Giá" : "Tạo Bảng Giá Mới"}
             </DialogTitle>
             <DialogDescription>
-              {editingPriceList ? "Update price list details" : "Create a new price list"}
+              {editingPriceList ? "Cập nhật thông tin bảng giá" : "Tạo bảng giá mới cho danh mục dịch vụ"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="price-list-name">Name *</Label>
+              <Label htmlFor="price-list-name">Tên *</Label>
               <Input
                 id="price-list-name"
-                placeholder="Enter price list name"
+                placeholder="Nhập tên bảng giá"
                 value={priceListForm.name}
                 onChange={(e) => setPriceListForm({ ...priceListForm, name: e.target.value })}
                 data-testid="input-price-list-name"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="price-list-description">Description</Label>
+              <Label htmlFor="price-list-description">Mô tả</Label>
               <Textarea
                 id="price-list-description"
-                placeholder="Enter description (optional)"
+                placeholder="Nhập mô tả (tùy chọn)"
                 value={priceListForm.description}
                 onChange={(e) => setPriceListForm({ ...priceListForm, description: e.target.value })}
                 data-testid="input-price-list-description"
@@ -1079,14 +1119,16 @@ export default function ServiceCatalogPage() {
               onClick={() => setPriceListDialogOpen(false)}
               data-testid="button-cancel-price-list"
             >
-              Cancel
+              Hủy
             </Button>
             <Button
               onClick={handleSavePriceList}
               disabled={createPriceListMutation.isPending || updatePriceListMutation.isPending}
               data-testid="button-save-price-list"
             >
-              {editingPriceList ? "Update" : "Create"}
+              {createPriceListMutation.isPending || updatePriceListMutation.isPending 
+                ? "Đang lưu..." 
+                : editingPriceList ? "Cập nhật" : "Tạo"}
             </Button>
           </DialogFooter>
         </DialogContent>
