@@ -4,6 +4,17 @@
 
 WFA Hub is a Vietnamese-language web application offering ready-made automation templates for business users. It enables non-coders to execute workflows like sending emails, creating quotations, and managing approvals. The platform is built with React, Express, and PostgreSQL, focusing on a clean, productivity-centric design inspired by Linear.app and Framer Dashboard. The project aims to provide a comprehensive workflow automation solution, including a robust quotation management system and an admin panel for system oversight.
 
+## Recent Changes (October 2025)
+
+**Service Catalog Module - Completed**
+- Intelligent CSV/Excel import system with flexible column mapping
+- Price format detection (comma vs dot separators): Supports both 1.000.000 and 1,000,000 formats
+- Smart unit extraction: Extract units from price column (e.g., "49.000 đ/tháng" → "tháng"), manual input, or dedicated column
+- Full catalog management: Search, category filtering, bulk delete operations
+- Tooltips and guidance throughout the import process
+- Backend uses `xlsx` for file parsing, `multer` for uploads
+- Integrated with quotation form for easy service selection
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -35,6 +46,7 @@ Preferred communication style: Simple, everyday language.
 - `customers`: Multi-tenant customer data with ownership validation.
 - `quotations`: Quotation details, auto-generated numbers, status, and associated items.
 - `quotationItems`: Line items for quotations.
+- `serviceCatalog`: Service catalog for quotations with name, description, unitPrice, unit, category. Supports CSV/Excel import with intelligent price parsing and unit extraction.
 - `quotationTemplates`, `emailTemplates`, `smtpConfigs`, `storageConfigs`, `userSettings`: Supporting tables for future features.
 
 **Schema Design Decisions:** UUID primary keys, JSONB for flexible data, indexed session expiration, type-safe schema exports. Encryption (AES-256-GCM) for sensitive data like SMTP passwords.
@@ -63,6 +75,8 @@ Preferred communication style: Simple, everyday language.
 - `@tanstack/react-query`: Server state management.
 - `@radix-ui/*` components: Accessible UI primitives.
 - `react-hook-form` & `@hookform/resolvers`: Form handling.
+- `xlsx`: Excel/CSV file parsing for service catalog import.
+- `multer`: File upload middleware for handling CSV/Excel uploads.
 
 **Development Tools:**
 - `@replit/vite-plugin-*`: Replit development enhancements.

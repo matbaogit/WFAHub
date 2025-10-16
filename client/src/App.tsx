@@ -23,7 +23,7 @@ import QuotationTemplates from "@/pages/quotation-templates";
 import EmailTemplates from "@/pages/email-templates";
 import SmtpConfig from "@/pages/smtp-config";
 import Analytics from "@/pages/analytics";
-import ServiceCatalog from "@/pages/service-catalog";
+import ServiceCatalogPage from "@/pages/service-catalog";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminTemplates from "@/pages/admin/templates";
@@ -50,7 +50,7 @@ function Router() {
           <Route path="/email-templates" component={EmailTemplates} />
           <Route path="/smtp-config" component={SmtpConfig} />
           <Route path="/analytics" component={Analytics} />
-          <Route path="/service-catalog" component={ServiceCatalog} />
+          <Route path="/service-catalog" component={ServiceCatalogPage} />
           <Route path="/logs" component={Logs} />
           <Route path="/account" component={Account} />
           <Route path="/admin" component={AdminDashboard} />
