@@ -9,6 +9,7 @@ import {
   quotationTemplates,
   smtpConfigs,
   userSettings,
+  serviceCatalog,
   type User,
   type RegisterUser,
   type Template,
@@ -26,6 +27,8 @@ import {
   type InsertQuotationTemplate,
   type SmtpConfig,
   type InsertSmtpConfig,
+  type ServiceCatalog,
+  type InsertServiceCatalog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -109,6 +112,13 @@ export interface IStorage {
 
   // Analytics
   getAnalytics(userId: string): Promise<any>;
+  
+  // Service Catalog operations
+  createServiceCatalog(item: InsertServiceCatalog): Promise<ServiceCatalog>;
+  getUserServiceCatalog(userId: string): Promise<ServiceCatalog[]>;
+  updateServiceCatalog(itemId: string, data: Partial<ServiceCatalog>): Promise<ServiceCatalog>;
+  deleteServiceCatalog(itemId: string): Promise<void>;
+  bulkCreateServiceCatalog(items: InsertServiceCatalog[]): Promise<ServiceCatalog[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -557,6 +567,41 @@ export class DatabaseStorage implements IStorage {
       revenueByMonth: [], // TODO: Implement monthly revenue
       topCustomers,
     };
+  }
+
+  // Service Catalog operations
+  async createServiceCatalog(item: InsertServiceCatalog): Promise<ServiceCatalog> {
+    const [catalogItem] = await db
+      .insert(serviceCatalog)
+      .values(item)
+      .returning();
+    return catalogItem;
+  }
+
+  async getUserServiceCatalog(userId: string): Promise<ServiceCatalog[]> {
+    return await db
+      .select()
+      .from(serviceCatalog)
+      .where(and(eq(serviceCatalog.userId, userId), eq(serviceCatalog.isActive, 1)))
+      .orderBy(desc(serviceCatalog.createdAt));
+  }
+
+  async updateServiceCatalog(itemId: string, data: Partial<ServiceCatalog>): Promise<ServiceCatalog> {
+    const [catalogItem] = await db
+      .update(serviceCatalog)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(serviceCatalog.id, itemId))
+      .returning();
+    return catalogItem;
+  }
+
+  async deleteServiceCatalog(itemId: string): Promise<void> {
+    await db.delete(serviceCatalog).where(eq(serviceCatalog.id, itemId));
+  }
+
+  async bulkCreateServiceCatalog(items: InsertServiceCatalog[]): Promise<ServiceCatalog[]> {
+    if (items.length === 0) return [];
+    return await db.insert(serviceCatalog).values(items).returning();
   }
 }
 

@@ -7,6 +7,8 @@ import passport from "passport";
 import type { User } from "@shared/schema";
 import { z } from "zod";
 import { sendQuotationEmail } from "./emailService";
+import multer from "multer";
+import * as XLSX from "xlsx";
 
 // Sanitize user object by removing sensitive fields
 const sanitizeUser = (user: User | null): Omit<User, 'passwordHash'> | null => {
@@ -46,6 +48,12 @@ const isAdmin = async (req: any, res: any, next: any) => {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Local Auth
   setupLocalAuth(app);
+  
+  // Setup multer for file uploads (memory storage)
+  const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  });
 
   // Register route
   app.post("/api/auth/register", async (req, res) => {
@@ -916,6 +924,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching analytics:", error);
       res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  // Service Catalog routes
+  app.post("/api/service-catalog/upload", isAuthenticated, upload.single("file"), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Parse file (supports CSV and Excel)
+      const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+      if (data.length < 2) {
+        return res.status(400).json({ message: "File must contain headers and at least one row of data" });
+      }
+
+      // Extract headers and preview data (first 5 rows)
+      const headers = data[0] as string[];
+      const previewData = data.slice(1, 6);
+
+      res.json({
+        headers,
+        previewData,
+        totalRows: data.length - 1,
+      });
+    } catch (error: any) {
+      console.error("Error uploading file:", error);
+      res.status(500).json({ message: error.message || "Failed to upload file" });
+    }
+  });
+
+  app.post("/api/service-catalog/import", isAuthenticated, upload.single("file"), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const mapping = JSON.parse(req.body.mapping || "{}");
+      
+      // Parse file
+      const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+      if (data.length < 2) {
+        return res.status(400).json({ message: "File must contain data" });
+      }
+
+      const headers = data[0] as string[];
+      const rows = data.slice(1);
+
+      // Map and validate data
+      const catalogItems = rows
+        .map((row: any[]) => {
+          const item: any = { userId: req.user.id };
+          
+          if (mapping.name !== undefined) item.name = row[mapping.name];
+          if (mapping.description !== undefined) item.description = row[mapping.description];
+          if (mapping.unitPrice !== undefined) {
+            const price = parseFloat(row[mapping.unitPrice]);
+            item.unitPrice = isNaN(price) ? 0 : Math.round(price);
+          }
+          if (mapping.unit !== undefined) item.unit = row[mapping.unit];
+          if (mapping.category !== undefined) item.category = row[mapping.category];
+
+          return item;
+        })
+        .filter((item: any) => item.name && item.unitPrice !== undefined);
+
+      if (catalogItems.length === 0) {
+        return res.status(400).json({ message: "No valid items found in file" });
+      }
+
+      // Bulk insert
+      const created = await storage.bulkCreateServiceCatalog(catalogItems);
+      
+      res.json({ 
+        success: true, 
+        imported: created.length,
+        items: created 
+      });
+    } catch (error: any) {
+      console.error("Error importing service catalog:", error);
+      res.status(500).json({ message: error.message || "Failed to import data" });
+    }
+  });
+
+  app.get("/api/service-catalog", isAuthenticated, async (req: any, res) => {
+    try {
+      const catalog = await storage.getUserServiceCatalog(req.user.id);
+      res.json(catalog);
+    } catch (error: any) {
+      console.error("Error fetching service catalog:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch catalog" });
+    }
+  });
+
+  app.delete("/api/service-catalog/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.deleteServiceCatalog(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting catalog item:", error);
+      res.status(500).json({ message: error.message || "Failed to delete item" });
     }
   });
 
