@@ -980,6 +980,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const headers = data[0] as string[];
       const rows = data.slice(1);
 
+      const priceFormat = mapping.priceFormat || "dot";
+
+      // Helper to parse price based on format
+      const parsePrice = (value: any): number => {
+        if (!value) return 0;
+        let str = String(value).trim();
+        
+        // Remove currency symbols and spaces
+        str = str.replace(/[₫đVNDvnd\s]/gi, "");
+        
+        // Handle format based on priceFormat
+        if (priceFormat === "comma") {
+          // Comma format: 1,000,000 -> remove commas
+          str = str.replace(/,/g, "");
+        } else {
+          // Dot format: 1.000.000 -> remove dots, or keep decimal point
+          // If there's only one dot and 2 digits after, it's decimal, otherwise it's thousand separator
+          const dotCount = (str.match(/\./g) || []).length;
+          if (dotCount > 1 || (dotCount === 1 && !str.match(/\.\d{2}$/))) {
+            str = str.replace(/\./g, "");
+          }
+        }
+        
+        const price = parseFloat(str);
+        return isNaN(price) ? 0 : Math.round(price);
+      };
+
+      // Helper to extract unit from price string
+      const extractUnit = (value: any): string | null => {
+        if (!value) return null;
+        const str = String(value).trim();
+        
+        // Common unit patterns in Vietnamese
+        const unitPatterns = [
+          /\/(tháng|năm|ngày|giờ|tuần|quý)/i,
+          /\s+(bộ|cái|chiếc|lần|người|suất|gói)/i,
+        ];
+        
+        for (const pattern of unitPatterns) {
+          const match = str.match(pattern);
+          if (match) {
+            return match[1] || match[0].trim();
+          }
+        }
+        return null;
+      };
+
       // Map and validate data
       const catalogItems = rows
         .map((row: any[]) => {
@@ -987,11 +1034,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (mapping.name !== undefined) item.name = row[mapping.name];
           if (mapping.description !== undefined) item.description = row[mapping.description];
+          
           if (mapping.unitPrice !== undefined) {
-            const price = parseFloat(row[mapping.unitPrice]);
-            item.unitPrice = isNaN(price) ? 0 : Math.round(price);
+            item.unitPrice = parsePrice(row[mapping.unitPrice]);
           }
-          if (mapping.unit !== undefined) item.unit = row[mapping.unit];
+          
+          // Handle unit based on mapping type
+          if (mapping.unit === "manual" && mapping.manualUnit) {
+            item.unit = mapping.manualUnit;
+          } else if (mapping.unit === "extract" && mapping.unitPrice !== undefined) {
+            const extracted = extractUnit(row[mapping.unitPrice]);
+            if (extracted) item.unit = extracted;
+          } else if (typeof mapping.unit === "number") {
+            item.unit = row[mapping.unit];
+          }
+          
           if (mapping.category !== undefined) item.category = row[mapping.category];
 
           return item;
