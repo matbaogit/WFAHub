@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupLocalAuth } from "./localAuth";
-import { insertExecutionLogSchema, registerUserSchema, loginUserSchema, insertTemplateSchema, insertSmtpConfigSchema } from "@shared/schema";
+import { insertExecutionLogSchema, registerUserSchema, loginUserSchema, insertTemplateSchema, insertSmtpConfigSchema, insertPriceListSchema } from "@shared/schema";
 import passport from "passport";
 import type { User } from "@shared/schema";
 import { z } from "zod";
@@ -1030,10 +1030,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return null;
       };
 
+      // Ensure priceListId is provided
+      if (!mapping.priceListId) {
+        return res.status(400).json({ message: "Price list ID is required" });
+      }
+
       // Map and validate data
       const catalogItems = rows
         .map((row: any[]) => {
-          const item: any = { userId: req.user.id };
+          const item: any = { 
+            userId: req.user.id,
+            priceListId: mapping.priceListId 
+          };
           
           if (mapping.name !== undefined) item.name = row[mapping.name];
           if (mapping.description !== undefined) item.description = row[mapping.description];
@@ -1093,6 +1101,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error deleting catalog item:", error);
       res.status(500).json({ message: error.message || "Failed to delete item" });
+    }
+  });
+
+  // Price Lists CRUD
+  app.get("/api/price-lists", isAuthenticated, async (req: any, res) => {
+    try {
+      const priceLists = await storage.getUserPriceLists(req.user.id);
+      res.json(priceLists);
+    } catch (error: any) {
+      console.error("Error fetching price lists:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch price lists" });
+    }
+  });
+
+  app.post("/api/price-lists", isAuthenticated, async (req: any, res) => {
+    try {
+      const data = insertPriceListSchema.parse({ ...req.body, userId: req.user.id });
+      const priceList = await storage.createPriceList(data);
+      res.json(priceList);
+    } catch (error: any) {
+      console.error("Error creating price list:", error);
+      res.status(400).json({ message: error.message || "Failed to create price list" });
+    }
+  });
+
+  app.patch("/api/price-lists/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const priceList = await storage.updatePriceList(req.params.id, req.body);
+      res.json(priceList);
+    } catch (error: any) {
+      console.error("Error updating price list:", error);
+      res.status(400).json({ message: error.message || "Failed to update price list" });
+    }
+  });
+
+  app.delete("/api/price-lists/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.deletePriceList(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting price list:", error);
+      res.status(500).json({ message: error.message || "Failed to delete price list" });
     }
   });
 

@@ -10,6 +10,7 @@ import {
   smtpConfigs,
   userSettings,
   serviceCatalog,
+  priceLists,
   type User,
   type RegisterUser,
   type Template,
@@ -29,6 +30,8 @@ import {
   type InsertSmtpConfig,
   type ServiceCatalog,
   type InsertServiceCatalog,
+  type PriceList,
+  type InsertPriceList,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -119,6 +122,12 @@ export interface IStorage {
   updateServiceCatalog(itemId: string, data: Partial<ServiceCatalog>): Promise<ServiceCatalog>;
   deleteServiceCatalog(itemId: string): Promise<void>;
   bulkCreateServiceCatalog(items: InsertServiceCatalog[]): Promise<ServiceCatalog[]>;
+  
+  // Price Lists
+  getUserPriceLists(userId: string): Promise<PriceList[]>;
+  createPriceList(data: InsertPriceList): Promise<PriceList>;
+  updatePriceList(id: string, data: Partial<PriceList>): Promise<PriceList>;
+  deletePriceList(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -602,6 +611,36 @@ export class DatabaseStorage implements IStorage {
   async bulkCreateServiceCatalog(items: InsertServiceCatalog[]): Promise<ServiceCatalog[]> {
     if (items.length === 0) return [];
     return await db.insert(serviceCatalog).values(items).returning();
+  }
+
+  // Price Lists operations
+  async getUserPriceLists(userId: string): Promise<PriceList[]> {
+    return await db
+      .select()
+      .from(priceLists)
+      .where(and(eq(priceLists.userId, userId), eq(priceLists.isActive, 1)))
+      .orderBy(desc(priceLists.createdAt));
+  }
+
+  async createPriceList(data: InsertPriceList): Promise<PriceList> {
+    const [priceList] = await db
+      .insert(priceLists)
+      .values(data)
+      .returning();
+    return priceList;
+  }
+
+  async updatePriceList(id: string, data: Partial<PriceList>): Promise<PriceList> {
+    const [priceList] = await db
+      .update(priceLists)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(priceLists.id, id))
+      .returning();
+    return priceList;
+  }
+
+  async deletePriceList(id: string): Promise<void> {
+    await db.delete(priceLists).where(eq(priceLists.id, id));
   }
 }
 
