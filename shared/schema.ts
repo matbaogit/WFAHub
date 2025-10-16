@@ -279,8 +279,8 @@ export const serviceCatalog = pgTable("service_catalog", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   unitPrice: integer("unit_price").notNull(),
-  unit: varchar("unit", { length: 50 }),
-  category: varchar("category", { length: 100 }),
+  unit: varchar("unit", { length: 255 }),
+  category: varchar("category", { length: 255 }),
   
   isActive: integer("is_active").default(1).notNull(),
   
