@@ -1,4 +1,4 @@
-import { Home, Zap, History, User, LogOut, Wallet, Sparkles, Shield, Users, BarChart3, FileText, UserCheck, Mail, Server, Layout } from "lucide-react";
+import { Home, Zap, History, User, LogOut, Wallet, Sparkles, Shield, Users, BarChart3, FileText, UserCheck, Mail, Server, Layout, Package } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -54,6 +54,11 @@ const menuItems = [
     title: "Phân tích",
     url: "/analytics",
     icon: BarChart3,
+  },
+  {
+    title: "Danh Mục Dịch Vụ",
+    url: "/service-catalog",
+    icon: Package,
   },
   {
     title: "Khách hàng",
