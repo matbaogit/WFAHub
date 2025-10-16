@@ -6,20 +6,24 @@ WFA Hub is a Vietnamese-language web application offering ready-made automation 
 
 ## Recent Changes (October 2025)
 
-**Service Catalog Module - Multi-Price List System (October 16, 2025)**
-- **Price List Management**: Support for multiple named price lists with individual CRUD operations
+**Service Catalog Module - Refactored UI (October 16, 2025)**
+- **Streamlined 2-Tab Interface**:
+  - **Bảng Giá (Price Lists)** - Default tab with dual-view system:
+    - **List View**: Grid layout showing all price lists as cards (package icon, name, description, service count badge)
+    - **Detail View**: Click any price list card → view its catalog with full search/filter/CRUD capabilities
+    - Seamless navigation with back button to return to list view
+  - **Import Dịch Vụ (Import Services)** - Multi-step import workflow unchanged
+- **Price List Management**: Full CRUD operations with individual price lists
 - **Multi-Step Import Workflow**:
   - Step 1: Select existing price list or create new one with name/description
   - Step 2: Upload CSV/Excel and map columns
 - **Enhanced Unit Extraction**: Improved regex to extract only unit keywords (tháng, năm, ngày, etc.) from price strings like "49.000 đ/tháng" → "tháng"
 - **Price Format Detection**: Supports both dot (1.000.000) and comma (1,000,000) formats
-- **Comprehensive Catalog Management**:
-  - Filter services by price list
+- **Catalog Detail View** (per price list):
   - Search by name and description
   - Category filtering
   - Bulk delete operations
-  - Price list badges on each service
-- **Tab-Based UI**: Catalog view, Price Lists management, and Import Services workflow
+  - Service table with VND formatting
 - **Data Migration**: Existing 242 catalog items migrated to "Default Price List"
 - **Backend**: Uses `xlsx` for file parsing, `multer` for uploads, cascade delete from price lists to services
 
