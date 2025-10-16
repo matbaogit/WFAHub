@@ -1012,16 +1012,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!value) return null;
         const str = String(value).trim();
         
-        // Common unit patterns in Vietnamese
+        // Common unit patterns in Vietnamese - extract only the unit keyword
         const unitPatterns = [
-          /\/(tháng|năm|ngày|giờ|tuần|quý)/i,
-          /\s+(bộ|cái|chiếc|lần|người|suất|gói)/i,
+          /\/(tháng|năm|ngày|giờ|tuần|quý|khóa|lượt)/i,
+          /đ\/(tháng|năm|ngày|giờ|tuần|quý)/i,
+          /VND\/(tháng|năm|ngày|giờ|tuần|quý)/i,
+          /\s+(bộ|cái|chiếc|lần|người|suất|gói|hộp|chai|lon|kg|gram|lít|mét|m2|m3)(?:\s|$)/i,
         ];
         
         for (const pattern of unitPatterns) {
           const match = str.match(pattern);
-          if (match) {
-            return match[1] || match[0].trim();
+          if (match && match[1]) {
+            // Return only the captured unit keyword (group 1)
+            return match[1].toLowerCase();
           }
         }
         return null;
