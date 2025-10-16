@@ -271,10 +271,25 @@ export const userSettings = pgTable("user_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Price Lists (manage multiple price lists)
+export const priceLists = pgTable("price_lists", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  
+  isActive: integer("is_active").default(1).notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Service Catalog (imported from price list)
 export const serviceCatalog = pgTable("service_catalog", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
+  priceListId: varchar("price_list_id").references(() => priceLists.id, { onDelete: "cascade" }),
   
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
@@ -372,6 +387,12 @@ export const insertUserSettingsSchema = createInsertSchema(userSettings).omit({
   updatedAt: true,
 });
 
+export const insertPriceListSchema = createInsertSchema(priceLists).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertServiceCatalogSchema = createInsertSchema(serviceCatalog).omit({
   id: true,
   createdAt: true,
@@ -404,5 +425,7 @@ export type StorageConfig = typeof storageConfigs.$inferSelect;
 export type InsertStorageConfig = z.infer<typeof insertStorageConfigSchema>;
 export type UserSettings = typeof userSettings.$inferSelect;
 export type InsertUserSettings = z.infer<typeof insertUserSettingsSchema>;
+export type PriceList = typeof priceLists.$inferSelect;
+export type InsertPriceList = z.infer<typeof insertPriceListSchema>;
 export type ServiceCatalog = typeof serviceCatalog.$inferSelect;
 export type InsertServiceCatalog = z.infer<typeof insertServiceCatalogSchema>;
