@@ -6,14 +6,22 @@ WFA Hub is a Vietnamese-language web application offering ready-made automation 
 
 ## Recent Changes (October 2025)
 
-**Service Catalog Module - Completed**
-- Intelligent CSV/Excel import system with flexible column mapping
-- Price format detection (comma vs dot separators): Supports both 1.000.000 and 1,000,000 formats
-- Smart unit extraction: Extract units from price column (e.g., "49.000 đ/tháng" → "tháng"), manual input, or dedicated column
-- Full catalog management: Search, category filtering, bulk delete operations
-- Tooltips and guidance throughout the import process
-- Backend uses `xlsx` for file parsing, `multer` for uploads
-- Integrated with quotation form for easy service selection
+**Service Catalog Module - Multi-Price List System (October 16, 2025)**
+- **Price List Management**: Support for multiple named price lists with individual CRUD operations
+- **Multi-Step Import Workflow**:
+  - Step 1: Select existing price list or create new one with name/description
+  - Step 2: Upload CSV/Excel and map columns
+- **Enhanced Unit Extraction**: Improved regex to extract only unit keywords (tháng, năm, ngày, etc.) from price strings like "49.000 đ/tháng" → "tháng"
+- **Price Format Detection**: Supports both dot (1.000.000) and comma (1,000,000) formats
+- **Comprehensive Catalog Management**:
+  - Filter services by price list
+  - Search by name and description
+  - Category filtering
+  - Bulk delete operations
+  - Price list badges on each service
+- **Tab-Based UI**: Catalog view, Price Lists management, and Import Services workflow
+- **Data Migration**: Existing 242 catalog items migrated to "Default Price List"
+- **Backend**: Uses `xlsx` for file parsing, `multer` for uploads, cascade delete from price lists to services
 
 ## User Preferences
 
@@ -46,7 +54,8 @@ Preferred communication style: Simple, everyday language.
 - `customers`: Multi-tenant customer data with ownership validation.
 - `quotations`: Quotation details, auto-generated numbers, status, and associated items.
 - `quotationItems`: Line items for quotations.
-- `serviceCatalog`: Service catalog for quotations with name, description, unitPrice, unit, category. Supports CSV/Excel import with intelligent price parsing and unit extraction.
+- `priceLists`: Multiple price lists with name, description, user ownership. One-to-many relationship with service catalog.
+- `serviceCatalog`: Service catalog for quotations with name, description, unitPrice, unit, category, priceListId (FK to priceLists). Supports CSV/Excel import with intelligent price parsing and unit extraction. Cascade delete when price list is removed.
 - `quotationTemplates`, `emailTemplates`, `smtpConfigs`, `storageConfigs`, `userSettings`: Supporting tables for future features.
 
 **Schema Design Decisions:** UUID primary keys, JSONB for flexible data, indexed session expiration, type-safe schema exports. Encryption (AES-256-GCM) for sensitive data like SMTP passwords.
