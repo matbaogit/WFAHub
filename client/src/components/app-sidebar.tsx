@@ -1,4 +1,5 @@
-import { Home, Zap, History, User, LogOut, Wallet, Sparkles, Shield, Users, BarChart3, FileText, UserCheck, Mail, Server, Layout, Package } from "lucide-react";
+import { useState } from "react";
+import { Home, Zap, History, User, LogOut, Wallet, Sparkles, Shield, Users, BarChart3, FileText, UserCheck, Mail, Server, Layout, Package, SendHorizontal, ChevronDown, ChevronRight } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -11,6 +12,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -19,7 +21,8 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-const menuItems = [
+// Menu items before quotation group
+const topMenuItems = [
   {
     title: "Trang chủ",
     url: "/",
@@ -30,10 +33,19 @@ const menuItems = [
     url: "/templates",
     icon: Zap,
   },
+];
+
+// Quotation group submenu items
+const quotationMenuItems = [
   {
-    title: "Báo giá",
+    title: "Báo giá Đơn lẻ",
     url: "/quotations",
     icon: FileText,
+  },
+  {
+    title: "Chiến dịch Email",
+    url: "/bulk-campaigns",
+    icon: SendHorizontal,
   },
   {
     title: "Mẫu Báo Giá",
@@ -50,11 +62,10 @@ const menuItems = [
     url: "/smtp-config",
     icon: Server,
   },
-  {
-    title: "Phân tích",
-    url: "/analytics",
-    icon: BarChart3,
-  },
+];
+
+// Menu items after quotation group
+const bottomMenuItems = [
   {
     title: "Danh Mục Dịch Vụ",
     url: "/service-catalog",
@@ -64,6 +75,11 @@ const menuItems = [
     title: "Khách hàng",
     url: "/customers",
     icon: UserCheck,
+  },
+  {
+    title: "Phân tích",
+    url: "/analytics",
+    icon: BarChart3,
   },
   {
     title: "Lịch sử",
@@ -105,6 +121,12 @@ export function AppSidebar() {
   const { user } = useAuth();
   const { viewMode } = useViewMode();
   const { toast } = useToast();
+  
+  // Check if any quotation submenu item is active
+  const isQuotationGroupActive = quotationMenuItems.some(item => location === item.url || location.startsWith(item.url + '/'));
+  
+  // Default to open if any submenu is active
+  const [isQuotationOpen, setIsQuotationOpen] = useState(isQuotationGroupActive);
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -145,12 +167,93 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent className="px-3">
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {/* Top menu items */}
+              {topMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
                     isActive={location === item.url}
                     data-testid={`link-${item.url === '/' ? 'home' : item.url.slice(1)}`}
+                    className={`
+                      group relative mb-1 rounded-xl transition-all duration-200
+                      ${location === item.url 
+                        ? 'bg-gradient-to-r from-cyan-500/10 to-blue-600/10 text-blue-600 shadow-sm border-l-4 border-blue-600' 
+                        : 'hover:bg-slate-100/80 hover:scale-[1.02]'
+                      }
+                    `}
+                  >
+                    <Link href={item.url}>
+                      <item.icon className={`w-5 h-5 ${location === item.url ? 'text-blue-600' : 'text-slate-600'} transition-colors`} />
+                      <span className={`font-medium ${location === item.url ? 'text-blue-600' : 'text-slate-700'}`}>
+                        {item.title}
+                      </span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+
+              {/* Collapsible Quotation Group */}
+              <Collapsible open={isQuotationOpen} onOpenChange={setIsQuotationOpen}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton
+                      data-testid="link-quotation-group"
+                      className={`
+                        group relative mb-1 rounded-xl transition-all duration-200
+                        ${isQuotationGroupActive
+                          ? 'bg-gradient-to-r from-cyan-500/10 to-blue-600/10 text-blue-600 shadow-sm border-l-4 border-blue-600' 
+                          : 'hover:bg-slate-100/80 hover:scale-[1.02]'
+                        }
+                      `}
+                    >
+                      <Mail className={`w-5 h-5 ${isQuotationGroupActive ? 'text-blue-600' : 'text-slate-600'} transition-colors`} />
+                      <span className={`font-medium ${isQuotationGroupActive ? 'text-blue-600' : 'text-slate-700'}`}>
+                        Gửi Báo Giá
+                      </span>
+                      {isQuotationOpen ? (
+                        <ChevronDown className={`ml-auto w-4 h-4 ${isQuotationGroupActive ? 'text-blue-600' : 'text-slate-600'}`} />
+                      ) : (
+                        <ChevronRight className={`ml-auto w-4 h-4 ${isQuotationGroupActive ? 'text-blue-600' : 'text-slate-600'}`} />
+                      )}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-1">
+                    <SidebarMenu className="ml-4 border-l-2 border-slate-200/60 pl-2">
+                      {quotationMenuItems.map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton 
+                            asChild
+                            isActive={location === item.url || location.startsWith(item.url + '/')}
+                            data-testid={`link-${item.url.slice(1)}`}
+                            className={`
+                              group relative mb-1 rounded-lg transition-all duration-200
+                              ${location === item.url || location.startsWith(item.url + '/')
+                                ? 'bg-gradient-to-r from-cyan-500/10 to-blue-600/10 text-blue-600 shadow-sm border-l-4 border-blue-600' 
+                                : 'hover:bg-slate-100/80 hover:scale-[1.02]'
+                              }
+                            `}
+                          >
+                            <Link href={item.url}>
+                              <item.icon className={`w-4 h-4 ${location === item.url || location.startsWith(item.url + '/') ? 'text-blue-600' : 'text-slate-600'} transition-colors`} />
+                              <span className={`font-medium text-sm ${location === item.url || location.startsWith(item.url + '/') ? 'text-blue-600' : 'text-slate-700'}`}>
+                                {item.title}
+                              </span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              {/* Bottom menu items */}
+              {bottomMenuItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton 
+                    asChild
+                    isActive={location === item.url}
+                    data-testid={`link-${item.url.slice(1)}`}
                     className={`
                       group relative mb-1 rounded-xl transition-all duration-200
                       ${location === item.url 
