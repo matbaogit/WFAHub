@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupLocalAuth } from "./localAuth";
-import { insertExecutionLogSchema, registerUserSchema, loginUserSchema, insertTemplateSchema, insertSmtpConfigSchema, insertPriceListSchema } from "@shared/schema";
+import { insertExecutionLogSchema, registerUserSchema, loginUserSchema, insertTemplateSchema, insertSmtpConfigSchema, insertPriceListSchema, insertBulkCampaignSchema, insertCampaignRecipientSchema, insertCampaignAttachmentSchema } from "@shared/schema";
 import passport from "passport";
 import type { User } from "@shared/schema";
 import { z } from "zod";
@@ -1194,6 +1194,234 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error sending quotation email:", error);
       res.status(500).json({ message: error.message || "Failed to send email" });
+    }
+  });
+
+  // ========== BULK EMAIL CAMPAIGNS ==========
+
+  // Get all campaigns for user
+  app.get("/api/bulk-campaigns", isAuthenticated, async (req: any, res) => {
+    try {
+      const campaigns = await storage.getUserBulkCampaigns(req.user.id);
+      res.json(campaigns);
+    } catch (error: any) {
+      console.error("Error fetching bulk campaigns:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch campaigns" });
+    }
+  });
+
+  // Get single campaign with details
+  app.get("/api/bulk-campaigns/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const campaign = await storage.getBulkCampaignWithDetails(req.params.id);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Check ownership
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      res.json(campaign);
+    } catch (error: any) {
+      console.error("Error fetching campaign:", error);
+      res.status(500).json({ message: error.message || "Failed to fetch campaign" });
+    }
+  });
+
+  // Create new campaign
+  app.post("/api/bulk-campaigns", isAuthenticated, async (req: any, res) => {
+    try {
+      const data = insertBulkCampaignSchema.parse({ 
+        ...req.body, 
+        userId: req.user.id 
+      });
+      const campaign = await storage.createBulkCampaign(data);
+      res.json(campaign);
+    } catch (error: any) {
+      console.error("Error creating campaign:", error);
+      res.status(400).json({ message: error.message || "Failed to create campaign" });
+    }
+  });
+
+  // Update campaign
+  app.patch("/api/bulk-campaigns/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      // Check ownership
+      const existing = await storage.getBulkCampaign(req.params.id);
+      if (!existing) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      if (existing.userId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      const campaign = await storage.updateBulkCampaign(req.params.id, req.body);
+      res.json(campaign);
+    } catch (error: any) {
+      console.error("Error updating campaign:", error);
+      res.status(400).json({ message: error.message || "Failed to update campaign" });
+    }
+  });
+
+  // Delete campaign
+  app.delete("/api/bulk-campaigns/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      // Check ownership
+      const existing = await storage.getBulkCampaign(req.params.id);
+      if (!existing) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      if (existing.userId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      await storage.deleteBulkCampaign(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error deleting campaign:", error);
+      res.status(500).json({ message: error.message || "Failed to delete campaign" });
+    }
+  });
+
+  // Parse CSV/Excel for recipients
+  app.post("/api/bulk-campaigns/parse-recipients", isAuthenticated, upload.single('file'), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(firstSheet);
+
+      // Return parsed data for preview
+      res.json({ 
+        success: true, 
+        data,
+        columns: data.length > 0 ? Object.keys(data[0]) : []
+      });
+    } catch (error: any) {
+      console.error("Error parsing recipients file:", error);
+      res.status(500).json({ message: error.message || "Failed to parse file" });
+    }
+  });
+
+  // Add recipients to campaign
+  app.post("/api/bulk-campaigns/:id/recipients", isAuthenticated, async (req: any, res) => {
+    try {
+      const campaignId = req.params.id;
+      
+      // Check ownership
+      const campaign = await storage.getBulkCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const recipients = req.body.recipients.map((r: any) => ({
+        ...r,
+        campaignId,
+      }));
+
+      const created = await storage.createCampaignRecipients(recipients);
+      
+      // Update campaign total recipients count
+      await storage.updateBulkCampaign(campaignId, {
+        totalRecipients: created.length,
+      });
+
+      res.json({ success: true, recipients: created });
+    } catch (error: any) {
+      console.error("Error adding recipients:", error);
+      res.status(400).json({ message: error.message || "Failed to add recipients" });
+    }
+  });
+
+  // Upload attachments
+  app.post("/api/bulk-campaigns/:id/attachments", isAuthenticated, upload.array('files', 100), async (req: any, res) => {
+    try {
+      const campaignId = req.params.id;
+      
+      // Check ownership
+      const campaign = await storage.getBulkCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ message: "No files uploaded" });
+      }
+
+      const attachments = [];
+      for (const file of req.files as Express.Multer.File[]) {
+        // In production, save to disk or cloud storage
+        // For now, we'll just save metadata
+        const storagePath = `/uploads/campaigns/${campaignId}/${file.originalname}`;
+        
+        const attachment = await storage.createCampaignAttachment({
+          campaignId,
+          filename: file.originalname,
+          storagePath,
+          fileSize: file.size,
+        });
+        
+        attachments.push(attachment);
+      }
+
+      res.json({ success: true, attachments });
+    } catch (error: any) {
+      console.error("Error uploading attachments:", error);
+      res.status(500).json({ message: error.message || "Failed to upload attachments" });
+    }
+  });
+
+  // Send campaign (trigger bulk email sending)
+  app.post("/api/bulk-campaigns/:id/send", isAuthenticated, async (req: any, res) => {
+    try {
+      const campaignId = req.params.id;
+      
+      // Get campaign with details
+      const campaign = await storage.getBulkCampaignWithDetails(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Check ownership
+      if (campaign.userId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      // Check if campaign is ready to send
+      if (campaign.recipients.length === 0) {
+        return res.status(400).json({ message: "Campaign has no recipients" });
+      }
+
+      // Update campaign status to sending
+      await storage.updateBulkCampaign(campaignId, {
+        status: "sending",
+        startedAt: new Date(),
+      });
+
+      // Start sending process (async - will implement in emailService)
+      // For now, just return success
+      res.json({ 
+        success: true, 
+        message: "Campaign sending started",
+        campaignId 
+      });
+
+      // TODO: Implement actual bulk email sending with rate limiting
+      // This will be done in task 5 (emailService)
+    } catch (error: any) {
+      console.error("Error sending campaign:", error);
+      res.status(500).json({ message: error.message || "Failed to send campaign" });
     }
   });
 
