@@ -1,0 +1,144 @@
+🧱 FRONTEND MODULE STRUCTURE
+
+Route tổng: /bulk-email
+
+1. 📤 Danh sách chiến dịch (/bulk-email)
+
+Hiển thị các chiến dịch đã tạo.
+
+Cột: Tên chiến dịch | Người gửi | Ngày tạo | Trạng thái | Tổng email | Thành công | Thất bại | Xem chi tiết.
+
+Nút: “+ Chiến dịch mới”.
+
+2. 🪄 Trình tạo chiến dịch mới (/bulk-email/new)
+
+Multi-step wizard gồm 5 bước:
+
+Step 1 — Tải danh sách người nhận
+
+Upload Excel/CSV (có hướng dẫn mẫu).
+
+Hiển thị preview 5–10 dòng đầu.
+
+Cho phép “chỉnh trực tiếp” trong bảng preview.
+
+Step 2 — Upload file đính kèm cá nhân hóa
+
+Upload .zip hoặc nhiều file PDF.
+
+Tự động match theo tên hoặc cột “File đính kèm”.
+
+Nếu không khớp → hiển thị danh sách lỗi.
+
+Step 3 — Soạn email mẫu
+
+Trường nhập:
+
+Tiêu đề email (cho phép merge {Tên}, {Công ty}, {Số tiền})
+
+Nội dung (WYSIWYG editor – ReactQuill)
+
+Logo, chữ ký, email gửi từ.
+
+Preview ở panel bên phải (1 bản email mẫu).
+
+Step 4 — Cấu hình gửi
+
+Gửi ngay / Lên lịch (datetime picker)
+
+Giới hạn tốc độ (50 mail/phút)
+
+Tóm tắt thông tin:
+
+Số người nhận, số file đính kèm
+
+Ước tính phí, hiển thị credit balance.
+
+Nút: “Gửi ngay” hoặc “Lên lịch”.
+
+Step 5 — Theo dõi chiến dịch
+
+Hiển thị tiến trình theo thời gian thực (progress bar).
+
+Bảng chi tiết:
+| Email | Tên | File đính kèm | Trạng thái | Thời gian | Mã lỗi |
+
+Biểu đồ: Donut chart (đã gửi, lỗi, mở, bounce).
+
+Nút “Tải báo cáo CSV” + “Gửi lại lỗi”.
+
+3. 📊 Lịch sử & Báo cáo (/bulk-email/history)
+
+Danh sách các chiến dịch đã hoàn tất.
+
+Cho phép tải lại log chi tiết (.csv, .pdf)
+
+Filter theo thời gian, trạng thái.
+
+Hiển thị tổng số email, tỉ lệ thành công.
+
+⚙️ MOCK BACKEND API STRUCTURE
+POST /api/bulk-email/import-recipients
+→ parse Excel, save to localStorage
+
+POST /api/bulk-email/upload-files
+→ upload zip, match file names
+
+POST /api/bulk-email/create
+→ save campaign (draft)
+
+POST /api/bulk-email/send
+→ simulate sending loop (setTimeout)
+
+GET /api/bulk-email/status/:id
+→ return stats (sent, failed, opened)
+
+GET /api/bulk-email/history
+→ list all campaigns
+
+GET /api/bulk-email/report/:id
+→ return CSV or PDF (mock)
+
+🎨 UI/UX GỢI Ý
+
+Giao diện sáng (white base, blue primary #1E88E5)
+
+Các bước tạo chiến dịch → dùng Stepper component.
+
+Các trạng thái gửi → dùng badges màu:
+
+Đang gửi → xanh dương nhạt
+
+Thành công → xanh lá
+
+Lỗi → đỏ nhạt
+
+Bounce → xám
+
+Biểu đồ: Recharts (Donut + Bar).
+
+Có tooltip hiển thị chi tiết trạng thái từng email.
+
+🧠 CÔNG NGHỆ ĐỀ XUẤT
+
+Frontend: React + TailwindCSS + Framer Motion
+
+Editor: ReactQuill
+
+Charts: Recharts
+
+File Handling: PapaParse (Excel/CSV), JSZip (giải nén ZIP)
+
+PDF Export: jsPDF
+
+State: Redux Toolkit
+
+Mock API: JSON server / localStorage
+
+💬 GỢI Ý MỞ RỘNG
+
+Cho phép lưu template email riêng (như “Thông báo lương”, “Báo giá tháng”).
+
+Cho phép chạy lại chiến dịch cũ với danh sách mới.
+
+Thêm thống kê tổng hợp theo tháng: số email gửi, tỉ lệ mở, tỉ lệ lỗi.
