@@ -11,6 +11,9 @@ import {
   userSettings,
   serviceCatalog,
   priceLists,
+  bulkCampaigns,
+  campaignRecipients,
+  campaignAttachments,
   type User,
   type RegisterUser,
   type Template,
@@ -32,6 +35,12 @@ import {
   type InsertServiceCatalog,
   type PriceList,
   type InsertPriceList,
+  type BulkCampaign,
+  type InsertBulkCampaign,
+  type CampaignRecipient,
+  type InsertCampaignRecipient,
+  type CampaignAttachment,
+  type InsertCampaignAttachment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -128,6 +137,23 @@ export interface IStorage {
   createPriceList(data: InsertPriceList): Promise<PriceList>;
   updatePriceList(id: string, data: Partial<PriceList>): Promise<PriceList>;
   deletePriceList(id: string): Promise<void>;
+  
+  // Bulk Campaign operations
+  createBulkCampaign(campaign: InsertBulkCampaign): Promise<BulkCampaign>;
+  getBulkCampaign(id: string): Promise<BulkCampaign | undefined>;
+  getUserBulkCampaigns(userId: string): Promise<BulkCampaign[]>;
+  updateBulkCampaign(campaignId: string, data: Partial<BulkCampaign>): Promise<BulkCampaign>;
+  deleteBulkCampaign(campaignId: string): Promise<void>;
+  getBulkCampaignWithDetails(campaignId: string): Promise<any | undefined>;
+  
+  // Campaign Recipient operations
+  createCampaignRecipients(recipients: InsertCampaignRecipient[]): Promise<CampaignRecipient[]>;
+  getCampaignRecipients(campaignId: string): Promise<CampaignRecipient[]>;
+  updateCampaignRecipient(recipientId: string, data: Partial<CampaignRecipient>): Promise<CampaignRecipient>;
+  
+  // Campaign Attachment operations
+  createCampaignAttachment(attachment: InsertCampaignAttachment): Promise<CampaignAttachment>;
+  getCampaignAttachments(campaignId: string): Promise<CampaignAttachment[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -641,6 +667,107 @@ export class DatabaseStorage implements IStorage {
 
   async deletePriceList(id: string): Promise<void> {
     await db.delete(priceLists).where(eq(priceLists.id, id));
+  }
+
+  // Bulk Campaign operations
+  async createBulkCampaign(campaign: InsertBulkCampaign): Promise<BulkCampaign> {
+    const [newCampaign] = await db
+      .insert(bulkCampaigns)
+      .values(campaign)
+      .returning();
+    return newCampaign;
+  }
+
+  async getBulkCampaign(id: string): Promise<BulkCampaign | undefined> {
+    const [campaign] = await db
+      .select()
+      .from(bulkCampaigns)
+      .where(eq(bulkCampaigns.id, id));
+    return campaign;
+  }
+
+  async getUserBulkCampaigns(userId: string): Promise<BulkCampaign[]> {
+    return await db
+      .select()
+      .from(bulkCampaigns)
+      .where(eq(bulkCampaigns.userId, userId))
+      .orderBy(desc(bulkCampaigns.createdAt));
+  }
+
+  async updateBulkCampaign(campaignId: string, data: Partial<BulkCampaign>): Promise<BulkCampaign> {
+    const [campaign] = await db
+      .update(bulkCampaigns)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(bulkCampaigns.id, campaignId))
+      .returning();
+    return campaign;
+  }
+
+  async deleteBulkCampaign(campaignId: string): Promise<void> {
+    await db.delete(bulkCampaigns).where(eq(bulkCampaigns.id, campaignId));
+  }
+
+  async getBulkCampaignWithDetails(campaignId: string): Promise<any | undefined> {
+    const [campaign] = await db
+      .select()
+      .from(bulkCampaigns)
+      .where(eq(bulkCampaigns.id, campaignId));
+
+    if (!campaign) return undefined;
+
+    const recipients = await db
+      .select()
+      .from(campaignRecipients)
+      .where(eq(campaignRecipients.campaignId, campaignId));
+
+    const attachments = await db
+      .select()
+      .from(campaignAttachments)
+      .where(eq(campaignAttachments.campaignId, campaignId));
+
+    return {
+      ...campaign,
+      recipients,
+      attachments,
+    };
+  }
+
+  // Campaign Recipient operations
+  async createCampaignRecipients(recipients: InsertCampaignRecipient[]): Promise<CampaignRecipient[]> {
+    if (recipients.length === 0) return [];
+    return await db.insert(campaignRecipients).values(recipients).returning();
+  }
+
+  async getCampaignRecipients(campaignId: string): Promise<CampaignRecipient[]> {
+    return await db
+      .select()
+      .from(campaignRecipients)
+      .where(eq(campaignRecipients.campaignId, campaignId));
+  }
+
+  async updateCampaignRecipient(recipientId: string, data: Partial<CampaignRecipient>): Promise<CampaignRecipient> {
+    const [recipient] = await db
+      .update(campaignRecipients)
+      .set(data)
+      .where(eq(campaignRecipients.id, recipientId))
+      .returning();
+    return recipient;
+  }
+
+  // Campaign Attachment operations
+  async createCampaignAttachment(attachment: InsertCampaignAttachment): Promise<CampaignAttachment> {
+    const [newAttachment] = await db
+      .insert(campaignAttachments)
+      .values(attachment)
+      .returning();
+    return newAttachment;
+  }
+
+  async getCampaignAttachments(campaignId: string): Promise<CampaignAttachment[]> {
+    return await db
+      .select()
+      .from(campaignAttachments)
+      .where(eq(campaignAttachments.campaignId, campaignId));
   }
 }
 
