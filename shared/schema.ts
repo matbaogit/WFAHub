@@ -303,6 +303,65 @@ export const serviceCatalog = pgTable("service_catalog", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// ============ BULK EMAIL CAMPAIGN MODULE ============
+
+// Bulk Email Campaigns
+export const bulkCampaigns = pgTable("bulk_campaigns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  quotationTemplateId: varchar("quotation_template_id").references(() => quotationTemplates.id),
+  smtpConfigId: varchar("smtp_config_id").references(() => smtpConfigs.id),
+  
+  name: varchar("name", { length: 255 }).notNull(),
+  subject: varchar("subject", { length: 500 }).notNull(),
+  
+  status: varchar("status", { length: 20 }).notNull().default("draft"),
+  
+  totalRecipients: integer("total_recipients").default(0).notNull(),
+  sentCount: integer("sent_count").default(0).notNull(),
+  failedCount: integer("failed_count").default(0).notNull(),
+  
+  scheduledAt: timestamp("scheduled_at"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  
+  estimatedCredits: integer("estimated_credits").default(0).notNull(),
+  actualCredits: integer("actual_credits").default(0).notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Campaign Recipients
+export const campaignRecipients = pgTable("campaign_recipients", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  campaignId: varchar("campaign_id").notNull().references(() => bulkCampaigns.id, { onDelete: "cascade" }),
+  
+  recipientEmail: varchar("recipient_email", { length: 255 }).notNull(),
+  recipientName: varchar("recipient_name", { length: 255 }),
+  customData: jsonb("custom_data"),
+  
+  attachmentFilename: varchar("attachment_filename", { length: 500 }),
+  
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+  sentAt: timestamp("sent_at"),
+  errorMessage: text("error_message"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Campaign Attachments
+export const campaignAttachments = pgTable("campaign_attachments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  campaignId: varchar("campaign_id").notNull().references(() => bulkCampaigns.id, { onDelete: "cascade" }),
+  
+  filename: varchar("filename", { length: 500 }).notNull(),
+  storagePath: varchar("storage_path", { length: 1000 }).notNull(),
+  fileSize: integer("file_size").notNull(),
+  
+  uploadedAt: timestamp("uploaded_at").defaultNow(),
+});
+
 // Relations for quotation module
 export const customersRelations = relations(customers, ({ one, many }) => ({
   user: one(users, {
@@ -336,6 +395,38 @@ export const quotationItemsRelations = relations(quotationItems, ({ one }) => ({
   quotation: one(quotations, {
     fields: [quotationItems.quotationId],
     references: [quotations.id],
+  }),
+}));
+
+// Bulk campaign relations
+export const bulkCampaignsRelations = relations(bulkCampaigns, ({ one, many }) => ({
+  user: one(users, {
+    fields: [bulkCampaigns.userId],
+    references: [users.id],
+  }),
+  quotationTemplate: one(quotationTemplates, {
+    fields: [bulkCampaigns.quotationTemplateId],
+    references: [quotationTemplates.id],
+  }),
+  smtpConfig: one(smtpConfigs, {
+    fields: [bulkCampaigns.smtpConfigId],
+    references: [smtpConfigs.id],
+  }),
+  recipients: many(campaignRecipients),
+  attachments: many(campaignAttachments),
+}));
+
+export const campaignRecipientsRelations = relations(campaignRecipients, ({ one }) => ({
+  campaign: one(bulkCampaigns, {
+    fields: [campaignRecipients.campaignId],
+    references: [bulkCampaigns.id],
+  }),
+}));
+
+export const campaignAttachmentsRelations = relations(campaignAttachments, ({ one }) => ({
+  campaign: one(bulkCampaigns, {
+    fields: [campaignAttachments.campaignId],
+    references: [bulkCampaigns.id],
   }),
 }));
 
@@ -399,6 +490,22 @@ export const insertServiceCatalogSchema = createInsertSchema(serviceCatalog).omi
   updatedAt: true,
 });
 
+export const insertBulkCampaignSchema = createInsertSchema(bulkCampaigns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCampaignRecipientSchema = createInsertSchema(campaignRecipients).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertCampaignAttachmentSchema = createInsertSchema(campaignAttachments).omit({
+  id: true,
+  uploadedAt: true,
+});
+
 // Types
 export type RegisterUser = z.infer<typeof registerUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
@@ -429,3 +536,11 @@ export type PriceList = typeof priceLists.$inferSelect;
 export type InsertPriceList = z.infer<typeof insertPriceListSchema>;
 export type ServiceCatalog = typeof serviceCatalog.$inferSelect;
 export type InsertServiceCatalog = z.infer<typeof insertServiceCatalogSchema>;
+
+// Bulk campaign types
+export type BulkCampaign = typeof bulkCampaigns.$inferSelect;
+export type InsertBulkCampaign = z.infer<typeof insertBulkCampaignSchema>;
+export type CampaignRecipient = typeof campaignRecipients.$inferSelect;
+export type InsertCampaignRecipient = z.infer<typeof insertCampaignRecipientSchema>;
+export type CampaignAttachment = typeof campaignAttachments.$inferSelect;
+export type InsertCampaignAttachment = z.infer<typeof insertCampaignAttachmentSchema>;
