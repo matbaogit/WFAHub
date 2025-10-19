@@ -6,6 +6,29 @@ WFA Hub is a Vietnamese-language web application offering ready-made automation 
 
 ## Recent Changes (October 2025)
 
+**Bulk Email Campaign Module - Foundation (October 19, 2025)**
+- **Sidebar Navigation Refactor**: 
+  - Reorganized quotation features into collapsible "Gửi Báo Giá" group
+  - Includes: Báo giá Đơn lẻ, Chiến dịch Email, Mẫu Báo Giá, Mẫu Email, Cấu hình SMTP
+- **Database Schema**: Added 3 new tables with cascade delete relations
+  - `bulkCampaigns`: Campaign metadata (name, subject, status, stats, schedule)
+  - `campaignRecipients`: Recipient tracking (email, name, send status, error messages)
+  - `campaignAttachments`: PDF attachment storage with file metadata
+- **Backend Infrastructure**: 8 RESTful API endpoints in server/routes.ts
+  - CRUD operations: GET/POST/PATCH/DELETE `/api/bulk-campaigns`
+  - CSV parsing: POST `/api/bulk-campaigns/parse-recipients` (preview before import)
+  - Recipient management: POST/GET/DELETE `/api/bulk-campaigns/:id/recipients`
+  - Attachment handling: POST/GET/DELETE `/api/bulk-campaigns/:id/attachments`
+  - Campaign trigger: POST `/api/bulk-campaigns/:id/send`
+- **Storage Layer**: Complete IStorage interface methods for campaigns, recipients, and attachments
+- **Frontend List Page** (`/bulk-campaigns`):
+  - Stats cards: Total campaigns, active, completed, total emails sent
+  - Campaign table: Status badges, recipient counts, send/fail metrics, creation dates
+  - Navigation: Link to create new campaign, click row to view details
+  - Delete functionality with confirmation
+- **Status Tracking**: 5 campaign states (draft, scheduled, sending, completed, failed)
+- **Next Steps**: Multi-step wizard page (recipient import, template selection, PDF attachment), detail page with real-time tracking, email sending service implementation
+
 **Service Catalog Module - Refactored UI (October 16, 2025)**
 - **Streamlined 2-Tab Interface**:
   - **Bảng Giá (Price Lists)** - Default tab with dual-view system:
@@ -60,6 +83,9 @@ Preferred communication style: Simple, everyday language.
 - `quotationItems`: Line items for quotations.
 - `priceLists`: Multiple price lists with name, description, user ownership. One-to-many relationship with service catalog.
 - `serviceCatalog`: Service catalog for quotations with name, description, unitPrice, unit, category, priceListId (FK to priceLists). Supports CSV/Excel import with intelligent price parsing and unit extraction. Cascade delete when price list is removed.
+- `bulkCampaigns`: Bulk email campaigns with name, subject, body, status (draft/scheduled/sending/completed/failed), recipient counts, credit estimation, and scheduling support. Foreign key to users.
+- `campaignRecipients`: Individual recipients for bulk campaigns with email, name, status tracking (pending/sent/failed), and error logging. Foreign key to bulkCampaigns with cascade delete.
+- `campaignAttachments`: PDF attachments for campaigns with filename, originalName, fileSize, mimeType, and filePath. Foreign key to bulkCampaigns with cascade delete.
 - `quotationTemplates`, `emailTemplates`, `smtpConfigs`, `storageConfigs`, `userSettings`: Supporting tables for future features.
 
 **Schema Design Decisions:** UUID primary keys, JSONB for flexible data, indexed session expiration, type-safe schema exports. Encryption (AES-256-GCM) for sensitive data like SMTP passwords.
