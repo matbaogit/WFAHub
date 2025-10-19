@@ -1300,7 +1300,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         data,
-        columns: data.length > 0 ? Object.keys(data[0]) : []
+        columns: data.length > 0 ? Object.keys(data[0] as Record<string, unknown>) : []
       });
     } catch (error: any) {
       console.error("Error parsing recipients file:", error);
