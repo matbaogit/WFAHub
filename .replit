@@ -9,7 +9,6 @@ packages = ["chromium"]
 [deployment]
 deploymentTarget = "static"
 build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
 publicDir = "dist"
 
 [[ports]]
