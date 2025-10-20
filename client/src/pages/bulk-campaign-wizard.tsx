@@ -100,6 +100,11 @@ export default function BulkCampaignWizard() {
     queryKey: ["/api/email-templates"],
   });
 
+  const { data: smtpConfig } = useQuery({
+    queryKey: ["/api/smtp-config"],
+    retry: false,
+  });
+
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
       const formData = new FormData();
@@ -642,6 +647,25 @@ export default function BulkCampaignWizard() {
           Xem lại cài đặt chiến dịch và gửi
         </p>
       </div>
+
+      {!smtpConfig && (
+        <Alert variant="destructive" data-testid="alert-smtp-not-configured">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Chưa cấu hình SMTP! Vui lòng{" "}
+            <a 
+              href="/smtp-config" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="underline font-semibold hover:text-destructive-foreground"
+              data-testid="link-smtp-config"
+            >
+              cấu hình SMTP ngay
+            </a>
+            {" "}để gửi email.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>
