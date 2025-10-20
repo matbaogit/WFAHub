@@ -302,7 +302,7 @@ export default function BulkCampaignWizard() {
 
   const renderStep1 = () => {
     const handleApplyMapping = async () => {
-      if (!columnMapping.email) {
+      if (!columnMapping.email || columnMapping.email === "NONE") {
         toast({
           variant: "destructive",
           title: "Thiếu cột Email",
@@ -398,7 +398,7 @@ export default function BulkCampaignWizard() {
               <div className="flex justify-end">
                 <Button
                   onClick={handleApplyMapping}
-                  disabled={!columnMapping.email || applyMappingMutation.isPending}
+                  disabled={!columnMapping.email || columnMapping.email === "NONE" || applyMappingMutation.isPending}
                   data-testid="button-apply-mapping"
                 >
                   {applyMappingMutation.isPending ? "Đang xử lý..." : "Áp dụng mapping"}
