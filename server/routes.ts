@@ -1350,7 +1350,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? JSON.parse(req.body.mapping) 
         : req.body.mapping;
       
+      console.log("[DEBUG] Received mapping:", mapping);
+      console.log("[DEBUG] mapping.email:", mapping?.email);
+      
       if (!mapping || !mapping.email) {
+        console.log("[ERROR] Validation failed - mapping:", mapping);
         return res.status(400).json({ message: "Cần chọn cột Email" });
       }
 
