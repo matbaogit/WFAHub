@@ -30,6 +30,10 @@ WFA Hub is a Vietnamese-language web application offering ready-made automation 
   - Instead of opening execution modal → navigate directly to `/bulk-campaigns`
   - Streamlined flow: Templates → Bulk Campaigns wizard
 - **Sidebar Navigation**: "Gửi Báo Giá" link now clickable, navigates to `/bulk-campaigns` list
+- **Bug Fix - Campaign Creation**: Fixed "Tạo chiến dịch thất bại" error
+  - Root cause: Field name mismatch between frontend (email/name) and database schema (recipientEmail/recipientName)
+  - Solution: Updated `/api/bulk-campaigns/:id/recipients` endpoint to correctly map field names
+  - Recipients data now properly includes recipientEmail, recipientName, and customData fields
 - **Remaining Work**: Email sending service with queue system, PDF generation per recipient, merge customData into quotation templates, SMTP integration with rate limiting
 
 **Previous Work - Bulk Email Campaign Module - Complete Vietnamese Localization (October 20, 2025)**

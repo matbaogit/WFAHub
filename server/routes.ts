@@ -1509,8 +1509,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const recipients = req.body.recipients.map((r: any) => ({
-        ...r,
         campaignId,
+        recipientEmail: r.email,
+        recipientName: r.name || null,
+        customData: r.customData || {},
+        status: r.status || 'pending',
       }));
 
       const created = await storage.createCampaignRecipients(recipients);
