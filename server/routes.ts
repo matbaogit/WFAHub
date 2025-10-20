@@ -1345,12 +1345,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply column mapping and return parsed recipients - Step 2: Apply mapping
   app.post("/api/bulk-campaigns/apply-mapping", isAuthenticated, upload.single('file'), async (req: any, res) => {
     try {
+      console.log("[DEBUG] Raw req.body:", req.body);
+      console.log("[DEBUG] req.body.mapping type:", typeof req.body.mapping);
+      console.log("[DEBUG] req.body.mapping value:", req.body.mapping);
+      
       // Parse mapping from JSON string (sent via FormData)
       const mapping = typeof req.body.mapping === 'string' 
         ? JSON.parse(req.body.mapping) 
         : req.body.mapping;
       
-      console.log("[DEBUG] Received mapping:", mapping);
+      console.log("[DEBUG] Parsed mapping:", mapping);
       console.log("[DEBUG] mapping.email:", mapping?.email);
       
       if (!mapping || !mapping.email) {
