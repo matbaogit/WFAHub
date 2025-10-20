@@ -6,7 +6,14 @@ WFA Hub is a Vietnamese-language web application offering ready-made automation 
 
 ## Recent Changes (October 2025)
 
-**Bulk Email Campaign Module - Complete UI (October 20, 2025)**
+**Bulk Email Campaign Module - Complete Vietnamese Localization (October 20, 2025)**
+- **Complete Vietnamese UI**: All bulk campaign pages now fully Vietnamese-ized
+  - Sidebar renamed: "Chiến dịch Email" → "Chiến dịch Báo Giá" (emphasizing quotation focus)
+  - List page: Stats cards, table headers, buttons, status badges all in Vietnamese
+  - Wizard page: All 4 steps with Vietnamese labels (Nhập, Mẫu, Thư, Xem lại), form fields, instructions, and navigation buttons
+  - Detail page: Stats, charts, recipient table, export button, search/filter UI all in Vietnamese
+  - Toast messages and error messages in Vietnamese
+  - Zero English text visible in UI (technical merge fields like {name} preserved)
 - **Database Schema Enhancement**: Extended bulk campaign tables with tracking & template integration
   - `bulkCampaigns`: Added emailSubject, emailBody, quotationTemplateId, emailTemplateId (FK to emailTemplates), sendRate (emails/min), openedCount, scheduledAt
   - `campaignRecipients`: Added customData (JSONB for merge fields), openedAt, sentAt timestamps
@@ -17,22 +24,22 @@ WFA Hub is a Vietnamese-language web application offering ready-made automation 
   - Increments campaign openedCount atomically
   - Silent error handling to prevent email client issues
 - **4-Step Campaign Wizard** (`/bulk-campaigns/new`):
-  - **Step 1 - Import Recipients**: Excel/CSV upload with live preview, parse columns to customData (name, email, company, etc.)
-  - **Step 2 - Select Template**: Choose quotation template for personalized PDF generation, preview template HTML
-  - **Step 3 - Compose Email**: Subject & body editor with merge field support ({name}, {email}, {company}), optional email template selection
-  - **Step 4 - Review & Send**: Campaign settings (name, send rate), summary stats (total recipients, est. time), send immediately or schedule
+  - **Step 1 - Nhập danh sách người nhận**: Excel/CSV upload with live preview, parse columns to customData (name, email, company, etc.)
+  - **Step 2 - Chọn mẫu báo giá**: Choose quotation template for personalized PDF generation, preview template HTML
+  - **Step 3 - Soạn thư**: Subject & body editor with merge field support ({name}, {email}, {company}), optional email template selection
+  - **Step 4 - Xem lại & Gửi**: Campaign settings (name, send rate), summary stats (total recipients, est. time), send immediately or schedule
   - Visual stepper UI with progress tracking, validation at each step
 - **Campaign Detail Page** (`/bulk-campaigns/:id`):
   - **Stats Dashboard**: Total recipients, sent count, opened count with open rate %, failed count
   - **Progress Chart**: Recharts bar chart showing distribution (total, sent, opened, failed)
   - **Email Preview**: Display campaign subject and body content
   - **Recipient Table**: Filterable by status (pending/sent/failed), searchable by email/name, shows sentAt/openedAt timestamps, displays error messages
-  - **Export Functionality**: Export recipients to CSV with full tracking data
+  - **Export Functionality**: Export recipients to CSV with full tracking data in Vietnamese
 - **Frontend List Page** (`/bulk-campaigns`):
   - Stats cards: Total campaigns, active, completed, total emails sent
   - Clickable campaign rows navigate to detail page
-  - Status badges with icons, delete with confirmation
-- **Sidebar Navigation**: Organized under collapsible "Gửi Báo Giá" group
+  - Status badges with icons (Nháp, Đã lên lịch, Đang gửi, Hoàn thành, Thất bại), delete with confirmation
+- **Sidebar Navigation**: Organized under collapsible "Gửi Báo Giá" group with "Chiến dịch Báo Giá" and "Mẫu Báo Giá" items
 - **Remaining Work**: Email sending service with queue system, PDF generation per recipient, merge customData into quotation templates, SMTP integration with rate limiting
 
 **Service Catalog Module - Refactored UI (October 16, 2025)**
