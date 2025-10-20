@@ -916,6 +916,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test SMTP configuration
+  app.post("/api/smtp-config/test", isAuthenticated, async (req: any, res) => {
+    try {
+      const { recipientEmail } = req.body;
+      
+      if (!recipientEmail) {
+        return res.status(400).json({ message: "Thiếu email người nhận" });
+      }
+
+      // Get SMTP config
+      const config = await storage.getSmtpConfig(req.user.id);
+      if (!config) {
+        return res.status(404).json({ message: "Chưa cấu hình SMTP" });
+      }
+
+      // Import nodemailer dynamically
+      const nodemailer = await import("nodemailer");
+      
+      // Create transporter
+      const transporter = nodemailer.default.createTransport({
+        host: config.host,
+        port: config.port,
+        secure: config.port === 465,
+        auth: {
+          user: config.username,
+          pass: config.password,
+        },
+      });
+
+      // Verify connection
+      await transporter.verify();
+
+      // Send test email
+      const info = await transporter.sendMail({
+        from: `"${config.fromName || 'WFA Hub'}" <${config.fromEmail}>`,
+        to: recipientEmail,
+        subject: "Test Email từ WFA Hub",
+        html: `
+          <h2>Email Test Thành Công!</h2>
+          <p>Cấu hình SMTP của bạn đã được thiết lập đúng.</p>
+          <p>Thông tin:</p>
+          <ul>
+            <li><strong>SMTP Host:</strong> ${config.host}</li>
+            <li><strong>Port:</strong> ${config.port}</li>
+            <li><strong>From:</strong> ${config.fromEmail}</li>
+          </ul>
+          <p>Bạn đã sẵn sàng để gửi chiến dịch báo giá hàng loạt!</p>
+        `,
+      });
+
+      console.log("Test email sent:", info.messageId);
+      res.json({ success: true, messageId: info.messageId });
+    } catch (error: any) {
+      console.error("Error sending test email:", error);
+      res.status(500).json({ 
+        message: error.message || "Không thể gửi email test. Vui lòng kiểm tra cấu hình SMTP."
+      });
+    }
+  });
+
   // Analytics endpoint
   app.get("/api/analytics", isAuthenticated, async (req: any, res) => {
     try {
