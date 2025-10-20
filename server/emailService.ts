@@ -176,7 +176,7 @@ export async function generateQuotationPDF(
 }
 
 export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> {
-  const { recipientEmail, recipientName, customData, subject, body, smtpConfig, trackingPixelUrl } = data;
+  const { recipientEmail, recipientName, customData, subject, body, smtpConfig, trackingPixelUrl, quotationTemplateHtml } = data;
 
   // Merge customData into subject and body
   const mergedData = {
@@ -222,11 +222,28 @@ export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> 
     },
   });
 
+  // Generate PDF attachment if quotation template is provided
+  let attachments: any[] = [];
+  if (quotationTemplateHtml) {
+    try {
+      const pdfBuffer = await generateQuotationPDF(quotationTemplateHtml, mergedData);
+      attachments.push({
+        filename: `Bao_Gia_${recipientName || 'KhachHang'}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf',
+      });
+    } catch (error) {
+      console.error('Failed to generate PDF attachment:', error);
+      // Continue sending email without PDF if generation fails
+    }
+  }
+
   // Send email
   await transporter.sendMail({
     from: `"${smtpConfig.fromName || smtpConfig.fromEmail}" <${smtpConfig.fromEmail}>`,
     to: recipientEmail,
     subject: renderedSubject,
     html: renderedBody,
+    attachments,
   });
 }
