@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import puppeteer from "puppeteer";
+import { execSync } from "child_process";
 import type { SmtpConfig, EmailTemplate, Quotation, Customer } from "@shared/schema";
 import { decryptPassword } from "./utils/encryption";
 
@@ -148,10 +149,29 @@ export async function generateQuotationPDF(
     renderedHtml = renderedHtml.replace(regex, String(value || ''));
   }
 
+  // Find Chromium executable path
+  let chromiumPath: string;
+  try {
+    chromiumPath = execSync('which chromium').toString().trim();
+  } catch {
+    // Fallback to default path if which command fails
+    chromiumPath = '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium';
+  }
+
   // Launch headless browser and generate PDF
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    executablePath: chromiumPath,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--single-process',
+      '--disable-gpu'
+    ],
   });
 
   try {
