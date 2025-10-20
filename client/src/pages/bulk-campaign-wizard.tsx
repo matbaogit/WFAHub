@@ -12,6 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import ColumnMappingTable from "@/components/ColumnMappingTable";
 import { 
   Upload, 
   FileSpreadsheet, 
@@ -57,6 +59,13 @@ interface QuotationTemplate {
   htmlContent: string;
 }
 
+interface FilePreviewData {
+  headers: string[];
+  preview: Array<Record<string, any>>;
+  totalRows: number;
+  autoMapping: Record<string, string>;
+}
+
 export default function BulkCampaignWizard() {
   const [, navigate] = useLocation();
   const { user } = useAuth();
@@ -66,11 +75,14 @@ export default function BulkCampaignWizard() {
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
   const [campaignName, setCampaignName] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<FilePreviewData | null>(null);
+  const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
   const [parsedRecipients, setParsedRecipients] = useState<ParsedRecipient[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
   const [sendRate, setSendRate] = useState(50);
+  const [showMappingView, setShowMappingView] = useState(false);
 
   const { data: quotationTemplates = [] } = useQuery<QuotationTemplate[]>({
     queryKey: ["/api/quotation-templates"],
@@ -85,21 +97,66 @@ export default function BulkCampaignWizard() {
         body: formData,
         credentials: "include",
       });
-      if (!response.ok) throw new Error("Upload failed");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Upload failed");
+      }
       return response.json();
     },
-    onSuccess: (data) => {
-      setParsedRecipients(data.recipients || []);
+    onSuccess: (data: any) => {
+      setFilePreview({
+        headers: data.headers,
+        preview: data.preview,
+        totalRows: data.totalRows,
+        autoMapping: data.autoMapping || {}
+      });
+      setColumnMapping(data.autoMapping || {});
+      setShowMappingView(true);
       toast({
         title: "Tải file thành công",
-        description: `Tìm thấy ${data.recipients?.length || 0} người nhận`,
+        description: `Tìm thấy ${data.totalRows} dòng dữ liệu`,
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         variant: "destructive",
         title: "Tải file thất bại",
-        description: "Không thể phân tích file. Vui lòng kiểm tra định dạng.",
+        description: error.message || "Không thể phân tích file. Vui lòng kiểm tra định dạng.",
+      });
+    },
+  });
+
+  const applyMappingMutation = useMutation({
+    mutationFn: async () => {
+      if (!uploadedFile) throw new Error("No file uploaded");
+      
+      const formData = new FormData();
+      formData.append("file", uploadedFile);
+      formData.append("mapping", JSON.stringify(columnMapping));
+      
+      const response = await fetch("/api/bulk-campaigns/apply-mapping", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Mapping failed");
+      }
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      setParsedRecipients(data.recipients || []);
+      toast({
+        title: "Áp dụng mapping thành công",
+        description: `Đã parse ${data.totalCount} người nhận`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Áp dụng mapping thất bại",
+        description: error.message,
       });
     },
   });
@@ -243,88 +300,162 @@ export default function BulkCampaignWizard() {
     </div>
   );
 
-  const renderStep1 = () => (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Nhập danh sách người nhận</h2>
-        <p className="text-sm text-muted-foreground">
-          Tải lên file Excel hoặc CSV chứa thông tin người nhận
-        </p>
-      </div>
+  const renderStep1 = () => {
+    const handleApplyMapping = async () => {
+      if (!columnMapping.email) {
+        toast({
+          variant: "destructive",
+          title: "Thiếu cột Email",
+          description: "Vui lòng chọn cột Email (bắt buộc)",
+        });
+        return;
+      }
+      await applyMappingMutation.mutateAsync();
+    };
 
-      <Card className="border-dashed hover-elevate">
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center justify-center py-8">
-            <Upload className="w-12 h-12 text-muted-foreground mb-4" />
-            <p className="text-sm text-muted-foreground mb-4">
-              {uploadedFile
-                ? `Đã chọn: ${uploadedFile.name}`
-                : "Nhấn để tải lên file Excel hoặc CSV"}
-            </p>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              onChange={handleFileSelect}
-              className="hidden"
-              data-testid="input-file-upload"
-            />
-            <Button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadMutation.isPending}
-              data-testid="button-select-file"
-            >
-              <FileSpreadsheet className="w-4 h-4 mr-2" />
-              {uploadMutation.isPending ? "Đang tải lên..." : "Chọn file"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">
+            Nhập danh sách người nhận
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {!showMappingView 
+              ? "Tải lên file Excel hoặc CSV chứa thông tin người nhận"
+              : `File: ${uploadedFile?.name} (${filePreview?.totalRows} dòng)`
+            }
+          </p>
+        </div>
 
-      {parsedRecipients.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Xem trước danh sách ({parsedRecipients.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="max-h-96 overflow-y-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Tên</TableHead>
-                    <TableHead>Dữ liệu tùy chỉnh</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {parsedRecipients.slice(0, 10).map((recipient, idx) => (
-                    <TableRow key={idx} data-testid={`row-recipient-${idx}`}>
-                      <TableCell>{recipient.email}</TableCell>
-                      <TableCell>{recipient.name || "-"}</TableCell>
-                      <TableCell>
-                        {recipient.customData && Object.keys(recipient.customData).length > 0 ? (
-                          <Badge variant="secondary">
-                            {Object.keys(recipient.customData).length} trường
-                          </Badge>
-                        ) : (
-                          "-"
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {parsedRecipients.length > 10 && (
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Hiển thị 10 trong số {parsedRecipients.length} người nhận
+        {!showMappingView ? (
+          <Card className="border-dashed hover-elevate">
+            <CardContent className="pt-6">
+              <div className="flex flex-col items-center justify-center py-8">
+                <Upload className="w-12 h-12 text-muted-foreground mb-4" />
+                <p className="text-sm text-muted-foreground mb-4">
+                  {uploadedFile
+                    ? `Đã chọn: ${uploadedFile.name}`
+                    : "Nhấn để tải lên file Excel hoặc CSV"}
                 </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  data-testid="input-file-upload"
+                />
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadMutation.isPending}
+                  data-testid="button-select-file"
+                >
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  {uploadMutation.isPending ? "Đang tải lên..." : "Chọn file"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Mapping cột dữ liệu</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowMappingView(false);
+                    setFilePreview(null);
+                    setUploadedFile(null);
+                    setParsedRecipients([]);
+                  }}
+                  data-testid="button-change-file"
+                >
+                  Đổi file
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {!columnMapping.email && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Vui lòng chọn cột Email (bắt buộc)
+                  </AlertDescription>
+                </Alert>
               )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
+              
+              <ColumnMappingTable
+                headers={filePreview?.headers || []}
+                preview={filePreview?.preview || []}
+                mapping={columnMapping}
+                onMappingChange={(field, column) => {
+                  setColumnMapping((prev) => ({ ...prev, [field]: column }));
+                }}
+              />
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleApplyMapping}
+                  disabled={!columnMapping.email || applyMappingMutation.isPending}
+                  data-testid="button-apply-mapping"
+                >
+                  {applyMappingMutation.isPending ? "Đang xử lý..." : "Áp dụng mapping"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {parsedRecipients.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-green-600 flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5" />
+                Đã parse thành công ({parsedRecipients.length} người nhận)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="max-h-96 overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Tên</TableHead>
+                      <TableHead>Dữ liệu tùy chỉnh</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {parsedRecipients.slice(0, 10).map((recipient, idx) => (
+                      <TableRow key={idx} data-testid={`row-recipient-${idx}`}>
+                        <TableCell>{recipient.email}</TableCell>
+                        <TableCell>{recipient.name || "-"}</TableCell>
+                        <TableCell>
+                          {recipient.customData && Object.keys(recipient.customData).length > 0 ? (
+                            <Badge variant="secondary">
+                              {Object.keys(recipient.customData).length} trường
+                            </Badge>
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {parsedRecipients.length > 10 && (
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    Hiển thị 10 trong số {parsedRecipients.length} người nhận
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  };
 
   const renderStep2 = () => (
     <div className="space-y-6">

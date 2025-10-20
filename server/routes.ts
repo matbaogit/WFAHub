@@ -1285,26 +1285,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Parse CSV/Excel for recipients
+  // Parse CSV/Excel for recipients - Step 1: Get headers and preview
   app.post("/api/bulk-campaigns/parse-recipients", isAuthenticated, upload.single('file'), async (req: any, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
+        return res.status(400).json({ message: "Không có file nào được tải lên" });
       }
 
       const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
       const data = XLSX.utils.sheet_to_json(firstSheet);
 
-      // Return parsed data for preview
+      if (data.length === 0) {
+        return res.status(400).json({ message: "File không có dữ liệu" });
+      }
+
+      // Get headers from first row
+      const headers = Object.keys(data[0] as Record<string, unknown>);
+      
+      // Auto-detect mapping based on common column names
+      const autoMapping: Record<string, string> = {};
+      headers.forEach(header => {
+        const lowerHeader = header.toLowerCase().trim();
+        if (lowerHeader.includes('email') || lowerHeader.includes('e-mail')) {
+          autoMapping['email'] = header;
+        } else if (lowerHeader.includes('name') || lowerHeader.includes('tên') || lowerHeader.includes('ten')) {
+          autoMapping['name'] = header;
+        } else if (lowerHeader.includes('company') || lowerHeader.includes('công ty') || lowerHeader.includes('cong ty')) {
+          autoMapping['company'] = header;
+        } else if (lowerHeader.includes('phone') || lowerHeader.includes('sđt') || lowerHeader.includes('điện thoại') || lowerHeader.includes('dien thoai')) {
+          autoMapping['phone'] = header;
+        } else if (lowerHeader.includes('address') || lowerHeader.includes('địa chỉ') || lowerHeader.includes('dia chi')) {
+          autoMapping['address'] = header;
+        }
+      });
+      
+      // Return headers and preview (first 5 rows)
       res.json({ 
         success: true, 
-        data,
-        columns: data.length > 0 ? Object.keys(data[0] as Record<string, unknown>) : []
+        headers,
+        preview: data.slice(0, 5),
+        totalRows: data.length,
+        autoMapping,
+        // Store full data in session for later use
+        fileKey: `upload_${Date.now()}_${Math.random().toString(36).slice(2)}`
       });
+
+      // Store parsed data in session for later retrieval
+      const fileKey = `upload_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      req.session.uploadedData = req.session.uploadedData || {};
+      req.session.uploadedData[fileKey] = data;
+      
     } catch (error: any) {
       console.error("Error parsing recipients file:", error);
-      res.status(500).json({ message: error.message || "Failed to parse file" });
+      res.status(500).json({ message: error.message || "Không thể đọc file" });
+    }
+  });
+
+  // Apply column mapping and return parsed recipients - Step 2: Apply mapping
+  app.post("/api/bulk-campaigns/apply-mapping", isAuthenticated, upload.single('file'), async (req: any, res) => {
+    try {
+      const { mapping } = req.body;
+      
+      if (!mapping || !mapping.email) {
+        return res.status(400).json({ message: "Cần chọn cột Email" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: "Không có file nào được tải lên" });
+      }
+
+      const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(firstSheet) as Array<Record<string, any>>;
+
+      // Apply mapping to convert raw data to recipients
+      const recipients = data.map(row => {
+        const recipient: any = {
+          email: row[mapping.email],
+          name: mapping.name ? row[mapping.name] : null,
+          status: 'pending',
+          customData: {}
+        };
+
+        // Add mapped fields to customData
+        Object.keys(mapping).forEach(field => {
+          if (field !== 'email' && field !== 'name' && mapping[field]) {
+            recipient.customData[field] = row[mapping[field]];
+          }
+        });
+
+        // Also add any unmapped columns as custom data
+        Object.keys(row).forEach(column => {
+          const isMapped = Object.values(mapping).includes(column);
+          if (!isMapped && row[column]) {
+            recipient.customData[column] = row[column];
+          }
+        });
+
+        return recipient;
+      }).filter(r => r.email); // Filter out rows without email
+
+      res.json({ 
+        success: true, 
+        recipients,
+        totalCount: recipients.length
+      });
+    } catch (error: any) {
+      console.error("Error applying mapping:", error);
+      res.status(500).json({ message: error.message || "Không thể áp dụng mapping" });
     }
   });
 
