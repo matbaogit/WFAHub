@@ -6,28 +6,34 @@ WFA Hub is a Vietnamese-language web application offering ready-made automation 
 
 ## Recent Changes (October 2025)
 
-**Bulk Email Campaign Module - Foundation (October 19, 2025)**
-- **Sidebar Navigation Refactor**: 
-  - Reorganized quotation features into collapsible "Gửi Báo Giá" group
-  - Includes: Báo giá Đơn lẻ, Chiến dịch Email, Mẫu Báo Giá, Mẫu Email, Cấu hình SMTP
-- **Database Schema**: Added 3 new tables with cascade delete relations
-  - `bulkCampaigns`: Campaign metadata (name, subject, status, stats, schedule)
-  - `campaignRecipients`: Recipient tracking (email, name, send status, error messages)
-  - `campaignAttachments`: PDF attachment storage with file metadata
-- **Backend Infrastructure**: 8 RESTful API endpoints in server/routes.ts
-  - CRUD operations: GET/POST/PATCH/DELETE `/api/bulk-campaigns`
-  - CSV parsing: POST `/api/bulk-campaigns/parse-recipients` (preview before import)
-  - Recipient management: POST/GET/DELETE `/api/bulk-campaigns/:id/recipients`
-  - Attachment handling: POST/GET/DELETE `/api/bulk-campaigns/:id/attachments`
-  - Campaign trigger: POST `/api/bulk-campaigns/:id/send`
-- **Storage Layer**: Complete IStorage interface methods for campaigns, recipients, and attachments
+**Bulk Email Campaign Module - Complete UI (October 20, 2025)**
+- **Database Schema Enhancement**: Extended bulk campaign tables with tracking & template integration
+  - `bulkCampaigns`: Added emailSubject, emailBody, quotationTemplateId, emailTemplateId (FK to emailTemplates), sendRate (emails/min), openedCount, scheduledAt
+  - `campaignRecipients`: Added customData (JSONB for merge fields), openedAt, sentAt timestamps
+  - `campaignAttachments`: Added originalName, mimeType for better file handling
+- **Tracking Pixel Implementation**: Public endpoint GET `/api/track/open/:campaignId/:recipientId`
+  - Returns 1x1 transparent GIF pixel
+  - Updates openedAt timestamp on first open
+  - Increments campaign openedCount atomically
+  - Silent error handling to prevent email client issues
+- **4-Step Campaign Wizard** (`/bulk-campaigns/new`):
+  - **Step 1 - Import Recipients**: Excel/CSV upload with live preview, parse columns to customData (name, email, company, etc.)
+  - **Step 2 - Select Template**: Choose quotation template for personalized PDF generation, preview template HTML
+  - **Step 3 - Compose Email**: Subject & body editor with merge field support ({name}, {email}, {company}), optional email template selection
+  - **Step 4 - Review & Send**: Campaign settings (name, send rate), summary stats (total recipients, est. time), send immediately or schedule
+  - Visual stepper UI with progress tracking, validation at each step
+- **Campaign Detail Page** (`/bulk-campaigns/:id`):
+  - **Stats Dashboard**: Total recipients, sent count, opened count with open rate %, failed count
+  - **Progress Chart**: Recharts bar chart showing distribution (total, sent, opened, failed)
+  - **Email Preview**: Display campaign subject and body content
+  - **Recipient Table**: Filterable by status (pending/sent/failed), searchable by email/name, shows sentAt/openedAt timestamps, displays error messages
+  - **Export Functionality**: Export recipients to CSV with full tracking data
 - **Frontend List Page** (`/bulk-campaigns`):
   - Stats cards: Total campaigns, active, completed, total emails sent
-  - Campaign table: Status badges, recipient counts, send/fail metrics, creation dates
-  - Navigation: Link to create new campaign, click row to view details
-  - Delete functionality with confirmation
-- **Status Tracking**: 5 campaign states (draft, scheduled, sending, completed, failed)
-- **Next Steps**: Multi-step wizard page (recipient import, template selection, PDF attachment), detail page with real-time tracking, email sending service implementation
+  - Clickable campaign rows navigate to detail page
+  - Status badges with icons, delete with confirmation
+- **Sidebar Navigation**: Organized under collapsible "Gửi Báo Giá" group
+- **Remaining Work**: Email sending service with queue system, PDF generation per recipient, merge customData into quotation templates, SMTP integration with rate limiting
 
 **Service Catalog Module - Refactored UI (October 16, 2025)**
 - **Streamlined 2-Tab Interface**:
