@@ -310,20 +310,25 @@ export const bulkCampaigns = pgTable("bulk_campaigns", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id),
   quotationTemplateId: varchar("quotation_template_id").references(() => quotationTemplates.id),
+  emailTemplateId: varchar("email_template_id").references(() => emailTemplates.id),
   smtpConfigId: varchar("smtp_config_id").references(() => smtpConfigs.id),
   
   name: varchar("name", { length: 255 }).notNull(),
-  subject: varchar("subject", { length: 500 }).notNull(),
+  emailSubject: varchar("email_subject", { length: 500 }).notNull(),
+  emailBody: text("email_body").notNull(),
   
   status: varchar("status", { length: 20 }).notNull().default("draft"),
   
   totalRecipients: integer("total_recipients").default(0).notNull(),
   sentCount: integer("sent_count").default(0).notNull(),
   failedCount: integer("failed_count").default(0).notNull(),
+  openedCount: integer("opened_count").default(0).notNull(),
   
   scheduledAt: timestamp("scheduled_at"),
   startedAt: timestamp("started_at"),
   completedAt: timestamp("completed_at"),
+  
+  sendRate: integer("send_rate").default(50).notNull(),
   
   estimatedCredits: integer("estimated_credits").default(0).notNull(),
   actualCredits: integer("actual_credits").default(0).notNull(),
@@ -345,6 +350,7 @@ export const campaignRecipients = pgTable("campaign_recipients", {
   
   status: varchar("status", { length: 20 }).notNull().default("pending"),
   sentAt: timestamp("sent_at"),
+  openedAt: timestamp("opened_at"),
   errorMessage: text("error_message"),
   
   createdAt: timestamp("created_at").defaultNow(),
@@ -356,8 +362,10 @@ export const campaignAttachments = pgTable("campaign_attachments", {
   campaignId: varchar("campaign_id").notNull().references(() => bulkCampaigns.id, { onDelete: "cascade" }),
   
   filename: varchar("filename", { length: 500 }).notNull(),
+  originalName: varchar("original_name", { length: 500 }).notNull(),
   storagePath: varchar("storage_path", { length: 1000 }).notNull(),
   fileSize: integer("file_size").notNull(),
+  mimeType: varchar("mime_type", { length: 100 }),
   
   uploadedAt: timestamp("uploaded_at").defaultNow(),
 });
@@ -407,6 +415,10 @@ export const bulkCampaignsRelations = relations(bulkCampaigns, ({ one, many }) =
   quotationTemplate: one(quotationTemplates, {
     fields: [bulkCampaigns.quotationTemplateId],
     references: [quotationTemplates.id],
+  }),
+  emailTemplate: one(emailTemplates, {
+    fields: [bulkCampaigns.emailTemplateId],
+    references: [emailTemplates.id],
   }),
   smtpConfig: one(smtpConfigs, {
     fields: [bulkCampaigns.smtpConfigId],
