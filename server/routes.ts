@@ -1355,7 +1355,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!mapping || !mapping.email) {
         console.log("[ERROR] Validation failed - mapping:", mapping);
-        return res.status(400).json({ message: "Cần chọn cột Email" });
+        return res.status(400).json({ 
+          message: "Cần chọn cột Email",
+          debug: {
+            mappingReceived: mapping,
+            emailField: mapping?.email,
+            mappingType: typeof mapping
+          }
+        });
       }
 
       if (!req.file) {
