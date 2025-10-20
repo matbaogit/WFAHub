@@ -149,8 +149,16 @@ export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> 
     renderedBody += `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none" />`;
   }
 
-  // Decrypt SMTP password
-  const decryptedPassword = decryptPassword(smtpConfig.password);
+  // Decrypt SMTP password if it looks encrypted (has colons indicating IV:encrypted:authTag format)
+  let decryptedPassword = smtpConfig.password;
+  if (smtpConfig.password && smtpConfig.password.includes(':')) {
+    try {
+      decryptedPassword = decryptPassword(smtpConfig.password);
+    } catch (error) {
+      // If decryption fails, use password as-is (backward compatibility)
+      console.warn('Password decryption failed, using plain password');
+    }
+  }
 
   // Create transporter
   const transporter = nodemailer.createTransport({
