@@ -144,6 +144,8 @@ function SmtpConfigForm({ form, onSubmit, isPending, onCancel, isEditing }: Smtp
 export default function SmtpConfiguration() {
   const { toast } = useToast();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
 
   const { data: config, isLoading } = useQuery<SmtpConfig | null>({
     queryKey: ["/api/smtp-config"],
@@ -184,14 +186,18 @@ export default function SmtpConfiguration() {
   });
 
   const testMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest("POST", "/api/smtp-config/test", {});
+    mutationFn: async (recipientEmail: string) => {
+      return await apiRequest("POST", "/api/smtp-config/test", { 
+        recipientEmail 
+      });
     },
     onSuccess: () => {
       toast({
         title: "Thành công",
         description: "Đã gửi email test thành công!",
       });
+      setIsTestDialogOpen(false);
+      setTestEmail("");
     },
     onError: (error: any) => {
       toast({
@@ -201,6 +207,18 @@ export default function SmtpConfiguration() {
       });
     },
   });
+
+  const handleTestEmail = () => {
+    if (!testEmail.trim()) {
+      toast({
+        title: "Thiếu thông tin",
+        description: "Vui lòng nhập email người nhận",
+        variant: "destructive",
+      });
+      return;
+    }
+    testMutation.mutate(testEmail);
+  };
 
   const onSubmit = (data: InsertSmtpConfig) => {
     // If editing and password is empty, remove it from payload to preserve existing password
@@ -313,7 +331,7 @@ export default function SmtpConfiguration() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => testMutation.mutate()}
+                onClick={() => setIsTestDialogOpen(true)}
                 disabled={testMutation.isPending}
                 className="rounded-xl"
                 data-testid="button-test-smtp"
@@ -368,6 +386,53 @@ export default function SmtpConfiguration() {
             onCancel={() => setIsEditOpen(false)}
             isEditing={!!config}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Test Email Dialog */}
+      <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Test Email SMTP</DialogTitle>
+            <DialogDescription>
+              Nhập email người nhận để gửi thử nghiệm
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="test-email" className="text-sm font-medium">
+                Email người nhận
+              </label>
+              <Input
+                id="test-email"
+                type="email"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                placeholder="recipient@example.com"
+                data-testid="input-test-email"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsTestDialogOpen(false);
+                  setTestEmail("");
+                }}
+                disabled={testMutation.isPending}
+                data-testid="button-cancel-test"
+              >
+                Hủy
+              </Button>
+              <Button
+                onClick={handleTestEmail}
+                disabled={testMutation.isPending}
+                data-testid="button-send-test"
+              >
+                {testMutation.isPending ? "Đang gửi..." : "Gửi test"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
