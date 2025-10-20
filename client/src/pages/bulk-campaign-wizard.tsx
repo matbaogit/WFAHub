@@ -302,6 +302,9 @@ export default function BulkCampaignWizard() {
 
   const renderStep1 = () => {
     const handleApplyMapping = async () => {
+      console.log("[DEBUG] Current columnMapping state:", columnMapping);
+      console.log("[DEBUG] columnMapping.email:", columnMapping.email);
+      
       if (!columnMapping.email || columnMapping.email === "NONE") {
         toast({
           variant: "destructive",
