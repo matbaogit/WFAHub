@@ -5,6 +5,7 @@ import { TemplateCard } from "@/components/template-card";
 import { ExecutionModal } from "@/components/execution-modal";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 const iconMap: Record<string, any> = {
   mail: Mail,
@@ -16,10 +17,20 @@ const iconMap: Record<string, any> = {
 
 export default function Templates() {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [, navigate] = useLocation();
   
   const { data: templates, isLoading, isError, error, refetch } = useQuery<Template[]>({
     queryKey: ["/api/templates"],
   });
+
+  const handleExecuteTemplate = (template: Template) => {
+    // If this is the "Gửi báo giá" template, navigate to bulk campaigns instead of opening modal
+    if (template.nameVi === "Gửi báo giá" || template.name === "Send Quotation") {
+      navigate("/bulk-campaigns");
+    } else {
+      setSelectedTemplate(template);
+    }
+  };
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto">
@@ -64,7 +75,7 @@ export default function Templates() {
               key={template.id}
               template={template}
               icon={iconMap[template.icon] || FileText}
-              onExecute={() => setSelectedTemplate(template)}
+              onExecute={() => handleExecuteTemplate(template)}
             />
           ))}
         </div>
