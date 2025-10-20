@@ -195,28 +195,41 @@ export function AppSidebar() {
               {/* Collapsible Quotation Group */}
               <Collapsible open={isQuotationOpen} onOpenChange={setIsQuotationOpen}>
                 <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
+                  <div className="flex items-center">
                     <SidebarMenuButton
+                      asChild
+                      isActive={location === '/bulk-campaigns' || location.startsWith('/bulk-campaigns/')}
                       data-testid="link-quotation-group"
                       className={`
-                        group relative mb-1 rounded-xl transition-all duration-200
-                        ${isQuotationGroupActive
+                        group relative mb-1 rounded-xl transition-all duration-200 flex-1
+                        ${location === '/bulk-campaigns' || location.startsWith('/bulk-campaigns/')
                           ? 'bg-gradient-to-r from-cyan-500/10 to-blue-600/10 text-blue-600 shadow-sm border-l-4 border-blue-600' 
                           : 'hover:bg-slate-100/80 hover:scale-[1.02]'
                         }
                       `}
                     >
-                      <Mail className={`w-5 h-5 ${isQuotationGroupActive ? 'text-blue-600' : 'text-slate-600'} transition-colors`} />
-                      <span className={`font-medium ${isQuotationGroupActive ? 'text-blue-600' : 'text-slate-700'}`}>
-                        Gửi Báo Giá
-                      </span>
-                      {isQuotationOpen ? (
-                        <ChevronDown className={`ml-auto w-4 h-4 ${isQuotationGroupActive ? 'text-blue-600' : 'text-slate-600'}`} />
-                      ) : (
-                        <ChevronRight className={`ml-auto w-4 h-4 ${isQuotationGroupActive ? 'text-blue-600' : 'text-slate-600'}`} />
-                      )}
+                      <Link href="/bulk-campaigns">
+                        <Mail className={`w-5 h-5 ${isQuotationGroupActive ? 'text-blue-600' : 'text-slate-600'} transition-colors`} />
+                        <span className={`font-medium ${isQuotationGroupActive ? 'text-blue-600' : 'text-slate-700'}`}>
+                          Gửi Báo Giá
+                        </span>
+                      </Link>
                     </SidebarMenuButton>
-                  </CollapsibleTrigger>
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mb-1 px-2 hover:bg-slate-100/80 rounded-lg"
+                        data-testid="button-toggle-quotation-group"
+                      >
+                        {isQuotationOpen ? (
+                          <ChevronDown className={`w-4 h-4 ${isQuotationGroupActive ? 'text-blue-600' : 'text-slate-600'}`} />
+                        ) : (
+                          <ChevronRight className={`w-4 h-4 ${isQuotationGroupActive ? 'text-blue-600' : 'text-slate-600'}`} />
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                  </div>
                   <CollapsibleContent className="mt-1">
                     <SidebarMenu className="ml-4 border-l-2 border-slate-200/60 pl-2">
                       {quotationMenuItems.map((item) => (
