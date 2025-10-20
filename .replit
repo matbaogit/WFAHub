@@ -7,9 +7,10 @@ channel = "stable-24_05"
 packages = ["chromium"]
 
 [deployment]
-deploymentTarget = "autoscale"
+deploymentTarget = "static"
 build = ["npm", "run", "build"]
 run = ["npm", "run", "start"]
+publicDir = "dist"
 
 [[ports]]
 localPort = 5000
@@ -30,10 +31,6 @@ externalPort = 4200
 [[ports]]
 localPort = 41915
 externalPort = 5000
-
-[[ports]]
-localPort = 43083
-externalPort = 6000
 
 [[ports]]
 localPort = 43551
