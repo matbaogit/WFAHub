@@ -64,7 +64,7 @@ export default function BulkCampaignsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-            Chiến dịch Email Hàng Loạt
+            Chiến dịch Báo Giá Hàng Loạt
           </h1>
           <p className="text-slate-500 mt-1">
             Gửi báo giá đến nhiều khách hàng cùng lúc

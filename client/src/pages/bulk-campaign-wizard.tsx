@@ -91,15 +91,15 @@ export default function BulkCampaignWizard() {
     onSuccess: (data) => {
       setParsedRecipients(data.recipients || []);
       toast({
-        title: "File uploaded successfully",
-        description: `Found ${data.recipients?.length || 0} recipients`,
+        title: "Tải file thành công",
+        description: `Tìm thấy ${data.recipients?.length || 0} người nhận`,
       });
     },
     onError: () => {
       toast({
         variant: "destructive",
-        title: "Upload failed",
-        description: "Failed to parse the file. Please check the format.",
+        title: "Tải file thất bại",
+        description: "Không thể phân tích file. Vui lòng kiểm tra định dạng.",
       });
     },
   });
@@ -123,8 +123,8 @@ export default function BulkCampaignWizard() {
       await queryClient.invalidateQueries({ queryKey: ["/api/bulk-campaigns"] });
 
       toast({
-        title: "Campaign created!",
-        description: "Your bulk email campaign has been started.",
+        title: "Chiến dịch đã tạo!",
+        description: "Chiến dịch báo giá hàng loạt đã bắt đầu.",
       });
 
       navigate("/bulk-campaigns");
@@ -132,8 +132,8 @@ export default function BulkCampaignWizard() {
     onError: () => {
       toast({
         variant: "destructive",
-        title: "Failed to create campaign",
-        description: "Please try again.",
+        title: "Tạo chiến dịch thất bại",
+        description: "Vui lòng thử lại.",
       });
     },
   });
@@ -150,8 +150,8 @@ export default function BulkCampaignWizard() {
     if (currentStep === 1 && parsedRecipients.length === 0) {
       toast({
         variant: "destructive",
-        title: "No recipients",
-        description: "Please upload a file with recipients first.",
+        title: "Chưa có người nhận",
+        description: "Vui lòng tải lên file danh sách người nhận.",
       });
       return;
     }
@@ -159,8 +159,8 @@ export default function BulkCampaignWizard() {
     if (currentStep === 2 && !selectedTemplateId) {
       toast({
         variant: "destructive",
-        title: "No template selected",
-        description: "Please select a quotation template.",
+        title: "Chưa chọn mẫu",
+        description: "Vui lòng chọn mẫu báo giá.",
       });
       return;
     }
@@ -168,8 +168,8 @@ export default function BulkCampaignWizard() {
     if (currentStep === 3 && (!emailSubject || !emailBody)) {
       toast({
         variant: "destructive",
-        title: "Incomplete email",
-        description: "Please provide both subject and email body.",
+        title: "Email chưa đầy đủ",
+        description: "Vui lòng nhập đầy đủ tiêu đề và nội dung thư.",
       });
       return;
     }
@@ -189,8 +189,8 @@ export default function BulkCampaignWizard() {
     if (!campaignName.trim()) {
       toast({
         variant: "destructive",
-        title: "Campaign name required",
-        description: "Please provide a name for your campaign.",
+        title: "Thiếu tên chiến dịch",
+        description: "Vui lòng đặt tên cho chiến dịch.",
       });
       return;
     }
@@ -225,10 +225,10 @@ export default function BulkCampaignWizard() {
               {step < currentStep ? <CheckCircle2 className="w-5 h-5" /> : step}
             </div>
             <span className="text-xs mt-2 text-muted-foreground">
-              {step === 1 && "Import"}
-              {step === 2 && "Template"}
-              {step === 3 && "Email"}
-              {step === 4 && "Review"}
+              {step === 1 && "Nhập"}
+              {step === 2 && "Mẫu"}
+              {step === 3 && "Thư"}
+              {step === 4 && "Xem lại"}
             </span>
           </div>
           {step < 4 && (
@@ -246,9 +246,9 @@ export default function BulkCampaignWizard() {
   const renderStep1 = () => (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Import Recipients</h2>
+        <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Nhập danh sách người nhận</h2>
         <p className="text-sm text-muted-foreground">
-          Upload an Excel or CSV file with recipient information
+          Tải lên file Excel hoặc CSV chứa thông tin người nhận
         </p>
       </div>
 
@@ -258,8 +258,8 @@ export default function BulkCampaignWizard() {
             <Upload className="w-12 h-12 text-muted-foreground mb-4" />
             <p className="text-sm text-muted-foreground mb-4">
               {uploadedFile
-                ? `Selected: ${uploadedFile.name}`
-                : "Click to upload Excel or CSV file"}
+                ? `Đã chọn: ${uploadedFile.name}`
+                : "Nhấn để tải lên file Excel hoặc CSV"}
             </p>
             <input
               ref={fileInputRef}
@@ -275,7 +275,7 @@ export default function BulkCampaignWizard() {
               data-testid="button-select-file"
             >
               <FileSpreadsheet className="w-4 h-4 mr-2" />
-              {uploadMutation.isPending ? "Uploading..." : "Select File"}
+              {uploadMutation.isPending ? "Đang tải lên..." : "Chọn file"}
             </Button>
           </div>
         </CardContent>
@@ -284,7 +284,7 @@ export default function BulkCampaignWizard() {
       {parsedRecipients.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Preview Recipients ({parsedRecipients.length})</CardTitle>
+            <CardTitle>Xem trước danh sách ({parsedRecipients.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="max-h-96 overflow-y-auto">
@@ -292,8 +292,8 @@ export default function BulkCampaignWizard() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Email</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Custom Data</TableHead>
+                    <TableHead>Tên</TableHead>
+                    <TableHead>Dữ liệu tùy chỉnh</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -304,7 +304,7 @@ export default function BulkCampaignWizard() {
                       <TableCell>
                         {recipient.customData && Object.keys(recipient.customData).length > 0 ? (
                           <Badge variant="secondary">
-                            {Object.keys(recipient.customData).length} fields
+                            {Object.keys(recipient.customData).length} trường
                           </Badge>
                         ) : (
                           "-"
@@ -316,7 +316,7 @@ export default function BulkCampaignWizard() {
               </Table>
               {parsedRecipients.length > 10 && (
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Showing first 10 of {parsedRecipients.length} recipients
+                  Hiển thị 10 trong số {parsedRecipients.length} người nhận
                 </p>
               )}
             </div>
@@ -329,9 +329,9 @@ export default function BulkCampaignWizard() {
   const renderStep2 = () => (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Select Quotation Template</h2>
+        <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Chọn mẫu báo giá</h2>
         <p className="text-sm text-muted-foreground">
-          Choose a template to generate personalized quotations for each recipient
+          Chọn mẫu để tạo báo giá cá nhân hóa cho từng người nhận
         </p>
       </div>
 
@@ -371,7 +371,7 @@ export default function BulkCampaignWizard() {
             <div className="flex flex-col items-center justify-center py-8">
               <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
               <p className="text-sm text-muted-foreground">
-                No quotation templates found. Create one first.
+                Không tìm thấy mẫu báo giá nào. Vui lòng tạo mẫu trước.
               </p>
             </div>
           </CardContent>
@@ -381,7 +381,7 @@ export default function BulkCampaignWizard() {
       {selectedTemplate && (
         <Card>
           <CardHeader>
-            <CardTitle>Template Preview</CardTitle>
+            <CardTitle>Xem trước mẫu</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="prose prose-sm max-w-none p-4 border rounded-md bg-muted/30">
@@ -396,16 +396,16 @@ export default function BulkCampaignWizard() {
   const renderStep3 = () => (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Compose Email</h2>
+        <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Soạn thư</h2>
         <p className="text-sm text-muted-foreground">
-          Write your email subject and body. Use merge fields like {`{name}`}, {`{email}`}, {`{company}`}
+          Nhập tiêu đề và nội dung thư. Sử dụng các trường merge như {`{name}`}, {`{email}`}, {`{company}`}
         </p>
       </div>
 
       <Card>
         <CardContent className="pt-6 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email-subject">Email Subject</Label>
+            <Label htmlFor="email-subject">Tiêu đề thư</Label>
             <Input
               id="email-subject"
               value={emailSubject}
@@ -416,7 +416,7 @@ export default function BulkCampaignWizard() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email-body">Email Body</Label>
+            <Label htmlFor="email-body">Nội dung thư</Label>
             <Textarea
               id="email-body"
               value={emailBody}
@@ -426,7 +426,7 @@ export default function BulkCampaignWizard() {
               data-testid="input-email-body"
             />
             <p className="text-xs text-muted-foreground">
-              Tip: Use merge fields from your Excel columns: {`{name}`}, {`{email}`}, {`{company}`}, etc.
+              Gợi ý: Sử dụng các trường merge từ file Excel: {`{name}`}, {`{email}`}, {`{company}`}, v.v.
             </p>
           </div>
         </CardContent>
@@ -434,17 +434,17 @@ export default function BulkCampaignWizard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Email Preview</CardTitle>
+          <CardTitle>Xem trước thư</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
             <div className="p-3 border rounded-md bg-muted/30">
-              <p className="text-xs text-muted-foreground mb-1">Subject:</p>
-              <p className="font-medium">{emailSubject || "No subject"}</p>
+              <p className="text-xs text-muted-foreground mb-1">Tiêu đề:</p>
+              <p className="font-medium">{emailSubject || "Chưa có tiêu đề"}</p>
             </div>
             <div className="p-3 border rounded-md bg-muted/30 min-h-32">
-              <p className="text-xs text-muted-foreground mb-1">Body:</p>
-              <div className="whitespace-pre-wrap text-sm">{emailBody || "No content"}</div>
+              <p className="text-xs text-muted-foreground mb-1">Nội dung:</p>
+              <div className="whitespace-pre-wrap text-sm">{emailBody || "Chưa có nội dung"}</div>
             </div>
           </div>
         </CardContent>
@@ -455,30 +455,30 @@ export default function BulkCampaignWizard() {
   const renderStep4 = () => (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Review & Send</h2>
+        <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Xem lại & Gửi</h2>
         <p className="text-sm text-muted-foreground">
-          Review your campaign settings and send
+          Xem lại cài đặt chiến dịch và gửi
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Campaign Settings</CardTitle>
+          <CardTitle>Cài đặt chiến dịch</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="campaign-name">Campaign Name</Label>
+            <Label htmlFor="campaign-name">Tên chiến dịch</Label>
             <Input
               id="campaign-name"
               value={campaignName}
               onChange={(e) => setCampaignName(e.target.value)}
-              placeholder="Holiday Promotion 2025"
+              placeholder="Khuyến mãi tháng 10/2025"
               data-testid="input-campaign-name"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="send-rate">Send Rate (emails per minute)</Label>
+            <Label htmlFor="send-rate">Tốc độ gửi (email/phút)</Label>
             <div className="flex items-center gap-4">
               <Input
                 id="send-rate"
@@ -489,7 +489,7 @@ export default function BulkCampaignWizard() {
                 max={100}
                 data-testid="input-send-rate"
               />
-              <span className="text-sm text-muted-foreground">emails/min</span>
+              <span className="text-sm text-muted-foreground">email/phút</span>
             </div>
           </div>
         </CardContent>
@@ -503,7 +503,7 @@ export default function BulkCampaignWizard() {
                 <Users className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Recipients</p>
+                <p className="text-sm text-muted-foreground">Người nhận</p>
                 <p className="text-2xl font-bold" data-testid="text-recipient-count">{parsedRecipients.length}</p>
               </div>
             </div>
@@ -517,9 +517,9 @@ export default function BulkCampaignWizard() {
                 <Clock className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Est. Time</p>
+                <p className="text-sm text-muted-foreground">Thời gian dự kiến</p>
                 <p className="text-2xl font-bold">
-                  {Math.ceil(parsedRecipients.length / sendRate)} min
+                  {Math.ceil(parsedRecipients.length / sendRate)} phút
                 </p>
               </div>
             </div>
@@ -533,8 +533,8 @@ export default function BulkCampaignWizard() {
                 <Zap className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Send Rate</p>
-                <p className="text-2xl font-bold">{sendRate}/min</p>
+                <p className="text-sm text-muted-foreground">Tốc độ gửi</p>
+                <p className="text-2xl font-bold">{sendRate}/phút</p>
               </div>
             </div>
           </CardContent>
@@ -543,21 +543,21 @@ export default function BulkCampaignWizard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Campaign Summary</CardTitle>
+          <CardTitle>Tóm tắt chiến dịch</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex justify-between py-2 border-b">
-            <span className="text-sm text-muted-foreground">Email Subject:</span>
+            <span className="text-sm text-muted-foreground">Tiêu đề thư:</span>
             <span className="text-sm font-medium">{emailSubject}</span>
           </div>
           <div className="flex justify-between py-2 border-b">
-            <span className="text-sm text-muted-foreground">Template:</span>
+            <span className="text-sm text-muted-foreground">Mẫu:</span>
             <span className="text-sm font-medium">
-              {selectedTemplate?.name || "None"}
+              {selectedTemplate?.name || "Không có"}
             </span>
           </div>
           <div className="flex justify-between py-2">
-            <span className="text-sm text-muted-foreground">Total Recipients:</span>
+            <span className="text-sm text-muted-foreground">Tổng số người nhận:</span>
             <span className="text-sm font-medium">{parsedRecipients.length}</span>
           </div>
         </CardContent>
@@ -574,13 +574,13 @@ export default function BulkCampaignWizard() {
           data-testid="button-back-to-list"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Campaigns
+          Quay lại danh sách
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-3xl">Create Bulk Email Campaign</CardTitle>
+          <CardTitle className="text-3xl">Tạo chiến dịch báo giá hàng loạt</CardTitle>
         </CardHeader>
         <CardContent>
           {renderStepIndicator()}
@@ -604,12 +604,12 @@ export default function BulkCampaignWizard() {
               data-testid="button-previous-step"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Previous
+              Quay lại
             </Button>
 
             {currentStep < 4 ? (
               <Button onClick={handleNext} data-testid="button-next-step">
-                Next
+                Tiếp tục
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             ) : (
@@ -619,7 +619,7 @@ export default function BulkCampaignWizard() {
                 data-testid="button-send-campaign"
               >
                 <Send className="w-4 h-4 mr-2" />
-                {createCampaignMutation.isPending ? "Sending..." : "Send Campaign"}
+                {createCampaignMutation.isPending ? "Đang gửi..." : "Gửi chiến dịch"}
               </Button>
             )}
           </div>
