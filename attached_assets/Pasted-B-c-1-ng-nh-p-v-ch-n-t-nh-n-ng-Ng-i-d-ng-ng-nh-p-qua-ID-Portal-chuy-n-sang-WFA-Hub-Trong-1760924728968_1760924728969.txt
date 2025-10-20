@@ -1,0 +1,128 @@
+Bước 1: Đăng nhập và chọn tính năng
+
+Người dùng đăng nhập qua ID Portal → chuyển sang WFA Hub
+
+Trong Hub, chọn tính năng:
+👉 “Gửi Email hàng loạt có đính kèm báo giá”
+
+Bước 2: Nhập dữ liệu người nhận
+
+Giao diện: “Danh sách người nhận”
+
+Người dùng chọn 1 trong 2 cách:
+
+Tải file Excel mẫu (Download Template) → điền thông tin:
+
+Họ tên, Email, Công ty, Sản phẩm/Dịch vụ, Số tiền, Ngày, v.v.
+
+Dán trực tiếp vào bảng (Import Table)
+
+Trường bắt buộc: Email người nhận
+Trường tùy chọn: Tên, Công ty, Số tiền, Ngày, v.v.
+
+✅ Cho phép xem trước 5–10 dòng đầu tiên sau khi import.
+✅ Nếu có lỗi (thiếu email, dữ liệu không hợp lệ) → hiển thị cảnh báo trước khi tiếp tục.
+
+Bước 3: Chọn mẫu báo giá có sẵn
+
+Giao diện: “Mẫu báo giá”
+
+Người dùng chọn 1 mẫu báo giá có sẵn từ thư viện template.
+Ví dụ:
+
+Mẫu Báo Giá Cơ Bản
+
+Mẫu Báo Giá Dịch Vụ
+
+Mẫu Báo Giá Theo Tháng
+
+Mỗi template có:
+
+Tên mẫu
+
+Nội dung HTML hoặc Markdown
+
+Các biến động (placeholders): {{ten_khach_hang}}, {{san_pham}}, {{gia}}, {{ngay}}, {{cong_ty}}, …
+
+Sau khi chọn template:
+
+Hệ thống tự động merge dữ liệu từ file Excel (ở Step 2) vào template.
+
+Tạo preview báo giá hoặc file PDF tạm thời cho từng khách hàng.
+
+Cho phép người dùng:
+
+✅ Xem trước 1 báo giá mẫu
+
+⚠️ Hiển thị cảnh báo nếu thiếu trường dữ liệu (placeholder không khớp)
+
+Bước 4: Soạn nội dung email
+
+Giao diện: “Soạn email & Merge field”
+
+Trường nhập:
+
+Tiêu đề email (hỗ trợ biến: {Tên}, {Công ty})
+
+Nội dung email (HTML Editor)
+
+Cho phép chèn biến động: {Tên}, {Công ty}, {Ngày}, {Số tiền}, v.v.
+
+Upload logo, chèn chữ ký (nếu có)
+
+Chọn email gửi đi (từ tài khoản email có sẵn hoặc SMTP cấu hình trong ID Portal)
+
+Bước 5: Cấu hình gửi, xem thử, kiểm tra xác nhận
+
+Giao diện: “Cấu hình gửi”
+
+Hiển thị ví dụ 1 email mẫu hoàn chỉnh (bao gồm nội dung và báo giá đính kèm).
+
+Tùy chọn gửi:
+
+Gửi ngay
+
+Lên lịch gửi (chọn ngày, giờ)
+
+Giới hạn tốc độ gửi (VD: 50 email/phút)
+
+Xác nhận lần cuối:
+
+Xem thử
+
+Số lượng người nhận
+
+Tổng số báo giá đính kèm
+
+Ước tính phí (VD: 50.000đ / 50 email)
+
+Nút “Gửi ngay / Lên lịch”
+
+Bước 6: Theo dõi trạng thái gửi
+
+Giao diện: “Theo dõi chiến dịch”
+
+Dashboard hiển thị:
+
+Tổng số email gửi
+
+Đã gửi / Lỗi / Đã mở / Bị trả lại
+
+Biểu đồ trạng thái (bar hoặc donut chart)
+
+Danh sách chi tiết:
+| Email | Tên | Báo giá đính kèm | Trạng thái | Thời gian gửi | Mã lỗi (nếu có) |
+
+Bước 7: Lịch sử & Báo cáo
+
+Giao diện: “Lịch sử chiến dịch”
+
+Hiển thị danh sách tất cả chiến dịch đã chạy
+
+Cho phép:
+
+Tải báo cáo chi tiết (.csv, .pdf)
+
+Xem lại log từng người
+
+Gửi lại email lỗi (retry thủ công)
