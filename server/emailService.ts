@@ -124,6 +124,16 @@ interface CampaignEmailData {
   trackingPixelUrl?: string;
 }
 
+// Helper function to check if password is encrypted (hex format)
+function isEncryptedPassword(password: string): boolean {
+  const parts = password.split(':');
+  if (parts.length !== 3) return false;
+  
+  // Check if all parts are valid hex strings
+  const hexRegex = /^[0-9a-fA-F]+$/;
+  return parts.every(part => part.length > 0 && hexRegex.test(part));
+}
+
 export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> {
   const { recipientEmail, recipientName, customData, subject, body, smtpConfig, trackingPixelUrl } = data;
 
@@ -149,9 +159,9 @@ export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> 
     renderedBody += `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none" />`;
   }
 
-  // Decrypt SMTP password if it looks encrypted (has colons indicating IV:encrypted:authTag format)
+  // Decrypt SMTP password only if it's in encrypted format (hex:hex:hex)
   let decryptedPassword = smtpConfig.password;
-  if (smtpConfig.password && smtpConfig.password.includes(':')) {
+  if (isEncryptedPassword(smtpConfig.password)) {
     try {
       decryptedPassword = decryptPassword(smtpConfig.password);
     } catch (error) {
