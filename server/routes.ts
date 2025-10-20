@@ -1557,8 +1557,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const attachment = await storage.createCampaignAttachment({
           campaignId,
           filename: file.originalname,
+          originalName: file.originalname,
           storagePath,
           fileSize: file.size,
+          mimeType: file.mimetype,
         });
         
         attachments.push(attachment);
@@ -1593,7 +1595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get user's SMTP config
-      const smtpConfig = await storage.getUserSmtpConfig(req.user.id);
+      const smtpConfig = await storage.getSmtpConfig(req.user.id);
       if (!smtpConfig) {
         return res.status(400).json({ message: "SMTP configuration not found. Please configure SMTP first." });
       }
