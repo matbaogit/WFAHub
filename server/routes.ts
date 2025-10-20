@@ -1425,6 +1425,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Tracking pixel endpoint (public - no auth required)
+  app.get("/api/track/open/:campaignId/:recipientId", async (req, res) => {
+    try {
+      const { campaignId, recipientId } = req.params;
+      
+      // Update recipient opened_at timestamp if not already set
+      const recipient = await storage.getCampaignRecipients(campaignId);
+      const targetRecipient = recipient.find(r => r.id === recipientId);
+      
+      if (targetRecipient && !targetRecipient.openedAt) {
+        // Update recipient
+        await storage.updateCampaignRecipient(recipientId, {
+          openedAt: new Date(),
+        });
+        
+        // Increment campaign opened count
+        const campaign = await storage.getBulkCampaign(campaignId);
+        if (campaign) {
+          await storage.updateBulkCampaign(campaignId, {
+            openedCount: campaign.openedCount + 1,
+          });
+        }
+      }
+      
+      // Return 1x1 transparent pixel
+      const pixel = Buffer.from(
+        'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+        'base64'
+      );
+      
+      res.set('Content-Type', 'image/gif');
+      res.set('Content-Length', pixel.length.toString());
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.send(pixel);
+    } catch (error) {
+      // Silent fail - return pixel anyway
+      console.error("Error tracking email open:", error);
+      const pixel = Buffer.from(
+        'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+        'base64'
+      );
+      res.set('Content-Type', 'image/gif');
+      res.send(pixel);
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
