@@ -43,7 +43,7 @@ const quotationMenuItems = [
     icon: FileText,
   },
   {
-    title: "Chiến dịch Email",
+    title: "Chiến dịch Báo Giá",
     url: "/bulk-campaigns",
     icon: SendHorizontal,
   },
