@@ -6,31 +6,33 @@ WFA Hub is a Vietnamese-language web application offering ready-made automation 
 
 ## Recent Changes (October 2025)
 
-**Bulk Email Campaign Module - Email Sending Implementation (October 20, 2025)**
+**Bulk Email Campaign Module - PDF Attachment Feature (October 20, 2025)**
+- **PDF Generation from Quotation Templates**: Automatic PDF creation and email attachment
+  - `generateQuotationPDF()` function in `server/emailService.ts` using Puppeteer
+  - Merges quotation template HTML with recipient-specific data ({name}, {company}, {email}, etc.)
+  - Converts merged HTML to PDF with A4 format, proper margins (20mm top/bottom, 15mm left/right)
+  - PDF filename format: `Bao_Gia_{recipientName}.pdf`
+  - Headless Chrome configuration with sandbox disabled for Replit environment
+- **Email Attachment Integration**:
+  - `sendCampaignEmail()` accepts optional `quotationTemplateHtml` parameter
+  - Generates PDF buffer and attaches to email via nodemailer
+  - Graceful error handling: continues sending email without PDF if generation fails
+  - Logs PDF generation failures for debugging
+- **Backend Enhancement** (POST `/api/bulk-campaigns/:id/send`):
+  - Retrieves quotation template HTML from database when campaign has `quotationTemplateId`
+  - Passes template HTML to email service for PDF generation per recipient
+  - Each recipient receives personalized PDF with their own data merged
+- **SMTP Password Encryption Fix**:
+  - Added `isEncryptedPassword()` helper to validate hex:hex:hex format
+  - Only attempts decryption for properly formatted encrypted passwords
+  - Prevents "Invalid encrypted data format" errors on plain text passwords
+  - Backward compatible with both encrypted and plain text passwords
+
+**Previous Work - Bulk Email Campaign Module - Email Sending Implementation (October 20, 2025)**
 - **Estimated Completion Time Display** (Step 4): Shows campaign duration and expected completion time
-  - Calculates duration based on totalRecipients / sendRate (emails/minute)
-  - Displays both duration in minutes (e.g., "15 phút") and specific completion time (e.g., "16h34")
-  - Uses Vietnamese time format with 24-hour clock
-- **Email Sending Service** (`server/emailService.ts`): Complete nodemailer integration
-  - `sendCampaignEmail()` function with SMTP configuration from database
-  - Merge field replacement: {name}, {company}, {email}, {phone}, {address}, {note}
-  - Tracking pixel insertion at end of email body for open tracking
-  - Comprehensive error handling with specific SMTP error messages
-- **Background Campaign Sending** (POST `/api/bulk-campaigns/:id/send`):
-  - Async IIFE for non-blocking background processing
-  - Rate limiting based on sendRate (default: 50 emails/minute)
-  - Campaign status transitions: draft → sending → completed/failed
-  - Recipient status updates: pending → sent/failed with timestamp
-  - Real-time counters: sentCount, failedCount updated per email
-  - Automatic campaign completion with completedAt timestamp
-  - Error logging per recipient in errorMessage field
-- **Database Schema Updates**: Enhanced tracking fields
-  - `bulkCampaigns`: startedAt, completedAt, sentCount, failedCount
-  - `campaignRecipients`: sentAt timestamp for delivery tracking
-- **Bug Fixes**:
-  - Fixed field name mismatch: email/name → recipientEmail/recipientName
-  - Added comprehensive logging for background process debugging
-- **Testing Status**: Background sending process implemented, needs end-to-end verification
+- **Email Sending Service**: Complete nodemailer integration with merge fields and tracking pixel
+- **Background Campaign Sending**: Async processing, rate limiting, status tracking
+- **Database Schema Updates**: Enhanced tracking fields for send status and timestamps
 
 **Previous Work - Bulk Email Campaign Module - Complete UI Improvements (October 20, 2025)**
 - **Wizard Step 2 Enhancement**: Quotation template selection with dropdown + auto-preview
