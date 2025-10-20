@@ -1614,6 +1614,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Start background sending process
       (async () => {
         try {
+          console.log(`[Campaign ${campaignId}] Starting background sending process...`);
+          console.log(`[Campaign ${campaignId}] Total recipients: ${campaign.recipients.length}`);
+          
           const sendRate = campaign.sendRate || 50; // emails per minute
           const delayMs = (60 * 1000) / sendRate; // milliseconds between each email
           
