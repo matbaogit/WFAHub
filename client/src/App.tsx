@@ -26,6 +26,7 @@ import Analytics from "@/pages/analytics";
 import ServiceCatalogPage from "@/pages/service-catalog";
 import BulkCampaigns from "@/pages/bulk-campaigns";
 import BulkCampaignWizard from "@/pages/bulk-campaign-wizard";
+import BulkCampaignDetail from "@/pages/bulk-campaign-detail";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminTemplates from "@/pages/admin/templates";
@@ -54,6 +55,7 @@ function Router() {
           <Route path="/analytics" component={Analytics} />
           <Route path="/service-catalog" component={ServiceCatalogPage} />
           <Route path="/bulk-campaigns/new" component={BulkCampaignWizard} />
+          <Route path="/bulk-campaigns/:id" component={BulkCampaignDetail} />
           <Route path="/bulk-campaigns" component={BulkCampaigns} />
           <Route path="/logs" component={Logs} />
           <Route path="/account" component={Account} />
