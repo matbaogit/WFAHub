@@ -469,48 +469,40 @@ export default function BulkCampaignWizard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {quotationTemplates.map((template) => (
-          <Card
-            key={template.id}
-            className={`cursor-pointer transition-all hover-elevate ${
-              selectedTemplateId === template.id ? "border-primary ring-2 ring-primary" : ""
-            }`}
-            onClick={() => setSelectedTemplateId(template.id)}
-            data-testid={`card-template-${template.id}`}
-          >
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  <CardTitle className="text-lg">{template.name}</CardTitle>
-                </div>
-                {selectedTemplateId === template.id && (
-                  <CheckCircle2 className="w-5 h-5 text-primary" />
-                )}
-              </div>
-            </CardHeader>
-            {template.description && (
-              <CardContent>
-                <p className="text-sm text-muted-foreground">{template.description}</p>
-              </CardContent>
-            )}
-          </Card>
-        ))}
-      </div>
-
-      {quotationTemplates.length === 0 && (
-        <Card className="border-dashed">
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center justify-center py-8">
-              <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
-              <p className="text-sm text-muted-foreground">
+      <Card>
+        <CardContent className="pt-6 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="template-select">Mẫu báo giá</Label>
+            <Select
+              value={selectedTemplateId || ""}
+              onValueChange={(value) => setSelectedTemplateId(value)}
+            >
+              <SelectTrigger id="template-select" data-testid="select-quotation-template">
+                <SelectValue placeholder="-- Chọn mẫu báo giá --" />
+              </SelectTrigger>
+              <SelectContent>
+                {quotationTemplates.map((template) => (
+                  <SelectItem 
+                    key={template.id} 
+                    value={template.id}
+                    data-testid={`option-template-${template.id}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      {template.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {quotationTemplates.length === 0 && (
+              <p className="text-xs text-muted-foreground">
                 Không tìm thấy mẫu báo giá nào. Vui lòng tạo mẫu trước.
               </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {selectedTemplate && (
         <Card>
@@ -518,8 +510,8 @@ export default function BulkCampaignWizard() {
             <CardTitle>Xem trước mẫu</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="prose prose-sm max-w-none p-4 border rounded-md bg-muted/30">
-              <div dangerouslySetInnerHTML={{ __html: selectedTemplate.htmlContent.substring(0, 500) + "..." }} />
+            <div className="prose prose-sm max-w-none p-4 border rounded-md bg-muted/30 max-h-96 overflow-y-auto">
+              <div dangerouslySetInnerHTML={{ __html: selectedTemplate.htmlContent }} />
             </div>
           </CardContent>
         </Card>
