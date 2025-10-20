@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import puppeteer from "puppeteer";
 import type { SmtpConfig, EmailTemplate, Quotation, Customer } from "@shared/schema";
 import { decryptPassword } from "./utils/encryption";
 
@@ -122,6 +123,7 @@ interface CampaignEmailData {
   body: string;
   smtpConfig: SmtpConfig;
   trackingPixelUrl?: string;
+  quotationTemplateHtml?: string;
 }
 
 // Helper function to check if password is encrypted (hex format)
@@ -132,6 +134,45 @@ function isEncryptedPassword(password: string): boolean {
   // Check if all parts are valid hex strings
   const hexRegex = /^[0-9a-fA-F]+$/;
   return parts.every(part => part.length > 0 && hexRegex.test(part));
+}
+
+// Generate PDF from quotation template HTML with merged data
+export async function generateQuotationPDF(
+  templateHtml: string,
+  recipientData: Record<string, any>
+): Promise<Buffer> {
+  // Replace {field} placeholders with actual data
+  let renderedHtml = templateHtml;
+  for (const [key, value] of Object.entries(recipientData)) {
+    const regex = new RegExp(`\\{${key}\\}`, 'g');
+    renderedHtml = renderedHtml.replace(regex, String(value || ''));
+  }
+
+  // Launch headless browser and generate PDF
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setContent(renderedHtml, { waitUntil: 'networkidle0' });
+    
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: '20mm',
+        right: '15mm',
+        bottom: '20mm',
+        left: '15mm',
+      },
+    });
+
+    return Buffer.from(pdfBuffer);
+  } finally {
+    await browser.close();
+  }
 }
 
 export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> {
