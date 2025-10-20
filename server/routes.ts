@@ -1345,26 +1345,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply column mapping and return parsed recipients - Step 2: Apply mapping
   app.post("/api/bulk-campaigns/apply-mapping", isAuthenticated, upload.single('file'), async (req: any, res) => {
     try {
-      console.log("[DEBUG] Raw req.body:", req.body);
+      console.log("[DEBUG] Raw req.body:", JSON.stringify(req.body));
       console.log("[DEBUG] req.body.mapping type:", typeof req.body.mapping);
       console.log("[DEBUG] req.body.mapping value:", req.body.mapping);
       
+      if (!req.body.mapping) {
+        console.error("[ERROR] req.body.mapping is undefined/null!");
+        return res.status(400).json({ 
+          message: "Không nhận được thông tin mapping",
+          debug: { body: req.body, hasFile: !!req.file }
+        });
+      }
+      
       // Parse mapping from JSON string (sent via FormData)
-      const mapping = typeof req.body.mapping === 'string' 
-        ? JSON.parse(req.body.mapping) 
-        : req.body.mapping;
+      let mapping;
+      try {
+        mapping = typeof req.body.mapping === 'string' 
+          ? JSON.parse(req.body.mapping) 
+          : req.body.mapping;
+      } catch (parseError: any) {
+        console.error("[ERROR] Failed to parse mapping:", parseError);
+        return res.status(400).json({ 
+          message: "Không thể parse mapping",
+          debug: { mappingValue: req.body.mapping, error: parseError.message }
+        });
+      }
       
       console.log("[DEBUG] Parsed mapping:", mapping);
       console.log("[DEBUG] mapping.email:", mapping?.email);
       
-      if (!mapping || !mapping.email) {
+      // Validate email column is mapped (check for null, undefined, empty string, or whitespace)
+      if (!mapping || !mapping.email || typeof mapping.email !== 'string' || mapping.email.trim() === '') {
         console.log("[ERROR] Validation failed - mapping:", mapping);
         return res.status(400).json({ 
           message: "Cần chọn cột Email",
           debug: {
             mappingReceived: mapping,
             emailField: mapping?.email,
-            mappingType: typeof mapping
+            mappingType: typeof mapping,
+            emailTrimmed: mapping?.email?.trim?.()
           }
         });
       }
