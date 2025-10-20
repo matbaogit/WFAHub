@@ -6,41 +6,39 @@ WFA Hub is a Vietnamese-language web application offering ready-made automation 
 
 ## Recent Changes (October 2025)
 
-**Bulk Email Campaign Module - Complete Vietnamese Localization (October 20, 2025)**
-- **Complete Vietnamese UI**: All bulk campaign pages now fully Vietnamese-ized
-  - Sidebar renamed: "Chiến dịch Email" → "Chiến dịch Báo Giá" (emphasizing quotation focus)
-  - List page: Stats cards, table headers, buttons, status badges all in Vietnamese
-  - Wizard page: All 4 steps with Vietnamese labels (Nhập, Mẫu, Thư, Xem lại), form fields, instructions, and navigation buttons
-  - Detail page: Stats, charts, recipient table, export button, search/filter UI all in Vietnamese
-  - Toast messages and error messages in Vietnamese
-  - Zero English text visible in UI (technical merge fields like {name} preserved)
-- **Database Schema Enhancement**: Extended bulk campaign tables with tracking & template integration
-  - `bulkCampaigns`: Added emailSubject, emailBody, quotationTemplateId, emailTemplateId (FK to emailTemplates), sendRate (emails/min), openedCount, scheduledAt
-  - `campaignRecipients`: Added customData (JSONB for merge fields), openedAt, sentAt timestamps
-  - `campaignAttachments`: Added originalName, mimeType for better file handling
-- **Tracking Pixel Implementation**: Public endpoint GET `/api/track/open/:campaignId/:recipientId`
-  - Returns 1x1 transparent GIF pixel
-  - Updates openedAt timestamp on first open
-  - Increments campaign openedCount atomically
-  - Silent error handling to prevent email client issues
-- **4-Step Campaign Wizard** (`/bulk-campaigns/new`):
-  - **Step 1 - Nhập danh sách người nhận**: Excel/CSV upload with live preview, parse columns to customData (name, email, company, etc.)
-  - **Step 2 - Chọn mẫu báo giá**: Choose quotation template for personalized PDF generation, preview template HTML
-  - **Step 3 - Soạn thư**: Subject & body editor with merge field support ({name}, {email}, {company}), optional email template selection
-  - **Step 4 - Xem lại & Gửi**: Campaign settings (name, send rate), summary stats (total recipients, est. time), send immediately or schedule
-  - Visual stepper UI with progress tracking, validation at each step
-- **Campaign Detail Page** (`/bulk-campaigns/:id`):
-  - **Stats Dashboard**: Total recipients, sent count, opened count with open rate %, failed count
-  - **Progress Chart**: Recharts bar chart showing distribution (total, sent, opened, failed)
-  - **Email Preview**: Display campaign subject and body content
-  - **Recipient Table**: Filterable by status (pending/sent/failed), searchable by email/name, shows sentAt/openedAt timestamps, displays error messages
-  - **Export Functionality**: Export recipients to CSV with full tracking data in Vietnamese
-- **Frontend List Page** (`/bulk-campaigns`):
-  - Stats cards: Total campaigns, active, completed, total emails sent
-  - Clickable campaign rows navigate to detail page
-  - Status badges with icons (Nháp, Đã lên lịch, Đang gửi, Hoàn thành, Thất bại), delete with confirmation
-- **Sidebar Navigation**: Organized under collapsible "Gửi Báo Giá" group with "Chiến dịch Báo Giá" and "Mẫu Báo Giá" items
+**Bulk Email Campaign Module - Complete UI Improvements (October 20, 2025)**
+- **Wizard Step 2 Enhancement**: Quotation template selection with dropdown + auto-preview
+  - Changed from card selection to Select dropdown for better UX
+  - Preview automatically displays selected template's HTML content (read-only)
+  - Full HTML rendering in scrollable preview section
+- **Wizard Step 3 Enhancement**: Email template dropdown with auto-fill
+  - Added optional email template selector (Select dropdown)
+  - Auto-fills emailSubject and emailBody when template selected
+  - Preview shows filled content (HTML if starts with '<', plain text otherwise)
+- **Wizard Step 4 - SMTP Validation**: Alert notification if SMTP not configured
+  - Query `/api/smtp-config` to check if user has SMTP setup
+  - Show red Alert with link "Cấu hình SMTP ngay" opening /smtp-config in new tab
+  - Prevents campaign creation without valid SMTP config
+- **SMTP Config Page - Test Email Feature**: Dialog for testing SMTP with recipient input
+  - Added "Test Email" button opens dialog with email input field
+  - User enters recipient email → sends test email via new endpoint
+  - Backend endpoint POST `/api/smtp-config/test` with nodemailer integration
+  - Verifies SMTP connection, sends formatted test email with config info
+  - Enhanced error handling with specific SMTP error messages
+- **Templates Page - Bulk Campaign Shortcut**: "Gửi báo giá" template now navigates to wizard
+  - Template card "Chạy ngay" button checks if template is "Gửi báo giá"
+  - Instead of opening execution modal → navigate directly to `/bulk-campaigns`
+  - Streamlined flow: Templates → Bulk Campaigns wizard
+- **Sidebar Navigation**: "Gửi Báo Giá" link now clickable, navigates to `/bulk-campaigns` list
 - **Remaining Work**: Email sending service with queue system, PDF generation per recipient, merge customData into quotation templates, SMTP integration with rate limiting
+
+**Previous Work - Bulk Email Campaign Module - Complete Vietnamese Localization (October 20, 2025)**
+- **Complete Vietnamese UI**: All bulk campaign pages fully Vietnamese-ized
+- **Database Schema Enhancement**: Extended bulk campaign tables with tracking & template integration
+- **Tracking Pixel Implementation**: Public endpoint GET `/api/track/open/:campaignId/:recipientId`
+- **4-Step Campaign Wizard** (`/bulk-campaigns/new`): Excel/CSV upload, template selection, email composition, review & send
+- **Campaign Detail Page** (`/bulk-campaigns/:id`): Stats dashboard, progress chart, email preview, recipient table, CSV export
+- **Frontend List Page** (`/bulk-campaigns`): Stats cards, clickable rows, status badges, delete confirmation
 
 **Service Catalog Module - Refactored UI (October 16, 2025)**
 - **Streamlined 2-Tab Interface**:
