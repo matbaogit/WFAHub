@@ -113,3 +113,61 @@ export async function sendTestEmail(smtpConfig: SmtpConfig, testEmail: string): 
     html: '<p>Đây là email test từ hệ thống WFA Hub.</p><p>SMTP configuration của bạn đang hoạt động tốt!</p>',
   });
 }
+
+interface CampaignEmailData {
+  recipientEmail: string;
+  recipientName?: string;
+  customData: Record<string, any>;
+  subject: string;
+  body: string;
+  smtpConfig: SmtpConfig;
+  trackingPixelUrl?: string;
+}
+
+export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> {
+  const { recipientEmail, recipientName, customData, subject, body, smtpConfig, trackingPixelUrl } = data;
+
+  // Merge customData into subject and body
+  const mergedData = {
+    name: recipientName || '',
+    email: recipientEmail,
+    ...customData,
+  };
+
+  let renderedSubject = subject;
+  let renderedBody = body;
+
+  // Replace {field} placeholders with actual data
+  for (const [key, value] of Object.entries(mergedData)) {
+    const regex = new RegExp(`\\{${key}\\}`, 'g');
+    renderedSubject = renderedSubject.replace(regex, String(value || ''));
+    renderedBody = renderedBody.replace(regex, String(value || ''));
+  }
+
+  // Add tracking pixel if provided
+  if (trackingPixelUrl) {
+    renderedBody += `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none" />`;
+  }
+
+  // Decrypt SMTP password
+  const decryptedPassword = decryptPassword(smtpConfig.password);
+
+  // Create transporter
+  const transporter = nodemailer.createTransport({
+    host: smtpConfig.host,
+    port: smtpConfig.port,
+    secure: smtpConfig.port === 465,
+    auth: {
+      user: smtpConfig.username,
+      pass: decryptedPassword,
+    },
+  });
+
+  // Send email
+  await transporter.sendMail({
+    from: `"${smtpConfig.fromName || smtpConfig.fromEmail}" <${smtpConfig.fromEmail}>`,
+    to: recipientEmail,
+    subject: renderedSubject,
+    html: renderedBody,
+  });
+}

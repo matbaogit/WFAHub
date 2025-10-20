@@ -6,7 +6,7 @@ import { insertExecutionLogSchema, registerUserSchema, loginUserSchema, insertTe
 import passport from "passport";
 import type { User } from "@shared/schema";
 import { z } from "zod";
-import { sendQuotationEmail } from "./emailService";
+import { sendQuotationEmail, sendCampaignEmail } from "./emailService";
 import multer from "multer";
 import * as XLSX from "xlsx";
 
@@ -1592,22 +1592,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Campaign has no recipients" });
       }
 
+      // Get user's SMTP config
+      const smtpConfig = await storage.getUserSmtpConfig(req.user.id);
+      if (!smtpConfig) {
+        return res.status(400).json({ message: "SMTP configuration not found. Please configure SMTP first." });
+      }
+
       // Update campaign status to sending
       await storage.updateBulkCampaign(campaignId, {
         status: "sending",
         startedAt: new Date(),
       });
 
-      // Start sending process (async - will implement in emailService)
-      // For now, just return success
+      // Return success immediately - sending will happen in background
       res.json({ 
         success: true, 
         message: "Campaign sending started",
         campaignId 
       });
 
-      // TODO: Implement actual bulk email sending with rate limiting
-      // This will be done in task 5 (emailService)
+      // Start background sending process
+      (async () => {
+        try {
+          const sendRate = campaign.sendRate || 50; // emails per minute
+          const delayMs = (60 * 1000) / sendRate; // milliseconds between each email
+          
+          let sentCount = 0;
+          let failedCount = 0;
+
+          for (const recipient of campaign.recipients) {
+            try {
+              // Generate tracking pixel URL
+              const trackingPixelUrl = `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000'}/api/track/open/${campaignId}/${recipient.id}`;
+
+              // Send email
+              await sendCampaignEmail({
+                recipientEmail: recipient.recipientEmail,
+                recipientName: recipient.recipientName || undefined,
+                customData: recipient.customData as Record<string, any> || {},
+                subject: campaign.emailSubject || '',
+                body: campaign.emailBody || '',
+                smtpConfig,
+                trackingPixelUrl,
+              });
+
+              // Update recipient status to sent
+              await storage.updateCampaignRecipient(recipient.id, {
+                status: 'sent',
+                sentAt: new Date(),
+              });
+
+              sentCount++;
+              console.log(`[Campaign ${campaignId}] Sent to ${recipient.recipientEmail} (${sentCount}/${campaign.recipients.length})`);
+            } catch (error: any) {
+              // Update recipient status to failed with error message
+              await storage.updateCampaignRecipient(recipient.id, {
+                status: 'failed',
+                errorMessage: error.message || 'Unknown error',
+              });
+
+              failedCount++;
+              console.error(`[Campaign ${campaignId}] Failed to send to ${recipient.recipientEmail}:`, error.message);
+            }
+
+            // Rate limiting - wait before sending next email
+            if (recipient !== campaign.recipients[campaign.recipients.length - 1]) {
+              await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
+          }
+
+          // Update campaign status to completed
+          await storage.updateBulkCampaign(campaignId, {
+            status: sentCount > 0 ? 'completed' : 'failed',
+            sentCount,
+            failedCount,
+            completedAt: new Date(),
+          });
+
+          console.log(`[Campaign ${campaignId}] Completed: ${sentCount} sent, ${failedCount} failed`);
+        } catch (error: any) {
+          console.error(`[Campaign ${campaignId}] Critical error in background sending:`, error);
+          
+          // Update campaign to failed status
+          await storage.updateBulkCampaign(campaignId, {
+            status: 'failed',
+          });
+        }
+      })();
     } catch (error: any) {
       console.error("Error sending campaign:", error);
       res.status(500).json({ message: error.message || "Failed to send campaign" });
