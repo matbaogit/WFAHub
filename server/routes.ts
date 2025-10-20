@@ -1600,6 +1600,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "SMTP configuration not found. Please configure SMTP first." });
       }
 
+      // Get quotation template HTML if campaign has a template selected
+      let quotationTemplateHtml: string | undefined;
+      if (campaign.quotationTemplateId) {
+        const template = await storage.getQuotationTemplate(campaign.quotationTemplateId);
+        if (template && template.htmlContent) {
+          quotationTemplateHtml = template.htmlContent;
+        }
+      }
+
       // Update campaign status to sending
       await storage.updateBulkCampaign(campaignId, {
         status: "sending",
@@ -1639,6 +1648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 body: campaign.emailBody || '',
                 smtpConfig,
                 trackingPixelUrl,
+                quotationTemplateHtml,
               });
 
               // Update recipient status to sent
