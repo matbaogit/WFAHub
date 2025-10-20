@@ -47,14 +47,20 @@ export default function ColumnMappingTable({
                 </TableCell>
                 <TableCell>
                   <Select
-                    value={mapping[field.key] || ""}
-                    onValueChange={(value) => onMappingChange(field.key, value)}
+                    value={mapping[field.key] || "NONE"}
+                    onValueChange={(value) => {
+                      if (value === "NONE") {
+                        onMappingChange(field.key, "");
+                      } else {
+                        onMappingChange(field.key, value);
+                      }
+                    }}
                   >
                     <SelectTrigger data-testid={`select-mapping-${field.key}`}>
                       <SelectValue placeholder="-- Chọn cột --" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">-- Bỏ qua --</SelectItem>
+                      <SelectItem value="NONE">-- Bỏ qua --</SelectItem>
                       {headers.map((header) => (
                         <SelectItem key={header} value={header}>
                           {header}
