@@ -727,6 +727,14 @@ export default function BulkCampaignWizard() {
                 <p className="text-2xl font-bold">
                   {Math.ceil(parsedRecipients.length / sendRate)} phút
                 </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Hoàn thành lúc{" "}
+                  {(() => {
+                    const minutes = Math.ceil(parsedRecipients.length / sendRate);
+                    const completionTime = new Date(Date.now() + minutes * 60000);
+                    return completionTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                  })()}
+                </p>
               </div>
             </div>
           </CardContent>
