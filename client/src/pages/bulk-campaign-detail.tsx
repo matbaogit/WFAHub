@@ -82,7 +82,7 @@ export default function BulkCampaignDetail() {
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading campaign details...</p>
+          <p className="text-muted-foreground">Đang tải thông tin chiến dịch...</p>
         </div>
       </div>
     );
@@ -95,11 +95,11 @@ export default function BulkCampaignDetail() {
           <CardContent className="pt-6">
             <div className="flex flex-col items-center justify-center py-12">
               <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
-              <p className="text-lg text-muted-foreground">Campaign not found</p>
+              <p className="text-lg text-muted-foreground">Không tìm thấy chiến dịch</p>
               <Link href="/bulk-campaigns">
                 <Button className="mt-4" variant="outline">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Campaigns
+                  Quay lại danh sách
                 </Button>
               </Link>
             </div>
@@ -201,7 +201,7 @@ export default function BulkCampaignDetail() {
               {campaign.name}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Created {format(new Date(campaign.createdAt), "dd/MM/yyyy HH:mm")}
+              Tạo lúc {format(new Date(campaign.createdAt), "dd/MM/yyyy HH:mm")}
             </p>
           </div>
         </div>
@@ -216,7 +216,7 @@ export default function BulkCampaignDetail() {
                 <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Recipients</p>
+                <p className="text-sm text-muted-foreground">Tổng người nhận</p>
                 <p className="text-2xl font-bold" data-testid="text-total-recipients">
                   {campaign.totalRecipients}
                 </p>
@@ -232,7 +232,7 @@ export default function BulkCampaignDetail() {
                 <Mail className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Sent</p>
+                <p className="text-sm text-muted-foreground">Đã gửi</p>
                 <p className="text-2xl font-bold" data-testid="text-sent-count">
                   {campaign.sentCount}
                 </p>
@@ -248,11 +248,11 @@ export default function BulkCampaignDetail() {
                 <Eye className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Opened</p>
+                <p className="text-sm text-muted-foreground">Đã mở</p>
                 <p className="text-2xl font-bold" data-testid="text-opened-count">
                   {campaign.openedCount}
                 </p>
-                <p className="text-xs text-muted-foreground">{openRate}% open rate</p>
+                <p className="text-xs text-muted-foreground">{openRate}% tỷ lệ mở</p>
               </div>
             </div>
           </CardContent>
@@ -265,7 +265,7 @@ export default function BulkCampaignDetail() {
                 <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Failed</p>
+                <p className="text-sm text-muted-foreground">Thất bại</p>
                 <p className="text-2xl font-bold" data-testid="text-failed-count">
                   {campaign.failedCount}
                 </p>
@@ -277,9 +277,9 @@ export default function BulkCampaignDetail() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Campaign Progress</CardTitle>
+          <CardTitle>Tiến độ chiến dịch</CardTitle>
           <CardDescription>
-            {progressPercentage}% complete • {campaign.sentCount} of {campaign.totalRecipients} sent
+            {progressPercentage}% hoàn thành • {campaign.sentCount} / {campaign.totalRecipients} đã gửi
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -300,19 +300,19 @@ export default function BulkCampaignDetail() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Email Details</CardTitle>
-              <CardDescription>Campaign email content</CardDescription>
+              <CardTitle>Chi tiết thư</CardTitle>
+              <CardDescription>Nội dung thư trong chiến dịch</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">Subject:</p>
+            <p className="text-sm font-medium text-muted-foreground mb-1">Tiêu đề:</p>
             <p className="text-sm" data-testid="text-email-subject">{campaign.emailSubject}</p>
           </div>
           <Separator />
           <div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">Body:</p>
+            <p className="text-sm font-medium text-muted-foreground mb-1">Nội dung:</p>
             <div className="p-3 bg-muted/30 rounded-md text-sm whitespace-pre-wrap max-h-64 overflow-y-auto" data-testid="text-email-body">
               {campaign.emailBody}
             </div>
@@ -324,12 +324,12 @@ export default function BulkCampaignDetail() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Recipients ({filteredRecipients.length})</CardTitle>
-              <CardDescription>Manage and track campaign recipients</CardDescription>
+              <CardTitle>Người nhận ({filteredRecipients.length})</CardTitle>
+              <CardDescription>Quản lý và theo dõi người nhận</CardDescription>
             </div>
             <Button onClick={handleExportCSV} variant="outline" size="sm" data-testid="button-export-csv">
               <Download className="w-4 h-4 mr-2" />
-              Export CSV
+              Xuất CSV
             </Button>
           </div>
         </CardHeader>
@@ -338,7 +338,7 @@ export default function BulkCampaignDetail() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search by email or name..."
+                placeholder="Tìm theo email hoặc tên..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -347,10 +347,10 @@ export default function BulkCampaignDetail() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-48" data-testid="select-status-filter">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder="Lọc theo trạng thái" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all">Tất cả trạng thái</SelectItem>
                 <SelectItem value="pending">Chờ gửi</SelectItem>
                 <SelectItem value="sent">Đã gửi</SelectItem>
                 <SelectItem value="failed">Thất bại</SelectItem>
@@ -363,18 +363,18 @@ export default function BulkCampaignDetail() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Email</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Sent At</TableHead>
-                  <TableHead>Opened At</TableHead>
-                  <TableHead>Error</TableHead>
+                  <TableHead>Tên</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead>Đã gửi lúc</TableHead>
+                  <TableHead>Đã mở lúc</TableHead>
+                  <TableHead>Lỗi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRecipients.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      No recipients found
+                      Không tìm thấy người nhận
                     </TableCell>
                   </TableRow>
                 ) : (
