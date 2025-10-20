@@ -40,12 +40,13 @@ import { format } from "date-fns";
 
 interface CampaignRecipient {
   id: string;
-  email: string;
-  name: string | null;
+  recipientEmail: string;
+  recipientName: string | null;
   status: string;
   openedAt: Date | null;
   sentAt: Date | null;
   errorMessage: string | null;
+  customData: Record<string, any>;
 }
 
 interface CampaignDetails {
@@ -112,8 +113,8 @@ export default function BulkCampaignDetail() {
   const filteredRecipients = campaign.recipients.filter((recipient) => {
     const matchesSearch =
       searchQuery === "" ||
-      recipient.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (recipient.name && recipient.name.toLowerCase().includes(searchQuery.toLowerCase()));
+      recipient.recipientEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (recipient.recipientName && recipient.recipientName.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesStatus = statusFilter === "all" || recipient.status === statusFilter;
 
@@ -166,8 +167,8 @@ export default function BulkCampaignDetail() {
   const handleExportCSV = () => {
     const headers = ["Email", "Tên", "Trạng thái", "Đã gửi", "Đã mở", "Lỗi"];
     const rows = filteredRecipients.map((r) => [
-      r.email,
-      r.name || "",
+      r.recipientEmail,
+      r.recipientName || "",
       r.status,
       r.sentAt ? format(new Date(r.sentAt), "dd/MM/yyyy HH:mm") : "",
       r.openedAt ? format(new Date(r.openedAt), "dd/MM/yyyy HH:mm") : "",
@@ -378,37 +379,52 @@ export default function BulkCampaignDetail() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredRecipients.map((recipient) => (
-                    <TableRow key={recipient.id} data-testid={`row-recipient-${recipient.id}`}>
-                      <TableCell className="font-medium">{recipient.email}</TableCell>
-                      <TableCell>{recipient.name || "-"}</TableCell>
-                      <TableCell>{getStatusBadge(recipient.status)}</TableCell>
-                      <TableCell>
-                        {recipient.sentAt
-                          ? format(new Date(recipient.sentAt), "dd/MM/yyyy HH:mm")
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        {recipient.openedAt ? (
-                          <div className="flex items-center gap-1 text-purple-600">
-                            <Eye className="w-3 h-3" />
-                            {format(new Date(recipient.openedAt), "dd/MM/yyyy HH:mm")}
-                          </div>
-                        ) : (
-                          "-"
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {recipient.errorMessage ? (
-                          <span className="text-xs text-destructive truncate max-w-xs block">
-                            {recipient.errorMessage}
-                          </span>
-                        ) : (
-                          "-"
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  filteredRecipients.map((recipient, index) => {
+                    // Calculate estimated send time based on position and sendRate
+                    const estimatedSendTime = recipient.sentAt 
+                      ? null 
+                      : campaign.startedAt 
+                        ? new Date(new Date(campaign.startedAt).getTime() + (index * (60000 / campaign.sendRate)))
+                        : null;
+                    
+                    return (
+                      <TableRow key={recipient.id} data-testid={`row-recipient-${recipient.id}`}>
+                        <TableCell className="font-medium">{recipient.recipientEmail}</TableCell>
+                        <TableCell>{recipient.recipientName || "-"}</TableCell>
+                        <TableCell>{getStatusBadge(recipient.status)}</TableCell>
+                        <TableCell>
+                          {recipient.sentAt ? (
+                            format(new Date(recipient.sentAt), "dd/MM/yyyy HH:mm")
+                          ) : estimatedSendTime ? (
+                            <span className="text-xs text-muted-foreground">
+                              Ước tính: {format(estimatedSendTime, "HH:mm")}
+                            </span>
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {recipient.openedAt ? (
+                            <div className="flex items-center gap-1 text-purple-600">
+                              <Eye className="w-3 h-3" />
+                              {format(new Date(recipient.openedAt), "dd/MM/yyyy HH:mm")}
+                            </div>
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {recipient.errorMessage ? (
+                            <span className="text-xs text-destructive truncate max-w-xs block">
+                              {recipient.errorMessage}
+                            </span>
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
