@@ -1611,8 +1611,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         campaignId 
       });
 
-      // Start background sending process
-      (async () => {
+      // Start background sending process using setImmediate to ensure it runs after response is sent
+      setImmediate(async () => {
         try {
           console.log(`[Campaign ${campaignId}] Starting background sending process...`);
           console.log(`[Campaign ${campaignId}] Total recipients: ${campaign.recipients.length}`);
@@ -1681,7 +1681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: 'failed',
           });
         }
-      })();
+      });
     } catch (error: any) {
       console.error("Error sending campaign:", error);
       res.status(500).json({ message: error.message || "Failed to send campaign" });

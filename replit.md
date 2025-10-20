@@ -6,35 +6,40 @@ WFA Hub is a Vietnamese-language web application offering ready-made automation 
 
 ## Recent Changes (October 2025)
 
-**Bulk Email Campaign Module - Complete UI Improvements (October 20, 2025)**
+**Bulk Email Campaign Module - Email Sending Implementation (October 20, 2025)**
+- **Estimated Completion Time Display** (Step 4): Shows campaign duration and expected completion time
+  - Calculates duration based on totalRecipients / sendRate (emails/minute)
+  - Displays both duration in minutes (e.g., "15 phút") and specific completion time (e.g., "16h34")
+  - Uses Vietnamese time format with 24-hour clock
+- **Email Sending Service** (`server/emailService.ts`): Complete nodemailer integration
+  - `sendCampaignEmail()` function with SMTP configuration from database
+  - Merge field replacement: {name}, {company}, {email}, {phone}, {address}, {note}
+  - Tracking pixel insertion at end of email body for open tracking
+  - Comprehensive error handling with specific SMTP error messages
+- **Background Campaign Sending** (POST `/api/bulk-campaigns/:id/send`):
+  - Async IIFE for non-blocking background processing
+  - Rate limiting based on sendRate (default: 50 emails/minute)
+  - Campaign status transitions: draft → sending → completed/failed
+  - Recipient status updates: pending → sent/failed with timestamp
+  - Real-time counters: sentCount, failedCount updated per email
+  - Automatic campaign completion with completedAt timestamp
+  - Error logging per recipient in errorMessage field
+- **Database Schema Updates**: Enhanced tracking fields
+  - `bulkCampaigns`: startedAt, completedAt, sentCount, failedCount
+  - `campaignRecipients`: sentAt timestamp for delivery tracking
+- **Bug Fixes**:
+  - Fixed field name mismatch: email/name → recipientEmail/recipientName
+  - Added comprehensive logging for background process debugging
+- **Testing Status**: Background sending process implemented, needs end-to-end verification
+
+**Previous Work - Bulk Email Campaign Module - Complete UI Improvements (October 20, 2025)**
 - **Wizard Step 2 Enhancement**: Quotation template selection with dropdown + auto-preview
-  - Changed from card selection to Select dropdown for better UX
-  - Preview automatically displays selected template's HTML content (read-only)
-  - Full HTML rendering in scrollable preview section
 - **Wizard Step 3 Enhancement**: Email template dropdown with auto-fill
-  - Added optional email template selector (Select dropdown)
-  - Auto-fills emailSubject and emailBody when template selected
-  - Preview shows filled content (HTML if starts with '<', plain text otherwise)
 - **Wizard Step 4 - SMTP Validation**: Alert notification if SMTP not configured
-  - Query `/api/smtp-config` to check if user has SMTP setup
-  - Show red Alert with link "Cấu hình SMTP ngay" opening /smtp-config in new tab
-  - Prevents campaign creation without valid SMTP config
 - **SMTP Config Page - Test Email Feature**: Dialog for testing SMTP with recipient input
-  - Added "Test Email" button opens dialog with email input field
-  - User enters recipient email → sends test email via new endpoint
-  - Backend endpoint POST `/api/smtp-config/test` with nodemailer integration
-  - Verifies SMTP connection, sends formatted test email with config info
-  - Enhanced error handling with specific SMTP error messages
 - **Templates Page - Bulk Campaign Shortcut**: "Gửi báo giá" template now navigates to wizard
-  - Template card "Chạy ngay" button checks if template is "Gửi báo giá"
-  - Instead of opening execution modal → navigate directly to `/bulk-campaigns`
-  - Streamlined flow: Templates → Bulk Campaigns wizard
-- **Sidebar Navigation**: "Gửi Báo Giá" link now clickable, navigates to `/bulk-campaigns` list
-- **Bug Fix - Campaign Creation**: Fixed "Tạo chiến dịch thất bại" error
-  - Root cause: Field name mismatch between frontend (email/name) and database schema (recipientEmail/recipientName)
-  - Solution: Updated `/api/bulk-campaigns/:id/recipients` endpoint to correctly map field names
-  - Recipients data now properly includes recipientEmail, recipientName, and customData fields
-- **Remaining Work**: Email sending service with queue system, PDF generation per recipient, merge customData into quotation templates, SMTP integration with rate limiting
+- **Sidebar Navigation**: "Gửi Báo Giá" link now clickable
+- **Campaign Detail Page**: Stats dashboard, progress chart, email preview, recipient table, CSV export
 
 **Previous Work - Bulk Email Campaign Module - Complete Vietnamese Localization (October 20, 2025)**
 - **Complete Vietnamese UI**: All bulk campaign pages fully Vietnamese-ized
