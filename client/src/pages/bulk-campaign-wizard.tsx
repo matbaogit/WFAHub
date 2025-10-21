@@ -14,6 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ColumnMappingTable from "@/components/ColumnMappingTable";
+import { VariablePicker } from "@/components/VariablePicker";
 import { 
   Upload, 
   FileSpreadsheet, 
@@ -88,6 +89,7 @@ export default function BulkCampaignWizard() {
   const [parsedRecipients, setParsedRecipients] = useState<ParsedRecipient[]>([]);
   const [availableVariables, setAvailableVariables] = useState<Array<{label: string, value: string}>>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [quotationHtmlContent, setQuotationHtmlContent] = useState("");
   const [selectedEmailTemplateId, setSelectedEmailTemplateId] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
@@ -482,64 +484,113 @@ export default function BulkCampaignWizard() {
     );
   };
 
-  const renderStep2 = () => (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Chọn mẫu báo giá</h2>
-        <p className="text-sm text-muted-foreground">
-          Chọn mẫu để tạo báo giá cá nhân hóa cho từng người nhận
-        </p>
-      </div>
+  const renderStep2 = () => {
+    const quotationTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="template-select">Mẫu báo giá</Label>
-            <Select
-              value={selectedTemplateId || ""}
-              onValueChange={(value) => setSelectedTemplateId(value)}
-            >
-              <SelectTrigger id="template-select" data-testid="select-quotation-template">
-                <SelectValue placeholder="-- Chọn mẫu báo giá --" />
-              </SelectTrigger>
-              <SelectContent>
-                {quotationTemplates.map((template) => (
-                  <SelectItem 
-                    key={template.id} 
-                    value={template.id}
-                    data-testid={`option-template-${template.id}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4" />
-                      {template.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {quotationTemplates.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                Không tìm thấy mẫu báo giá nào. Vui lòng tạo mẫu trước.
-              </p>
-            )}
+    const handleQuotationDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
+      e.preventDefault();
+      const variable = e.dataTransfer.getData("text/plain");
+      
+      if (!quotationTextareaRef.current) return;
+      
+      const textarea = quotationTextareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const currentValue = quotationHtmlContent;
+      
+      const newValue = currentValue.substring(0, start) + variable + currentValue.substring(end);
+      setQuotationHtmlContent(newValue);
+      
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + variable.length, start + variable.length);
+      }, 0);
+    };
+
+    const handleQuotationDragOver = (e: React.DragEvent<HTMLTextAreaElement>) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    };
+
+    const handleTemplateSelect = (templateId: string) => {
+      setSelectedTemplateId(templateId);
+      const template = quotationTemplates.find(t => t.id === templateId);
+      if (template) {
+        setQuotationHtmlContent(template.htmlContent);
+      }
+    };
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Chọn mẫu báo giá</h2>
+          <p className="text-sm text-muted-foreground">
+            Chọn mẫu hoặc soạn HTML tùy chỉnh. Kéo thả biến từ sidebar vào khung soạn thảo.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className="lg:col-span-1">
+            <VariablePicker 
+              variables={availableVariables} 
+              title="Biến từ CSV"
+              description="Kéo và thả vào khung HTML"
+            />
           </div>
-        </CardContent>
-      </Card>
 
-      {selectedTemplate && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Xem trước mẫu</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="prose prose-sm max-w-none p-4 border rounded-md bg-muted/30 max-h-96 overflow-y-auto">
-              <div dangerouslySetInnerHTML={{ __html: selectedTemplate.htmlContent }} />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
+          <div className="lg:col-span-3 space-y-4">
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="template-select">Mẫu báo giá (tùy chọn)</Label>
+                  <Select
+                    value={selectedTemplateId || ""}
+                    onValueChange={handleTemplateSelect}
+                  >
+                    <SelectTrigger id="template-select" data-testid="select-quotation-template">
+                      <SelectValue placeholder="-- Chọn mẫu để tự động điền --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {quotationTemplates.map((template) => (
+                        <SelectItem 
+                          key={template.id} 
+                          value={template.id}
+                          data-testid={`option-template-${template.id}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4" />
+                            {template.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="quotation-html">Nội dung HTML</Label>
+                  <Textarea
+                    ref={quotationTextareaRef}
+                    id="quotation-html"
+                    value={quotationHtmlContent}
+                    onChange={(e) => setQuotationHtmlContent(e.target.value)}
+                    onDrop={handleQuotationDrop}
+                    onDragOver={handleQuotationDragOver}
+                    placeholder="<div>Báo giá cho {name}...</div>"
+                    className="font-mono text-sm min-h-[300px] bg-muted/30"
+                    data-testid="textarea-quotation-html"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Kéo thả biến từ sidebar hoặc nhập trực tiếp mã HTML
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderStep3 = () => {
     const selectedEmailTemplate = emailTemplates.find((t) => t.id === selectedEmailTemplateId);
