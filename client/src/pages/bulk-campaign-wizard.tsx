@@ -71,6 +71,7 @@ interface FilePreviewData {
   preview: Array<Record<string, any>>;
   totalRows: number;
   autoMapping: Record<string, string>;
+  availableVariables?: Array<{label: string, value: string}>;
 }
 
 export default function BulkCampaignWizard() {
@@ -85,6 +86,7 @@ export default function BulkCampaignWizard() {
   const [filePreview, setFilePreview] = useState<FilePreviewData | null>(null);
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
   const [parsedRecipients, setParsedRecipients] = useState<ParsedRecipient[]>([]);
+  const [availableVariables, setAvailableVariables] = useState<Array<{label: string, value: string}>>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [selectedEmailTemplateId, setSelectedEmailTemplateId] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
@@ -125,9 +127,11 @@ export default function BulkCampaignWizard() {
         headers: data.headers,
         preview: data.preview,
         totalRows: data.totalRows,
-        autoMapping: data.autoMapping || {}
+        autoMapping: data.autoMapping || {},
+        availableVariables: data.availableVariables || []
       });
       setColumnMapping(data.autoMapping || {});
+      setAvailableVariables(data.availableVariables || []);
       setShowMappingView(true);
       toast({
         title: "Tải file thành công",
@@ -276,6 +280,7 @@ export default function BulkCampaignWizard() {
       quotationTemplateId: selectedTemplateId || null,
       sendRate,
       userId: user?.id,
+      availableVariables,
     });
   };
 
