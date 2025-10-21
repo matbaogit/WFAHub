@@ -593,104 +593,170 @@ export default function BulkCampaignWizard() {
   };
 
   const renderStep3 = () => {
-    const selectedEmailTemplate = emailTemplates.find((t) => t.id === selectedEmailTemplateId);
+    const emailSubjectRef = useRef<HTMLInputElement>(null);
+    const emailBodyRef = useRef<HTMLTextAreaElement>(null);
+
+    const handleEmailSubjectDrop = (e: React.DragEvent<HTMLInputElement>) => {
+      e.preventDefault();
+      const variable = e.dataTransfer.getData("text/plain");
+      
+      if (!emailSubjectRef.current) return;
+      
+      const input = emailSubjectRef.current;
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || 0;
+      const currentValue = emailSubject;
+      
+      const newValue = currentValue.substring(0, start) + variable + currentValue.substring(end);
+      setEmailSubject(newValue);
+      
+      setTimeout(() => {
+        input.focus();
+        input.setSelectionRange(start + variable.length, start + variable.length);
+      }, 0);
+    };
+
+    const handleEmailBodyDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
+      e.preventDefault();
+      const variable = e.dataTransfer.getData("text/plain");
+      
+      if (!emailBodyRef.current) return;
+      
+      const textarea = emailBodyRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const currentValue = emailBody;
+      
+      const newValue = currentValue.substring(0, start) + variable + currentValue.substring(end);
+      setEmailBody(newValue);
+      
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + variable.length, start + variable.length);
+      }, 0);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "copy";
+    };
 
     return (
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Soạn thư</h2>
           <p className="text-sm text-muted-foreground">
-            Chọn mẫu email hoặc nhập tiêu đề và nội dung thư. Sử dụng các trường merge như {`{name}`}, {`{email}`}, {`{company}`}
+            Soạn email hoặc chọn mẫu. Kéo thả biến từ sidebar vào tiêu đề hoặc nội dung.
           </p>
         </div>
 
-        <Card>
-          <CardContent className="pt-6 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email-template-select">Mẫu email (không bắt buộc)</Label>
-              <Select
-                value={selectedEmailTemplateId}
-                onValueChange={(value) => {
-                  setSelectedEmailTemplateId(value);
-                  const template = emailTemplates.find((t) => t.id === value);
-                  if (template) {
-                    setEmailSubject(template.subject);
-                    setEmailBody(template.htmlContent);
-                  }
-                }}
-              >
-                <SelectTrigger id="email-template-select" data-testid="select-email-template">
-                  <SelectValue placeholder="-- Chọn mẫu email --" />
-                </SelectTrigger>
-                <SelectContent>
-                  {emailTemplates.map((template) => (
-                    <SelectItem 
-                      key={template.id} 
-                      value={template.id}
-                      data-testid={`option-email-template-${template.id}`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4" />
-                        {template.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Chọn mẫu để tự động điền tiêu đề và nội dung
-              </p>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className="lg:col-span-1">
+            <VariablePicker 
+              variables={availableVariables} 
+              title="Biến từ CSV"
+              description="Kéo và thả vào email"
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email-subject">Tiêu đề thư</Label>
-              <Input
-                id="email-subject"
-                value={emailSubject}
-                onChange={(e) => setEmailSubject(e.target.value)}
-                placeholder="Báo giá dành riêng cho {name}"
-                data-testid="input-email-subject"
-              />
-            </div>
+          <div className="lg:col-span-3 space-y-4">
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email-template-select">Mẫu email (tùy chọn)</Label>
+                  <Select
+                    value={selectedEmailTemplateId}
+                    onValueChange={(value) => {
+                      setSelectedEmailTemplateId(value);
+                      const template = emailTemplates.find((t) => t.id === value);
+                      if (template) {
+                        setEmailSubject(template.subject);
+                        setEmailBody(template.htmlContent);
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="email-template-select" data-testid="select-email-template">
+                      <SelectValue placeholder="-- Chọn mẫu để tự động điền --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {emailTemplates.map((template) => (
+                        <SelectItem 
+                          key={template.id} 
+                          value={template.id}
+                          data-testid={`option-email-template-${template.id}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4" />
+                            {template.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email-body">Nội dung thư</Label>
-              <Textarea
-                id="email-body"
-                value={emailBody}
-                onChange={(e) => setEmailBody(e.target.value)}
-                placeholder="Xin chào {name},&#10;&#10;Chúng tôi gửi đến bạn báo giá chi tiết...&#10;&#10;Trân trọng."
-                rows={12}
-                data-testid="input-email-body"
-              />
-              <p className="text-xs text-muted-foreground">
-                Gợi ý: Sử dụng các trường merge từ file Excel: {`{name}`}, {`{email}`}, {`{company}`}, v.v.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="email-subject">Tiêu đề thư</Label>
+                  <Input
+                    ref={emailSubjectRef}
+                    id="email-subject"
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                    onDrop={handleEmailSubjectDrop}
+                    onDragOver={handleDragOver}
+                    placeholder="Báo giá dành riêng cho {name}"
+                    className="bg-muted/30"
+                    data-testid="input-email-subject"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Kéo thả biến từ sidebar vào tiêu đề
+                  </p>
+                </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Xem trước thư</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="p-3 border rounded-md bg-muted/30">
-                <p className="text-xs text-muted-foreground mb-1">Tiêu đề:</p>
-                <p className="font-medium">{emailSubject || "Chưa có tiêu đề"}</p>
-              </div>
-              <div className="p-3 border rounded-md bg-muted/30 min-h-32 max-h-96 overflow-y-auto">
-                <p className="text-xs text-muted-foreground mb-1">Nội dung:</p>
-                {emailBody.startsWith('<') ? (
-                  <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: emailBody }} />
-                ) : (
-                  <div className="whitespace-pre-wrap text-sm">{emailBody || "Chưa có nội dung"}</div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="email-body">Nội dung thư</Label>
+                  <Textarea
+                    ref={emailBodyRef}
+                    id="email-body"
+                    value={emailBody}
+                    onChange={(e) => setEmailBody(e.target.value)}
+                    onDrop={handleEmailBodyDrop}
+                    onDragOver={handleDragOver}
+                    placeholder="Xin chào {name},&#10;&#10;Chúng tôi gửi đến bạn báo giá chi tiết...&#10;&#10;Trân trọng."
+                    rows={12}
+                    className="bg-muted/30"
+                    data-testid="input-email-body"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Kéo thả biến từ sidebar hoặc nhập trực tiếp nội dung
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Xem trước thư</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="p-3 border rounded-md bg-muted/30">
+                    <p className="text-xs text-muted-foreground mb-1">Tiêu đề:</p>
+                    <p className="font-medium">{emailSubject || "Chưa có tiêu đề"}</p>
+                  </div>
+                  <div className="p-3 border rounded-md bg-muted/30 min-h-32 max-h-96 overflow-y-auto">
+                    <p className="text-xs text-muted-foreground mb-1">Nội dung:</p>
+                    {emailBody.startsWith('<') ? (
+                      <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: emailBody }} />
+                    ) : (
+                      <div className="whitespace-pre-wrap text-sm">{emailBody || "Chưa có nội dung"}</div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   };
