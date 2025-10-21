@@ -1345,6 +1345,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper function to normalize column names to variable names
+  const normalizeVariableName = (columnName: string): string => {
+    return columnName
+      .toLowerCase()
+      .trim()
+      .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, 'a')
+      .replace(/[èéẹẻẽêềếệểễ]/g, 'e')
+      .replace(/[ìíịỉĩ]/g, 'i')
+      .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, 'o')
+      .replace(/[ùúụủũưừứựửữ]/g, 'u')
+      .replace(/[ỳýỵỷỹ]/g, 'y')
+      .replace(/đ/g, 'd')
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  };
+
   // Parse CSV/Excel for recipients - Step 1: Get headers and preview
   app.post("/api/bulk-campaigns/parse-recipients", isAuthenticated, upload.single('file'), async (req: any, res) => {
     try {
@@ -1363,6 +1379,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get headers from first row
       const headers = Object.keys(data[0] as Record<string, unknown>);
       
+      // Create available variables mapping (column name -> variable name)
+      const availableVariables: Array<{label: string, value: string}> = headers.map(header => ({
+        label: header,
+        value: `{${normalizeVariableName(header)}}`
+      }));
+      
       // Auto-detect mapping based on common column names
       const autoMapping: Record<string, string> = {};
       headers.forEach(header => {
@@ -1380,13 +1402,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
       
-      // Return headers and preview (first 5 rows)
+      // Return headers, preview, and available variables
       res.json({ 
         success: true, 
         headers,
         preview: data.slice(0, 5),
         totalRows: data.length,
         autoMapping,
+        availableVariables,
         // Store full data in session for later use
         fileKey: `upload_${Date.now()}_${Math.random().toString(36).slice(2)}`
       });
