@@ -161,7 +161,7 @@ export default function QuotationTemplates() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Template Báo Giá</h1>
-          <p className="text-muted-foreground mt-1">Quản lý template HTML cho báo giá</p>
+          <p className="text-muted-foreground mt-1">Quản lý mẫu tệp đính kèm</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
