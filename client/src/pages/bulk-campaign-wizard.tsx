@@ -198,7 +198,7 @@ export default function BulkCampaignWizard() {
       }
       toast({
         title: "Áp dụng mapping thành công",
-        description: `Đã parse ${data.totalCount} người nhận với ${data.availableVariables?.length || 0} biến`,
+        description: `Đã phân tích ${data.totalCount} người nhận với ${data.availableVariables?.length || 0} biến`,
       });
     },
     onError: (error: Error) => {
@@ -234,7 +234,7 @@ export default function BulkCampaignWizard() {
       await queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
 
       const message = schedulingMode === "now" 
-        ? "Chiến dịch báo giá hàng loạt đã bắt đầu gửi."
+        ? "Chiến dịch email hàng loạt đã bắt đầu gửi."
         : "Chiến dịch đã được lên lịch thành công.";
 
       toast({
@@ -276,7 +276,7 @@ export default function BulkCampaignWizard() {
       toast({
         variant: "destructive",
         title: "Chưa chọn mẫu",
-        description: "Vui lòng chọn mẫu báo giá.",
+        description: "Vui lòng chọn mẫu tệp cá nhân hoá.",
       });
       return;
     }
@@ -499,7 +499,7 @@ export default function BulkCampaignWizard() {
             <CardHeader>
               <CardTitle className="text-green-600 flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5" />
-                Đã parse thành công ({parsedRecipients.length} người nhận)
+                Đã phân tích thành công ({parsedRecipients.length} người nhận)
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -599,7 +599,7 @@ export default function BulkCampaignWizard() {
             <Card>
               <CardContent className="pt-6 space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="template-select">Mẫu báo giá (tùy chọn)</Label>
+                  <Label htmlFor="template-select">Mẫu tệp cá nhân hoá (tùy chọn)</Label>
                   <Select
                     value={selectedTemplateId || ""}
                     onValueChange={handleTemplateSelect}
@@ -633,7 +633,7 @@ export default function BulkCampaignWizard() {
                     onChange={(e) => setQuotationHtmlContent(e.target.value)}
                     onDrop={handleQuotationDrop}
                     onDragOver={handleQuotationDragOver}
-                    placeholder="<div>Báo giá cho {name}...</div>"
+                    placeholder="<div>Nội dung cho {name}...</div>"
                     className="font-mono text-sm min-h-[300px] bg-muted/30"
                     data-testid="textarea-quotation-html"
                   />
@@ -758,7 +758,7 @@ export default function BulkCampaignWizard() {
                     onChange={(e) => setEmailSubject(e.target.value)}
                     onDrop={handleEmailSubjectDrop}
                     onDragOver={handleDragOver}
-                    placeholder="Báo giá dành riêng cho {name}"
+                    placeholder="Email dành riêng cho {name}"
                     className="bg-muted/30"
                     data-testid="input-email-subject"
                   />
@@ -776,7 +776,7 @@ export default function BulkCampaignWizard() {
                     onChange={(e) => setEmailBody(e.target.value)}
                     onDrop={handleEmailBodyDrop}
                     onDragOver={handleDragOver}
-                    placeholder="Xin chào {name},&#10;&#10;Chúng tôi gửi đến bạn báo giá chi tiết...&#10;&#10;Trân trọng."
+                    placeholder="Xin chào {name},&#10;&#10;Chúng tôi gửi đến bạn thông tin chi tiết...&#10;&#10;Trân trọng."
                     rows={12}
                     className="bg-muted/30"
                     data-testid="input-email-body"
@@ -1032,7 +1032,7 @@ export default function BulkCampaignWizard() {
               <span className="text-sm font-medium">{emailSubject}</span>
             </div>
             <div className="flex justify-between py-2 border-b">
-              <span className="text-sm text-muted-foreground">Mẫu báo giá:</span>
+              <span className="text-sm text-muted-foreground">Mẫu tệp đính kèm:</span>
               <span className="text-sm font-medium">
                 {selectedTemplate?.name || "Không có"}
               </span>
@@ -1146,7 +1146,7 @@ export default function BulkCampaignWizard() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-3xl">Tạo chiến dịch báo giá hàng loạt</CardTitle>
+          <CardTitle className="text-3xl">Tạo chiến dịch gửi email hàng loạt</CardTitle>
         </CardHeader>
         <CardContent>
           {renderStepIndicator()}
