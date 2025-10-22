@@ -494,51 +494,66 @@ export default function BulkCampaignWizard() {
           </Card>
         )}
 
-        {parsedRecipients.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-green-600 flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5" />
-                Đã phân tích thành công ({parsedRecipients.length} người nhận)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="max-h-96 overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Tên</TableHead>
-                      <TableHead>Dữ liệu tùy chỉnh</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {parsedRecipients.slice(0, 10).map((recipient, idx) => (
-                      <TableRow key={idx} data-testid={`row-recipient-${idx}`}>
-                        <TableCell>{recipient.email}</TableCell>
-                        <TableCell>{recipient.name || "-"}</TableCell>
-                        <TableCell>
-                          {recipient.customData && Object.keys(recipient.customData).length > 0 ? (
-                            <Badge variant="secondary">
-                              {Object.keys(recipient.customData).length} trường
-                            </Badge>
-                          ) : (
-                            "-"
-                          )}
-                        </TableCell>
+        {parsedRecipients.length > 0 && (() => {
+          // Get all unique customData keys from all recipients
+          const customDataKeys = Array.from(
+            new Set(
+              parsedRecipients.flatMap(r => 
+                r.customData ? Object.keys(r.customData) : []
+              )
+            )
+          );
+
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-green-600 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5" />
+                  Đã phân tích thành công ({parsedRecipients.length} người nhận)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="max-h-96 overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Email</TableHead>
+                        {parsedRecipients.some(r => r.name) && (
+                          <TableHead>Tên</TableHead>
+                        )}
+                        {customDataKeys.map(key => (
+                          <TableHead key={key} className="capitalize">
+                            {key}
+                          </TableHead>
+                        ))}
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {parsedRecipients.length > 10 && (
-                  <p className="text-xs text-muted-foreground mt-2 text-center">
-                    Hiển thị 10 trong số {parsedRecipients.length} người nhận
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                    </TableHeader>
+                    <TableBody>
+                      {parsedRecipients.slice(0, 10).map((recipient, idx) => (
+                        <TableRow key={idx} data-testid={`row-recipient-${idx}`}>
+                          <TableCell>{recipient.email}</TableCell>
+                          {parsedRecipients.some(r => r.name) && (
+                            <TableCell>{recipient.name || "-"}</TableCell>
+                          )}
+                          {customDataKeys.map(key => (
+                            <TableCell key={key}>
+                              {recipient.customData?.[key] || "-"}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {parsedRecipients.length > 10 && (
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      Hiển thị 10 trong số {parsedRecipients.length} người nhận
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
       </div>
     );
   };
