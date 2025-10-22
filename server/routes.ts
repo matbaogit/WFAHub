@@ -1479,6 +1479,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
       const data = XLSX.utils.sheet_to_json(firstSheet) as Array<Record<string, any>>;
 
+      // Get all column headers
+      const headers = data.length > 0 ? Object.keys(data[0]) : [];
+      
+      // Create available variables mapping (column name -> variable name)
+      const availableVariables: Array<{label: string, value: string}> = headers.map(header => ({
+        label: header,
+        value: `{${normalizeVariableName(header)}}`
+      }));
+
       // Apply mapping to convert raw data to recipients
       const recipients = data.map(row => {
         const recipient: any = {
@@ -1488,19 +1497,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           customData: {}
         };
 
-        // Add mapped fields to customData
-        Object.keys(mapping).forEach(field => {
-          if (field !== 'email' && field !== 'name' && mapping[field]) {
-            recipient.customData[field] = row[mapping[field]];
-          }
-        });
-
-        // Also add any unmapped columns as custom data
+        // Add ALL columns to customData with NORMALIZED keys
+        // This ensures variable names match between template {cong_ty} and data
         Object.keys(row).forEach(column => {
-          const isMapped = Object.values(mapping).includes(column);
-          if (!isMapped && row[column]) {
-            recipient.customData[column] = row[column];
-          }
+          const normalizedKey = normalizeVariableName(column);
+          recipient.customData[normalizedKey] = row[column];
         });
 
         return recipient;
@@ -1509,7 +1510,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true, 
         recipients,
-        totalCount: recipients.length
+        totalCount: recipients.length,
+        availableVariables  // Include available variables for frontend
       });
     } catch (error: any) {
       console.error("Error applying mapping:", error);
