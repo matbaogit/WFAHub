@@ -24,6 +24,10 @@ export default function Templates() {
   });
 
   const handleExecuteTemplate = (template: Template) => {
+    console.log("[DEBUG] Template clicked:", template);
+    console.log("[DEBUG] template.nameVi:", template.nameVi);
+    console.log("[DEBUG] template.name:", template.name);
+    
     // If this is the "Gửi báo giá" or "Gửi Email kèm File" template, navigate to bulk campaigns
     if (
       template.nameVi === "Gửi báo giá" || 
@@ -31,8 +35,10 @@ export default function Templates() {
       template.nameVi === "Gửi Email kèm File" ||
       template.name === "Send Email with Attachment"
     ) {
+      console.log("[DEBUG] Navigating to /bulk-campaigns");
       navigate("/bulk-campaigns");
     } else {
+      console.log("[DEBUG] Opening modal");
       setSelectedTemplate(template);
     }
   };
