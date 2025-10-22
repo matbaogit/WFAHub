@@ -334,6 +334,7 @@ export default function BulkCampaignWizard() {
       name: campaignName,
       emailSubject,
       emailBody,
+      quotationHtml: quotationHtmlContent || null,
       quotationTemplateId: selectedTemplateId || null,
       sendRate,
       scheduledAt,
