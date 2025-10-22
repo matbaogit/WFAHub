@@ -225,12 +225,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(userId);
       
       // Get campaign count
-      const campaigns = await storage.getBulkCampaigns(userId);
+      const campaigns = await storage.getUserBulkCampaigns(userId);
       const campaignCount = campaigns.length;
       const completedCampaigns = campaigns.filter(c => c.status === 'completed').length;
       
       // Get quotation count
-      const quotations = await storage.getQuotationsByUserId(userId);
+      const quotations = await storage.getUserQuotations(userId);
       const quotationCount = quotations.length;
       
       // Get recent execution logs (last 5)
