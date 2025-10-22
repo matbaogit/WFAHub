@@ -316,6 +316,7 @@ export const bulkCampaigns = pgTable("bulk_campaigns", {
   name: varchar("name", { length: 255 }).notNull(),
   emailSubject: varchar("email_subject", { length: 500 }).notNull(),
   emailBody: text("email_body").notNull(),
+  quotationHtml: text("quotation_html"),
   availableVariables: jsonb("available_variables"),
   
   status: varchar("status", { length: 20 }).notNull().default("draft"),
