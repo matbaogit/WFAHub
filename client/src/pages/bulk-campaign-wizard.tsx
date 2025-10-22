@@ -580,7 +580,7 @@ export default function BulkCampaignWizard() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Chọn mẫu báo giá</h2>
+          <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Chọn mẫu tệp cá nhân hoá</h2>
           <p className="text-sm text-muted-foreground">
             Chọn mẫu hoặc soạn HTML tùy chỉnh. Kéo thả biến từ sidebar vào khung soạn thảo.
           </p>
