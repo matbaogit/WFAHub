@@ -192,9 +192,13 @@ export default function BulkCampaignWizard() {
     },
     onSuccess: (data: any) => {
       setParsedRecipients(data.recipients || []);
+      // Update availableVariables from apply-mapping response
+      if (data.availableVariables) {
+        setAvailableVariables(data.availableVariables);
+      }
       toast({
         title: "Áp dụng mapping thành công",
-        description: `Đã parse ${data.totalCount} người nhận`,
+        description: `Đã parse ${data.totalCount} người nhận với ${data.availableVariables?.length || 0} biến`,
       });
     },
     onError: (error: Error) => {
