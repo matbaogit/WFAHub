@@ -495,11 +495,11 @@ export default function BulkCampaignWizard() {
         )}
 
         {parsedRecipients.length > 0 && (() => {
-          // Get all unique customData keys from all recipients
+          // Get all unique customData keys from all recipients, excluding 'email' to avoid duplicate
           const customDataKeys = Array.from(
             new Set(
               parsedRecipients.flatMap(r => 
-                r.customData ? Object.keys(r.customData) : []
+                r.customData ? Object.keys(r.customData).filter(k => k !== 'email') : []
               )
             )
           );
@@ -518,9 +518,6 @@ export default function BulkCampaignWizard() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Email</TableHead>
-                        {parsedRecipients.some(r => r.name) && (
-                          <TableHead>Tên</TableHead>
-                        )}
                         {customDataKeys.map(key => (
                           <TableHead key={key} className="capitalize">
                             {key}
@@ -532,9 +529,6 @@ export default function BulkCampaignWizard() {
                       {parsedRecipients.slice(0, 10).map((recipient, idx) => (
                         <TableRow key={idx} data-testid={`row-recipient-${idx}`}>
                           <TableCell>{recipient.email}</TableCell>
-                          {parsedRecipients.some(r => r.name) && (
-                            <TableCell>{recipient.name || "-"}</TableCell>
-                          )}
                           {customDataKeys.map(key => (
                             <TableCell key={key}>
                               {recipient.customData?.[key] || "-"}
