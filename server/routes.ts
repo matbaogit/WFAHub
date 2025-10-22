@@ -1625,9 +1625,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "SMTP configuration not found. Please configure SMTP first." });
       }
 
-      // Get quotation template HTML if campaign has a template selected
+      // Get quotation template HTML - prioritize edited content over template
       let quotationTemplateHtml: string | undefined;
-      if (campaign.quotationTemplateId) {
+      if (campaign.quotationHtml) {
+        // Use edited content from campaign (user's customized version)
+        quotationTemplateHtml = campaign.quotationHtml;
+      } else if (campaign.quotationTemplateId) {
+        // Fallback to original template if no edited content
         const template = await storage.getQuotationTemplate(campaign.quotationTemplateId);
         if (template && template.htmlContent) {
           quotationTemplateHtml = template.htmlContent;
