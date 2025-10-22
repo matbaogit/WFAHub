@@ -41,7 +41,7 @@ export default function Account() {
   const handleTopUp = () => {
     toast({
       title: "Tính năng đang phát triển",
-      description: "Tính năng nạp credits sẽ sớm được ra mắt.",
+      description: "Tính năng nạp tín dụng sẽ sớm được ra mắt.",
     });
   };
 
@@ -50,7 +50,7 @@ export default function Account() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight mb-2">Tài khoản</h1>
         <p className="text-muted-foreground">
-          Quản lý thông tin cá nhân và số dư credits
+          Quản lý thông tin cá nhân và số dư tín dụng
         </p>
       </div>
 
@@ -100,14 +100,14 @@ export default function Account() {
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Wallet className="w-5 h-5" />
-            Số dư Credits
+            Số dư Tín dụng
           </h3>
           <div className="flex items-center justify-between mb-6">
             <div>
               <p className="text-sm text-muted-foreground mb-1">Số dư hiện tại</p>
               <p className="text-3xl font-bold font-mono" data-testid="text-credits-balance">
                 {user?.credits || 0}
-                <span className="text-base font-normal text-muted-foreground ml-2">credits</span>
+                <span className="text-base font-normal text-muted-foreground ml-2">tín dụng</span>
               </p>
             </div>
             <Button 
@@ -121,8 +121,8 @@ export default function Account() {
           </div>
           <div className="bg-muted/50 rounded-lg p-4">
             <p className="text-sm text-muted-foreground">
-              Mỗi tính năng tự động hóa sẽ tiêu tốn một lượng credits nhất định. 
-              Nạp thêm credits để tiếp tục sử dụng các tính năng.
+              Mỗi tính năng tự động hóa sẽ tiêu tốn một lượng tín dụng nhất định. 
+              Nạp thêm tín dụng để tiếp tục sử dụng các tính năng.
             </p>
           </div>
         </Card>

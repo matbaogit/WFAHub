@@ -63,7 +63,7 @@ function AdminUsersContent() {
           Danh sách người dùng
         </h1>
         <p className="text-lg text-slate-600">
-          Quản lý credits và quyền của người dùng
+          Quản lý tín dụng và quyền của người dùng
         </p>
       </div>
 
@@ -108,7 +108,7 @@ function AdminUsersContent() {
                       value={credits}
                       onChange={(e) => setCredits(Number(e.target.value))}
                       className="w-24 h-9"
-                      placeholder="Credits"
+                      placeholder="Tín dụng"
                       data-testid={`input-credits-${user.id}`}
                     />
                     <Button
@@ -134,7 +134,7 @@ function AdminUsersContent() {
                     <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500/10 to-blue-600/10 border border-cyan-500/20">
                       <Coins className="w-4 h-4 text-blue-600" />
                       <span className="font-mono font-bold text-blue-600">{user.credits}</span>
-                      <span className="text-sm text-slate-500">credits</span>
+                      <span className="text-sm text-slate-500">tín dụng</span>
                     </div>
                     <Button
                       size="sm"

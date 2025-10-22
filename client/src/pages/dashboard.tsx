@@ -99,7 +99,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card className="hover-elevate" data-testid="card-credits">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Credits còn lại</CardTitle>
+            <CardTitle className="text-sm font-medium">Tín dụng còn lại</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -237,7 +237,7 @@ export default function Dashboard() {
                         {activity.template?.nameVi || 'Unknown'}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {activity.creditsUsed} credits • {formatDistanceToNow(new Date(activity.executedAt), { addSuffix: true, locale: vi })}
+                        {activity.creditsUsed} tín dụng • {formatDistanceToNow(new Date(activity.executedAt), { addSuffix: true, locale: vi })}
                       </p>
                     </div>
                   </div>

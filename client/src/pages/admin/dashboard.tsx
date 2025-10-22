@@ -93,7 +93,7 @@ function AdminDashboardContent() {
             <div className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-orange-700 bg-clip-text text-transparent" data-testid="stat-total-revenue">
               {stats?.totalRevenue || 0}
             </div>
-            <p className="text-xs text-slate-500 mt-1">Credits đã sử dụng</p>
+            <p className="text-xs text-slate-500 mt-1">Tín dụng đã sử dụng</p>
           </CardContent>
         </Card>
 

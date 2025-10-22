@@ -103,7 +103,7 @@ function TemplateForm({ form, onSubmit, isPending, onCancel }: TemplateFormProps
             name="creditCost"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Chi phí Credits</FormLabel>
+                <FormLabel>Chi phí Tín dụng</FormLabel>
                 <FormControl>
                   <Input 
                     type="number" 
@@ -405,7 +405,7 @@ function AdminTemplatesContent() {
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500/10 to-blue-600/10 border border-cyan-500/20">
                       <span className="text-slate-600">Chi phí:</span>
                       <span className="font-mono font-bold text-blue-600">{template.creditCost}</span>
-                      <span className="text-slate-500">credits</span>
+                      <span className="text-slate-500">tín dụng</span>
                     </div>
                     <div className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600">
                       ID: <span className="font-mono text-xs">{template.id.slice(0, 8)}...</span>

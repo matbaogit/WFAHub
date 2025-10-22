@@ -230,6 +230,8 @@ export default function BulkCampaignWizard() {
     onSuccess: async () => {
       setShowCreditDialog(false);
       await queryClient.invalidateQueries({ queryKey: ["/api/bulk-campaigns"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
 
       const message = schedulingMode === "now" 
         ? "Chiến dịch báo giá hàng loạt đã bắt đầu gửi."
@@ -1010,7 +1012,7 @@ export default function BulkCampaignWizard() {
                   <Coins className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Chi phí credit</p>
+                  <p className="text-sm text-muted-foreground">Chi phí tín dụng</p>
                   <p className="text-2xl font-bold" data-testid="text-estimated-credits">
                     {estimatedCreditCost.toLocaleString('vi-VN')}
                   </p>
@@ -1056,7 +1058,7 @@ export default function BulkCampaignWizard() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Coins className="w-5 h-5 text-primary" />
-                Xác nhận sử dụng credit
+                Xác nhận sử dụng tín dụng
               </DialogTitle>
               <DialogDescription>
                 Vui lòng xác nhận thông tin trước khi gửi chiến dịch
@@ -1065,7 +1067,7 @@ export default function BulkCampaignWizard() {
             
             <div className="space-y-4 py-4">
               <div className="flex justify-between items-center p-3 bg-muted/30 rounded-md">
-                <span className="text-sm text-muted-foreground">Số dư credit hiện tại:</span>
+                <span className="text-sm text-muted-foreground">Số dư tín dụng hiện tại:</span>
                 <span className="text-lg font-bold" data-testid="text-current-balance">
                   {user?.credits?.toLocaleString('vi-VN') || 0}
                 </span>
@@ -1091,7 +1093,7 @@ export default function BulkCampaignWizard() {
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    Số dư credit không đủ! Vui lòng nạp thêm credit để tiếp tục.
+                    Số dư tín dụng không đủ! Vui lòng nạp thêm tín dụng để tiếp tục.
                   </AlertDescription>
                 </Alert>
               )}

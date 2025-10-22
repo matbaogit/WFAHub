@@ -78,7 +78,7 @@ export default function Logs() {
                 <TableHead>Thời gian</TableHead>
                 <TableHead>Tính năng</TableHead>
                 <TableHead>Trạng thái</TableHead>
-                <TableHead className="text-right">Credits sử dụng</TableHead>
+                <TableHead className="text-right">Tín dụng sử dụng</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
