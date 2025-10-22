@@ -137,17 +137,27 @@ function isEncryptedPassword(password: string): boolean {
   return parts.every(part => part.length > 0 && hexRegex.test(part));
 }
 
+// Helper function to merge variables - supports both {var} and {{var}} patterns
+function mergeVariables(template: string, data: Record<string, any>): string {
+  let result = template;
+  for (const [key, value] of Object.entries(data)) {
+    // Replace both {{key}} (double braces) and {key} (single braces)
+    const doubleRegex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+    const singleRegex = new RegExp(`\\{${key}\\}`, 'g');
+    const strValue = String(value || '');
+    result = result.replace(doubleRegex, strValue);
+    result = result.replace(singleRegex, strValue);
+  }
+  return result;
+}
+
 // Generate PDF from quotation template HTML with merged data
 export async function generateQuotationPDF(
   templateHtml: string,
   recipientData: Record<string, any>
 ): Promise<Buffer> {
-  // Replace {field} placeholders with actual data
-  let renderedHtml = templateHtml;
-  for (const [key, value] of Object.entries(recipientData)) {
-    const regex = new RegExp(`\\{${key}\\}`, 'g');
-    renderedHtml = renderedHtml.replace(regex, String(value || ''));
-  }
+  // Replace {field} and {{field}} placeholders with actual data
+  const renderedHtml = mergeVariables(templateHtml, recipientData);
 
   // Find Chromium executable path
   let chromiumPath: string;
@@ -205,15 +215,9 @@ export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> 
     ...customData,
   };
 
-  let renderedSubject = subject;
-  let renderedBody = body;
-
-  // Replace {field} placeholders with actual data
-  for (const [key, value] of Object.entries(mergedData)) {
-    const regex = new RegExp(`\\{${key}\\}`, 'g');
-    renderedSubject = renderedSubject.replace(regex, String(value || ''));
-    renderedBody = renderedBody.replace(regex, String(value || ''));
-  }
+  // Replace {field} and {{field}} placeholders with actual data
+  const renderedSubject = mergeVariables(subject, mergedData);
+  let renderedBody = mergeVariables(body, mergedData);
 
   // Add tracking pixel if provided
   if (trackingPixelUrl) {
