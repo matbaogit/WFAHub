@@ -31,6 +31,7 @@ import {
   Zap,
   Calendar as CalendarIcon,
   Coins,
+  Loader2,
 } from "lucide-react";
 import {
   Table,
@@ -94,6 +95,9 @@ export default function BulkCampaignWizard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const quotationTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const emailSubjectRef = useRef<HTMLInputElement>(null);
+  const emailBodyRef = useRef<HTMLTextAreaElement>(null);
 
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
   const [campaignName, setCampaignName] = useState("");
@@ -533,8 +537,6 @@ export default function BulkCampaignWizard() {
   };
 
   const renderStep2 = () => {
-    const quotationTextareaRef = useRef<HTMLTextAreaElement>(null);
-
     const handleQuotationDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
       e.preventDefault();
       const variable = e.dataTransfer.getData("text/plain");
@@ -641,9 +643,6 @@ export default function BulkCampaignWizard() {
   };
 
   const renderStep3 = () => {
-    const emailSubjectRef = useRef<HTMLInputElement>(null);
-    const emailBodyRef = useRef<HTMLTextAreaElement>(null);
-
     const handleEmailSubjectDrop = (e: React.DragEvent<HTMLInputElement>) => {
       e.preventDefault();
       const variable = e.dataTransfer.getData("text/plain");
