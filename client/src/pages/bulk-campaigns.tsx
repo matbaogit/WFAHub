@@ -67,7 +67,7 @@ export default function BulkCampaignsPage() {
             Chiến dịch Gửi Email
           </h1>
           <p className="text-slate-500 mt-1">
-            Gửi báo giá đến nhiều khách hàng cùng lúc
+            Gửi Email kèm tệp cá nhân hoá đến nhiều khách hàng cùng lúc
           </p>
         </div>
         <Link href="/bulk-campaigns/new">
