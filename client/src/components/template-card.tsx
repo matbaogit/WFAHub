@@ -43,7 +43,7 @@ export function TemplateCard({ template, icon: Icon, onExecute }: TemplateCardPr
             className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105"
             data-testid={`button-run-${template.id}`}
           >
-            Chạy ngay
+            Bắt đầu ngay
           </Button>
         </div>
       </div>
