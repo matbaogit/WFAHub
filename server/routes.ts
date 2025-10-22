@@ -216,6 +216,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Dashboard stats endpoint
+  app.get("/api/dashboard/stats", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      
+      // Get user for credits
+      const user = await storage.getUser(userId);
+      
+      // Get campaign count
+      const campaigns = await storage.getBulkCampaigns(userId);
+      const campaignCount = campaigns.length;
+      const completedCampaigns = campaigns.filter(c => c.status === 'completed').length;
+      
+      // Get quotation count
+      const quotations = await storage.getQuotationsByUserId(userId);
+      const quotationCount = quotations.length;
+      
+      // Get recent execution logs (last 5)
+      const logs = await storage.getUserExecutionLogs(userId);
+      const recentLogs = logs.slice(0, 5);
+      const enrichedLogs = await Promise.all(
+        recentLogs.map(async (log) => {
+          const template = await storage.getTemplate(log.templateId);
+          return { ...log, template };
+        })
+      );
+      
+      // Get recent campaigns (last 3)
+      const recentCampaigns = campaigns
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 3);
+      
+      res.json({
+        user: sanitizeUser(user),
+        stats: {
+          credits: user?.credits || 0,
+          campaignCount,
+          completedCampaigns,
+          quotationCount,
+        },
+        recentActivities: enrichedLogs,
+        recentCampaigns,
+      });
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard stats" });
+    }
+  });
+
   // ==================== ADMIN ROUTES ====================
   
   // Get all users (admin only)
