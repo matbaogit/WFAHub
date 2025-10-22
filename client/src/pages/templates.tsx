@@ -24,8 +24,13 @@ export default function Templates() {
   });
 
   const handleExecuteTemplate = (template: Template) => {
-    // If this is the "Gửi báo giá" template, navigate to bulk campaigns instead of opening modal
-    if (template.nameVi === "Gửi báo giá" || template.name === "Send Quotation") {
+    // If this is the "Gửi báo giá" or "Gửi Email kèm File" template, navigate to bulk campaigns
+    if (
+      template.nameVi === "Gửi báo giá" || 
+      template.name === "Send Quotation" ||
+      template.nameVi === "Gửi Email kèm File" ||
+      template.name === "Send Email with Attachment"
+    ) {
       navigate("/bulk-campaigns");
     } else {
       setSelectedTemplate(template);
