@@ -211,7 +211,7 @@ export function AppSidebar() {
                       <Link href="/bulk-campaigns">
                         <Mail className={`w-5 h-5 ${isQuotationGroupActive ? 'text-blue-600' : 'text-slate-600'} transition-colors`} />
                         <span className={`font-medium ${isQuotationGroupActive ? 'text-blue-600' : 'text-slate-700'}`}>
-                          Gửi Báo Giá
+                          Chiến dịch Gửi Email
                         </span>
                       </Link>
                     </SidebarMenuButton>
