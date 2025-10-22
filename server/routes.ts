@@ -1687,6 +1687,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
 
               sentCount++;
+              
+              // Deduct 1 credit from user for successful email send
+              try {
+                const user = await storage.getUser(campaign.userId);
+                if (user) {
+                  await storage.updateUser(campaign.userId, {
+                    credits: Math.max(0, user.credits - 1),
+                  });
+                }
+              } catch (creditError) {
+                console.error(`[Campaign ${campaignId}] Failed to deduct credit:`, creditError);
+              }
+              
               console.log(`[Campaign ${campaignId}] Sent to ${recipient.recipientEmail} (${sentCount}/${campaign.recipients.length})`);
             } catch (error: any) {
               // Update recipient status to failed with error message
@@ -1705,15 +1718,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
 
-          // Update campaign status to completed
+          // Update campaign status to completed with actual credits used
           await storage.updateBulkCampaign(campaignId, {
             status: sentCount > 0 ? 'completed' : 'failed',
             sentCount,
             failedCount,
+            actualCredits: sentCount, // Each successful email = 1 credit
             completedAt: new Date(),
           });
 
-          console.log(`[Campaign ${campaignId}] Completed: ${sentCount} sent, ${failedCount} failed`);
+          console.log(`[Campaign ${campaignId}] Completed: ${sentCount} sent, ${failedCount} failed, ${sentCount} credits used`);
         } catch (error: any) {
           console.error(`[Campaign ${campaignId}] Critical error in background sending:`, error);
           
