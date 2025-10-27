@@ -16,6 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ColumnMappingTable from "@/components/ColumnMappingTable";
 import { VariablePicker } from "@/components/VariablePicker";
+import { Editor } from '@tinymce/tinymce-react';
 import { 
   Upload, 
   FileSpreadsheet, 
@@ -589,9 +590,9 @@ export default function BulkCampaignWizard() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Chọn mẫu tệp cá nhân hoá</h2>
+          <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Chọn mẫu tệp đính kèm</h2>
           <p className="text-sm text-muted-foreground">
-            Chọn mẫu hoặc soạn HTML tùy chỉnh. Kéo thả biến từ sidebar vào khung soạn thảo.
+            Chọn mẫu hoặc soạn nội dung tùy chỉnh. Kéo thả biến từ sidebar vào khung soạn thảo hoặc paste từ Word.
           </p>
         </div>
 
@@ -635,19 +636,54 @@ export default function BulkCampaignWizard() {
 
                 <div className="space-y-2">
                   <Label htmlFor="quotation-html">Nội dung HTML</Label>
-                  <Textarea
-                    ref={quotationTextareaRef}
-                    id="quotation-html"
-                    value={quotationHtmlContent}
-                    onChange={(e) => setQuotationHtmlContent(e.target.value)}
-                    onDrop={handleQuotationDrop}
-                    onDragOver={handleQuotationDragOver}
-                    placeholder="<div>Nội dung cho {name}...</div>"
-                    className="font-mono text-sm min-h-[300px] bg-muted/30"
-                    data-testid="textarea-quotation-html"
-                  />
+                  <div className="border rounded-md" data-testid="editor-quotation-html">
+                    <Editor
+                      apiKey="no-api-key"
+                      value={quotationHtmlContent}
+                      onEditorChange={(content) => setQuotationHtmlContent(content)}
+                      init={{
+                        height: 500,
+                        menubar: true,
+                        plugins: [
+                          'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                          'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                          'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount', 'paste'
+                        ],
+                        toolbar: 'undo redo | blocks | bold italic forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image link | table | code | help',
+                        paste_data_images: true,
+                        paste_as_text: false,
+                        paste_retain_style_properties: 'all',
+                        paste_merge_formats: true,
+                        paste_word_valid_elements: '@[style|class],p,h1,h2,h3,h4,h5,h6,strong,em,u,s,a[href],ul,ol,li,br,img[src|alt|width|height],table,thead,tbody,tr,th,td,span,div',
+                        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; }',
+                        images_upload_url: '/api/upload-image',
+                        images_upload_handler: async (blobInfo) => {
+                          const formData = new FormData();
+                          formData.append('file', blobInfo.blob(), blobInfo.filename());
+                          
+                          const response = await fetch('/api/upload-image', {
+                            method: 'POST',
+                            body: formData,
+                            credentials: 'include',
+                          });
+                          
+                          if (!response.ok) {
+                            throw new Error('Image upload failed');
+                          }
+                          
+                          const json = await response.json();
+                          return json.location;
+                        },
+                        automatic_uploads: true,
+                        file_picker_types: 'image',
+                        relative_urls: false,
+                        remove_script_host: false,
+                        convert_urls: true,
+                      }}
+                    />
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    Kéo thả biến từ sidebar hoặc nhập trực tiếp mã HTML
+                    Kéo thả biến từ sidebar vào editor hoặc paste nội dung từ Word với định dạng và hình ảnh
                   </p>
                 </div>
               </CardContent>
