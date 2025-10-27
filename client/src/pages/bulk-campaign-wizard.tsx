@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -132,6 +132,80 @@ export default function BulkCampaignWizard() {
     queryKey: ["/api/smtp-config"],
     retry: false,
   });
+
+  const quillModules = useMemo(() => ({
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'align': [] }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'indent': '-1'}, { 'indent': '+1' }],
+        ['link', 'image'],
+        ['blockquote', 'code-block'],
+        ['clean']
+      ],
+      handlers: {
+        image: function() {
+          const input = document.createElement('input');
+          input.setAttribute('type', 'file');
+          input.setAttribute('accept', 'image/*');
+          input.click();
+
+          input.onchange = async () => {
+            const file = input.files?.[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+              const response = await fetch('/api/upload-image', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include',
+              });
+
+              if (!response.ok) {
+                throw new Error('Image upload failed');
+              }
+
+              const json = await response.json();
+              const quill = quotationEditorRef.current?.getEditor?.();
+              if (quill) {
+                const range = quill.getSelection?.(true);
+                if (range) {
+                  quill.insertEmbed(range.index, 'image', json.location);
+                  quill.setSelection(range.index + 1);
+                }
+              }
+            } catch (error) {
+              console.error('Image upload failed:', error);
+              toast({
+                title: "Lỗi",
+                description: "Không thể tải lên hình ảnh",
+                variant: "destructive",
+              });
+            }
+          };
+        }
+      }
+    },
+    clipboard: {
+      matchVisual: false
+    }
+  }), [toast]);
+
+  const quillFormats = useMemo(() => [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'color', 'background',
+    'align',
+    'list', 'bullet', 'indent',
+    'link', 'image',
+    'blockquote', 'code-block'
+  ], []);
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -634,76 +708,8 @@ export default function BulkCampaignWizard() {
                       theme="snow"
                       value={quotationHtmlContent}
                       onChange={setQuotationHtmlContent}
-                      modules={{
-                        toolbar: {
-                          container: [
-                            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                            ['bold', 'italic', 'underline', 'strike'],
-                            [{ 'color': [] }, { 'background': [] }],
-                            [{ 'align': [] }],
-                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                            [{ 'indent': '-1'}, { 'indent': '+1' }],
-                            ['link', 'image'],
-                            ['blockquote', 'code-block'],
-                            ['clean']
-                          ],
-                          handlers: {
-                            image: async function() {
-                              const input = document.createElement('input');
-                              input.setAttribute('type', 'file');
-                              input.setAttribute('accept', 'image/*');
-                              input.click();
-
-                              input.onchange = async () => {
-                                const file = input.files?.[0];
-                                if (!file) return;
-
-                                const formData = new FormData();
-                                formData.append('file', file);
-
-                                try {
-                                  const response = await fetch('/api/upload-image', {
-                                    method: 'POST',
-                                    body: formData,
-                                    credentials: 'include',
-                                  });
-
-                                  if (!response.ok) {
-                                    throw new Error('Image upload failed');
-                                  }
-
-                                  const json = await response.json();
-                                  const quill = quotationEditorRef.current?.getEditor();
-                                  if (quill) {
-                                    const range = quill.getSelection(true);
-                                    quill.insertEmbed(range.index, 'image', json.location);
-                                    quill.setSelection(range.index + 1);
-                                  }
-                                } catch (error) {
-                                  console.error('Image upload failed:', error);
-                                  toast({
-                                    title: "Lỗi",
-                                    description: "Không thể tải lên hình ảnh",
-                                    variant: "destructive",
-                                  });
-                                }
-                              };
-                            }
-                          }
-                        },
-                        clipboard: {
-                          matchVisual: false
-                        }
-                      }}
-                      formats={[
-                        'header',
-                        'bold', 'italic', 'underline', 'strike',
-                        'color', 'background',
-                        'align',
-                        'list', 'bullet', 'indent',
-                        'link', 'image',
-                        'blockquote', 'code-block'
-                      ]}
+                      modules={quillModules}
+                      formats={quillFormats}
                       style={{ height: '400px', marginBottom: '50px' }}
                     />
                   </div>
