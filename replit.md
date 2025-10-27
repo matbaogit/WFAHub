@@ -6,7 +6,27 @@ WFA Hub is a Vietnamese-language web application offering ready-made automation 
 
 ## Recent Changes (October 2025)
 
-**Bulk Email Campaign Module - PDF Attachment Feature (October 20, 2025)**
+**Rich Text Editor Migration - Quill Integration (October 27, 2025)**
+- **Migrated from TinyMCE to Quill**: Replaced proprietary TinyMCE with free open-source Quill editor
+  - Removed TinyMCE dependencies (`@tinymce/tinymce-react`, `tinymce`)
+  - Installed `react-quill` package for Quill integration
+  - Complete feature parity with previous TinyMCE implementation
+- **Quill Editor Configuration** (Step 2 of bulk campaign wizard):
+  - Snow theme with comprehensive toolbar: headers, bold, italic, underline, strike, colors, alignment, lists, indentation, links, images, blockquotes, code blocks
+  - Custom image upload handler integrates with existing `/api/upload-image` endpoint
+  - Drag & drop variable support: CSV variables ({name}, {email}, {company}, etc.) can be dragged from sidebar into editor
+  - Paste from Word support: Preserves formatting and images when pasting from Microsoft Word
+  - Clean HTML output stored in campaign database
+- **Technical Benefits**:
+  - Zero licensing costs (BSD-3-Clause license)
+  - Lightweight (~43KB minified vs TinyMCE's ~200KB)
+  - No API key requirements or usage limits
+  - Better clipboard handling for Word paste operations
+  - Framework-agnostic with excellent React integration
+- **UI Consistency**: Label updated from "Mẫu tệp cá nhân hoá" to "Mẫu tệp đính kèm" for clarity
+- **Location**: `client/src/pages/bulk-campaign-wizard.tsx` Step 2 (renderStep2)
+
+**Previous Work - Bulk Email Campaign Module - PDF Attachment Feature (October 20, 2025)**
 - **PDF Generation from Quotation Templates**: Automatic PDF creation and email attachment
   - `generateQuotationPDF()` function in `server/emailService.ts` using Puppeteer
   - Merges quotation template HTML with recipient-specific data ({name}, {company}, {email}, etc.)
