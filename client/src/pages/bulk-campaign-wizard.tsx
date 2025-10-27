@@ -608,7 +608,7 @@ export default function BulkCampaignWizard() {
             <Card>
               <CardContent className="pt-6 space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="template-select">Mẫu tệp cá nhân hoá (tùy chọn)</Label>
+                  <Label htmlFor="template-select">Mẫu tệp đính kèm (tùy chọn)</Label>
                   <Select
                     value={selectedTemplateId || ""}
                     onValueChange={handleTemplateSelect}
