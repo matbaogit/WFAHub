@@ -612,7 +612,23 @@ export default function BulkCampaignWizard() {
 
                 <div className="space-y-2">
                   <Label htmlFor="quotation-html">Nội dung HTML</Label>
-                  <div className="border rounded-md" data-testid="editor-quotation-html">
+                  <div 
+                    className="border rounded-md" 
+                    data-testid="editor-quotation-html"
+                    onDrop={(e: React.DragEvent) => {
+                      const variable = e.dataTransfer?.getData('text/plain');
+                      if (variable && variable.startsWith('{') && variable.endsWith('}')) {
+                        e.preventDefault();
+                        const quill = quotationEditorRef.current?.getEditor();
+                        if (quill) {
+                          const range = quill.getSelection(true);
+                          quill.insertText(range.index, variable);
+                          quill.setSelection(range.index + variable.length);
+                        }
+                      }
+                    }}
+                    onDragOver={(e: React.DragEvent) => e.preventDefault()}
+                  >
                     <ReactQuill
                       ref={quotationEditorRef}
                       theme="snow"
@@ -689,18 +705,6 @@ export default function BulkCampaignWizard() {
                         'blockquote', 'code-block'
                       ]}
                       style={{ height: '400px', marginBottom: '50px' }}
-                      onDrop={(e) => {
-                        const variable = e.dataTransfer?.getData('text/plain');
-                        if (variable && variable.startsWith('{') && variable.endsWith('}')) {
-                          e.preventDefault();
-                          const quill = quotationEditorRef.current?.getEditor();
-                          if (quill) {
-                            const range = quill.getSelection(true);
-                            quill.insertText(range.index, variable);
-                            quill.setSelection(range.index + variable.length);
-                          }
-                        }
-                      }}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
