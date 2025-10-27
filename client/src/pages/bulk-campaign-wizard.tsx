@@ -16,7 +16,8 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ColumnMappingTable from "@/components/ColumnMappingTable";
 import { VariablePicker } from "@/components/VariablePicker";
-import { Editor } from '@tinymce/tinymce-react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { 
   Upload, 
   FileSpreadsheet, 
@@ -612,58 +613,93 @@ export default function BulkCampaignWizard() {
                 <div className="space-y-2">
                   <Label htmlFor="quotation-html">Nội dung HTML</Label>
                   <div className="border rounded-md" data-testid="editor-quotation-html">
-                    <Editor
-                      tinymceScriptSrc="https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js"
-                      onInit={(evt, editor) => quotationEditorRef.current = editor}
+                    <ReactQuill
+                      ref={quotationEditorRef}
+                      theme="snow"
                       value={quotationHtmlContent}
-                      onEditorChange={(content) => setQuotationHtmlContent(content)}
-                      init={{
-                        height: 500,
-                        menubar: true,
-                        plugins: [
-                          'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                          'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                          'insertdatetime', 'media', 'table', 'code', 'help', 'wordcount', 'paste'
-                        ],
-                        toolbar: 'undo redo | blocks | bold italic forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | image link | table | code | help',
-                        paste_data_images: true,
-                        paste_as_text: false,
-                        paste_retain_style_properties: 'all',
-                        paste_merge_formats: true,
-                        paste_word_valid_elements: '@[style|class],p,h1,h2,h3,h4,h5,h6,strong,em,u,s,a[href],ul,ol,li,br,img[src|alt|width|height],table,thead,tbody,tr,th,td,span,div',
-                        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; }',
-                        images_upload_url: '/api/upload-image',
-                        images_upload_handler: async (blobInfo) => {
-                          const formData = new FormData();
-                          formData.append('file', blobInfo.blob(), blobInfo.filename());
-                          
-                          const response = await fetch('/api/upload-image', {
-                            method: 'POST',
-                            body: formData,
-                            credentials: 'include',
-                          });
-                          
-                          if (!response.ok) {
-                            throw new Error('Image upload failed');
-                          }
-                          
-                          const json = await response.json();
-                          return json.location;
-                        },
-                        automatic_uploads: true,
-                        file_picker_types: 'image',
-                        relative_urls: false,
-                        remove_script_host: false,
-                        convert_urls: true,
-                        setup: (editor) => {
-                          editor.on('drop', (e) => {
-                            const variable = e.dataTransfer?.getData('text/plain');
-                            if (variable && variable.startsWith('{') && variable.endsWith('}')) {
-                              e.preventDefault();
-                              editor.insertContent(variable);
+                      onChange={setQuotationHtmlContent}
+                      modules={{
+                        toolbar: {
+                          container: [
+                            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                            ['bold', 'italic', 'underline', 'strike'],
+                            [{ 'color': [] }, { 'background': [] }],
+                            [{ 'align': [] }],
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            [{ 'indent': '-1'}, { 'indent': '+1' }],
+                            ['link', 'image'],
+                            ['blockquote', 'code-block'],
+                            ['clean']
+                          ],
+                          handlers: {
+                            image: async function() {
+                              const input = document.createElement('input');
+                              input.setAttribute('type', 'file');
+                              input.setAttribute('accept', 'image/*');
+                              input.click();
+
+                              input.onchange = async () => {
+                                const file = input.files?.[0];
+                                if (!file) return;
+
+                                const formData = new FormData();
+                                formData.append('file', file);
+
+                                try {
+                                  const response = await fetch('/api/upload-image', {
+                                    method: 'POST',
+                                    body: formData,
+                                    credentials: 'include',
+                                  });
+
+                                  if (!response.ok) {
+                                    throw new Error('Image upload failed');
+                                  }
+
+                                  const json = await response.json();
+                                  const quill = quotationEditorRef.current?.getEditor();
+                                  if (quill) {
+                                    const range = quill.getSelection(true);
+                                    quill.insertEmbed(range.index, 'image', json.location);
+                                    quill.setSelection(range.index + 1);
+                                  }
+                                } catch (error) {
+                                  console.error('Image upload failed:', error);
+                                  toast({
+                                    title: "Lỗi",
+                                    description: "Không thể tải lên hình ảnh",
+                                    variant: "destructive",
+                                  });
+                                }
+                              };
                             }
-                          });
+                          }
                         },
+                        clipboard: {
+                          matchVisual: false
+                        }
+                      }}
+                      formats={[
+                        'header',
+                        'bold', 'italic', 'underline', 'strike',
+                        'color', 'background',
+                        'align',
+                        'list', 'bullet', 'indent',
+                        'link', 'image',
+                        'blockquote', 'code-block'
+                      ]}
+                      style={{ height: '400px', marginBottom: '50px' }}
+                      onDrop={(e) => {
+                        const variable = e.dataTransfer?.getData('text/plain');
+                        if (variable && variable.startsWith('{') && variable.endsWith('}')) {
+                          e.preventDefault();
+                          const quill = quotationEditorRef.current?.getEditor();
+                          if (quill) {
+                            const range = quill.getSelection(true);
+                            quill.insertText(range.index, variable);
+                            quill.setSelection(range.index + variable.length);
+                          }
+                        }
                       }}
                     />
                   </div>
