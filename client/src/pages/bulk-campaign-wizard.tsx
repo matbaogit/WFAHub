@@ -96,7 +96,7 @@ export default function BulkCampaignWizard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const quotationTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const quotationEditorRef = useRef<any>(null);
   const emailSubjectRef = useRef<HTMLInputElement>(null);
   const emailBodyRef = useRef<HTMLTextAreaElement>(null);
 
@@ -639,6 +639,7 @@ export default function BulkCampaignWizard() {
                   <div className="border rounded-md" data-testid="editor-quotation-html">
                     <Editor
                       apiKey="no-api-key"
+                      onInit={(evt, editor) => quotationEditorRef.current = editor}
                       value={quotationHtmlContent}
                       onEditorChange={(content) => setQuotationHtmlContent(content)}
                       init={{
@@ -679,6 +680,15 @@ export default function BulkCampaignWizard() {
                         relative_urls: false,
                         remove_script_host: false,
                         convert_urls: true,
+                        setup: (editor) => {
+                          editor.on('drop', (e) => {
+                            const variable = e.dataTransfer?.getData('text/plain');
+                            if (variable && variable.startsWith('{') && variable.endsWith('}')) {
+                              e.preventDefault();
+                              editor.insertContent(variable);
+                            }
+                          });
+                        },
                       }}
                     />
                   </div>
