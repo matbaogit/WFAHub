@@ -9,6 +9,8 @@ import { z } from "zod";
 import { sendQuotationEmail, sendCampaignEmail } from "./emailService";
 import multer from "multer";
 import * as XLSX from "xlsx";
+import * as fs from "fs";
+import * as path from "path";
 
 // Sanitize user object by removing sensitive fields
 const sanitizeUser = (user: User | null): Omit<User, 'passwordHash'> | null => {
@@ -53,6 +55,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const upload = multer({ 
     storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  });
+
+  // Image upload endpoint for TinyMCE editor
+  app.post("/api/upload-image", isAuthenticated, upload.single('file'), async (req: any, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      // Create upload directory if it doesn't exist
+      const uploadDir = path.join(process.cwd(), 'attached_assets', 'uploaded_images');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      // Generate unique filename
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 8);
+      const ext = path.extname(req.file.originalname);
+      const filename = `${timestamp}_${randomString}${ext}`;
+      const filepath = path.join(uploadDir, filename);
+
+      // Write file to disk
+      fs.writeFileSync(filepath, req.file.buffer);
+
+      // Return URL path that can be accessed by the browser
+      const imageUrl = `/attached_assets/uploaded_images/${filename}`;
+      
+      res.json({ location: imageUrl });
+    } catch (error: any) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ error: error.message || "Failed to upload image" });
+    }
   });
 
   // Register route
