@@ -554,31 +554,6 @@ export default function BulkCampaignWizard() {
   };
 
   const renderStep2 = () => {
-    const handleQuotationDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
-      e.preventDefault();
-      const variable = e.dataTransfer.getData("text/plain");
-      
-      if (!quotationTextareaRef.current) return;
-      
-      const textarea = quotationTextareaRef.current;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const currentValue = quotationHtmlContent;
-      
-      const newValue = currentValue.substring(0, start) + variable + currentValue.substring(end);
-      setQuotationHtmlContent(newValue);
-      
-      setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start + variable.length, start + variable.length);
-      }, 0);
-    };
-
-    const handleQuotationDragOver = (e: React.DragEvent<HTMLTextAreaElement>) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "copy";
-    };
-
     const handleTemplateSelect = (templateId: string) => {
       setSelectedTemplateId(templateId);
       const template = quotationTemplates.find(t => t.id === templateId);
@@ -638,7 +613,7 @@ export default function BulkCampaignWizard() {
                   <Label htmlFor="quotation-html">Nội dung HTML</Label>
                   <div className="border rounded-md" data-testid="editor-quotation-html">
                     <Editor
-                      apiKey="no-api-key"
+                      tinymceScriptSrc="https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js"
                       onInit={(evt, editor) => quotationEditorRef.current = editor}
                       value={quotationHtmlContent}
                       onEditorChange={(content) => setQuotationHtmlContent(content)}
