@@ -6,25 +6,39 @@ WFA Hub is a Vietnamese-language web application offering ready-made automation 
 
 ## Recent Changes (October 2025)
 
-**Rich Text Editor Migration - Quill Integration (October 27, 2025)**
-- **Migrated from TinyMCE to Quill**: Replaced proprietary TinyMCE with free open-source Quill editor
-  - Removed TinyMCE dependencies (`@tinymce/tinymce-react`, `tinymce`)
-  - Installed `react-quill` package for Quill integration
-  - Complete feature parity with previous TinyMCE implementation
-- **Quill Editor Configuration** (Step 2 of bulk campaign wizard):
-  - Snow theme with comprehensive toolbar: headers, bold, italic, underline, strike, colors, alignment, lists, indentation, links, images, blockquotes, code blocks
+**Rich Text Editor Migration - TipTap Integration (October 28, 2025)**
+- **Migrated from Quill to TipTap**: Replaced Quill editor with TipTap for superior table paste support
+  - **Reason for Migration**: Quill has poor Word table paste support - doesn't preserve table structure
+  - Uninstalled `react-quill` package
+  - Installed TipTap packages: `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-table`, `@tiptap/extension-table-row`, `@tiptap/extension-table-cell`, `@tiptap/extension-table-header`, `@tiptap/extension-color`, `@tiptap/extension-text-style`, `@tiptap/extension-image`, `@tiptap/extension-text-align`, `@tiptap/extension-underline`, `@tiptap/pm`
+  - Complete feature parity + enhanced table functionality
+- **TipTap Editor Configuration** (Step 2 of bulk campaign wizard):
+  - Full-featured toolbar: undo/redo, headings (H1-H3), bold, italic, underline, strikethrough, text color picker, text alignment (left/center/right), bullet/ordered lists, blockquote, code blocks, image upload, table operations
+  - **Table Support** (primary improvement over Quill):
+    - Insert table (3x3 with header row)
+    - Add/delete columns before/after
+    - Add/delete rows before/after
+    - Merge cells (when multiple selected)
+    - Split cells
+    - Delete entire table
+    - Resizable columns
+    - **Paste from Word**: Preserves table structure, borders, and formatting when pasting from Microsoft Word
   - Custom image upload handler integrates with existing `/api/upload-image` endpoint
   - Drag & drop variable support: CSV variables ({name}, {email}, {company}, etc.) can be dragged from sidebar into editor
-  - Paste from Word support: Preserves formatting and images when pasting from Microsoft Word
-  - Clean HTML output stored in campaign database
+  - Clean HTML output with proper table markup
 - **Technical Benefits**:
-  - Zero licensing costs (BSD-3-Clause license)
-  - Lightweight (~43KB minified vs TinyMCE's ~200KB)
+  - **MIT License** (100% free, no restrictions for private/commercial use)
+  - Unlike CKEditor 5 (GPL license requiring open-source or paid commercial license)
+  - Modern architecture built on ProseMirror
+  - Excellent Word paste support for tables (primary reason for choosing TipTap)
+  - Lightweight and performant
   - No API key requirements or usage limits
-  - Better clipboard handling for Word paste operations
-  - Framework-agnostic with excellent React integration
-- **UI Consistency**: Label updated from "Mẫu tệp cá nhân hoá" to "Mẫu tệp đính kèm" for clarity
-- **Location**: `client/src/pages/bulk-campaign-wizard.tsx` Step 2 (renderStep2)
+- **Component Structure**:
+  - Custom `<TiptapEditor>` component at `client/src/components/TiptapEditor.tsx`
+  - Toolbar with conditional table operations (visible when table is active)
+  - Custom CSS styling at `client/src/pages/tiptap-editor.css`
+  - Editor initialization with `useEditor` hook in wizard component
+- **Location**: `client/src/pages/bulk-campaign-wizard.tsx` Step 2, `client/src/components/TiptapEditor.tsx`
 
 **Previous Work - Bulk Email Campaign Module - PDF Attachment Feature (October 20, 2025)**
 - **PDF Generation from Quotation Templates**: Automatic PDF creation and email attachment
