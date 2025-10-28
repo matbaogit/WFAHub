@@ -164,7 +164,12 @@ export default function BulkCampaignWizard() {
     onUpdate: ({ editor }) => {
       setQuotationHtmlContent(editor.getHTML());
     },
-    editorProps: {
+  });
+
+  // Add clipboard paste handler after editor is created
+  if (editor) {
+    editor.options.editorProps = {
+      ...editor.options.editorProps,
       handlePaste: (view, event, slice) => {
         const items = Array.from(event.clipboardData?.items || []);
         
@@ -188,11 +193,10 @@ export default function BulkCampaignWizard() {
                 return response.json();
               })
               .then(json => {
-                // Insert image at current cursor position
-                const { schema } = view.state;
-                const node = schema.nodes.image.create({ src: json.location });
-                const transaction = view.state.tr.replaceSelectionWith(node);
-                view.dispatch(transaction);
+                // Use TipTap command to insert image safely
+                if (editor && !editor.isDestroyed) {
+                  editor.chain().focus().setImage({ src: json.location }).run();
+                }
               })
               .catch(error => {
                 console.error('Image upload failed:', error);
@@ -238,11 +242,10 @@ export default function BulkCampaignWizard() {
                   return response.json();
                 })
                 .then(json => {
-                  // Insert image at current cursor position
-                  const { schema } = view.state;
-                  const node = schema.nodes.image.create({ src: json.location });
-                  const transaction = view.state.tr.replaceSelectionWith(node);
-                  view.dispatch(transaction);
+                  // Use TipTap command to insert image safely
+                  if (editor && !editor.isDestroyed) {
+                    editor.chain().focus().setImage({ src: json.location }).run();
+                  }
                 })
                 .catch(error => {
                   console.error('Image upload failed:', error);
@@ -262,8 +265,8 @@ export default function BulkCampaignWizard() {
         
         return false; // Not handled - use default paste behavior
       },
-    },
-  });
+    };
+  }
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
