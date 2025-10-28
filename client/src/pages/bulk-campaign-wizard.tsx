@@ -164,6 +164,105 @@ export default function BulkCampaignWizard() {
     onUpdate: ({ editor }) => {
       setQuotationHtmlContent(editor.getHTML());
     },
+    editorProps: {
+      handlePaste: (view, event, slice) => {
+        const items = Array.from(event.clipboardData?.items || []);
+        
+        // Case 1: Check for direct image files (screenshots, copy from file explorer)
+        for (const item of items) {
+          if (item.type.indexOf("image") === 0) {
+            event.preventDefault();
+            const file = item.getAsFile();
+            if (!file) continue;
+            
+            // Upload image to server
+            const formData = new FormData();
+            formData.append('file', file);
+            fetch('/api/upload-image', {
+              method: 'POST',
+              body: formData,
+              credentials: 'include',
+            })
+              .then(response => {
+                if (!response.ok) throw new Error('Upload failed');
+                return response.json();
+              })
+              .then(json => {
+                // Insert image at current cursor position
+                const { schema } = view.state;
+                const node = schema.nodes.image.create({ src: json.location });
+                const transaction = view.state.tr.replaceSelectionWith(node);
+                view.dispatch(transaction);
+              })
+              .catch(error => {
+                console.error('Image upload failed:', error);
+                toast({
+                  variant: "destructive",
+                  title: "Upload ảnh thất bại",
+                  description: "Không thể tải ảnh lên server.",
+                });
+              });
+            
+            return true; // Handled - prevent default paste behavior
+          }
+        }
+        
+        // Case 2: Check for base64 images in HTML (from Word documents)
+        const html = event.clipboardData?.getData('text/html');
+        if (html && html.includes('<img')) {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const images = doc.querySelectorAll('img');
+          
+          let hasBase64Images = false;
+          images.forEach(img => {
+            const src = img.getAttribute('src');
+            if (src && src.startsWith('data:image')) {
+              hasBase64Images = true;
+              event.preventDefault();
+              
+              // Convert base64 to blob, then upload
+              fetch(src)
+                .then(res => res.blob())
+                .then(blob => {
+                  const formData = new FormData();
+                  formData.append('file', blob, 'pasted-image.png');
+                  return fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include',
+                  });
+                })
+                .then(response => {
+                  if (!response.ok) throw new Error('Upload failed');
+                  return response.json();
+                })
+                .then(json => {
+                  // Insert image at current cursor position
+                  const { schema } = view.state;
+                  const node = schema.nodes.image.create({ src: json.location });
+                  const transaction = view.state.tr.replaceSelectionWith(node);
+                  view.dispatch(transaction);
+                })
+                .catch(error => {
+                  console.error('Image upload failed:', error);
+                  toast({
+                    variant: "destructive",
+                    title: "Upload ảnh thất bại",
+                    description: "Không thể tải ảnh từ Word lên server.",
+                  });
+                });
+            }
+          });
+          
+          if (hasBase64Images) {
+            return true; // Handled - prevent default paste behavior
+          }
+        }
+        
+        return false; // Not handled - use default paste behavior
+      },
+    },
   });
 
   const uploadMutation = useMutation({
