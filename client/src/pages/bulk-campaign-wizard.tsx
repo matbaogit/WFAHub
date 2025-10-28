@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,8 +16,19 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ColumnMappingTable from "@/components/ColumnMappingTable";
 import { VariablePicker } from "@/components/VariablePicker";
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import { TiptapEditor } from "@/components/TiptapEditor";
+import { useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { Table as TiptapTable } from '@tiptap/extension-table';
+import { TableRow as TiptapTableRow } from '@tiptap/extension-table-row';
+import { TableCell as TiptapTableCell } from '@tiptap/extension-table-cell';
+import { TableHeader as TiptapTableHeader } from '@tiptap/extension-table-header';
+import { TextAlign } from '@tiptap/extension-text-align';
+import { Underline } from '@tiptap/extension-underline';
+import { Image as TiptapImage } from '@tiptap/extension-image';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
+import './tiptap-editor.css';
 import { 
   Upload, 
   FileSpreadsheet, 
@@ -97,7 +108,6 @@ export default function BulkCampaignWizard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const quotationEditorRef = useRef<any>(null);
   const emailSubjectRef = useRef<HTMLInputElement>(null);
   const emailBodyRef = useRef<HTMLTextAreaElement>(null);
 
@@ -133,79 +143,28 @@ export default function BulkCampaignWizard() {
     retry: false,
   });
 
-  const quillModules = useMemo(() => ({
-    toolbar: {
-      container: [
-        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'align': [] }],
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-        [{ 'indent': '-1'}, { 'indent': '+1' }],
-        ['link', 'image'],
-        ['blockquote', 'code-block'],
-        ['clean']
-      ],
-      handlers: {
-        image: function() {
-          const input = document.createElement('input');
-          input.setAttribute('type', 'file');
-          input.setAttribute('accept', 'image/*');
-          input.click();
-
-          input.onchange = async () => {
-            const file = input.files?.[0];
-            if (!file) return;
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            try {
-              const response = await fetch('/api/upload-image', {
-                method: 'POST',
-                body: formData,
-                credentials: 'include',
-              });
-
-              if (!response.ok) {
-                throw new Error('Image upload failed');
-              }
-
-              const json = await response.json();
-              const quill = quotationEditorRef.current?.getEditor?.();
-              if (quill) {
-                const range = quill.getSelection?.(true);
-                if (range) {
-                  quill.insertEmbed(range.index, 'image', json.location);
-                  quill.setSelection(range.index + 1);
-                }
-              }
-            } catch (error) {
-              console.error('Image upload failed:', error);
-              toast({
-                title: "Lỗi",
-                description: "Không thể tải lên hình ảnh",
-                variant: "destructive",
-              });
-            }
-          };
-        }
-      }
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      TiptapTable.configure({
+        resizable: true,
+      }),
+      TiptapTableRow,
+      TiptapTableHeader,
+      TiptapTableCell,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      Underline,
+      TiptapImage,
+      TextStyle,
+      Color,
+    ],
+    content: quotationHtmlContent,
+    onUpdate: ({ editor }) => {
+      setQuotationHtmlContent(editor.getHTML());
     },
-    clipboard: {
-      matchVisual: false
-    }
-  }), [toast]);
-
-  const quillFormats = useMemo(() => [
-    'header',
-    'bold', 'italic', 'underline', 'strike',
-    'color', 'background',
-    'align',
-    'list', 'bullet', 'indent',
-    'link', 'image',
-    'blockquote', 'code-block'
-  ], []);
+  });
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -686,35 +645,23 @@ export default function BulkCampaignWizard() {
 
                 <div className="space-y-2">
                   <Label htmlFor="quotation-html">Nội dung HTML</Label>
-                  <div 
-                    className="border rounded-md" 
-                    data-testid="editor-quotation-html"
-                    onDrop={(e: React.DragEvent) => {
-                      const variable = e.dataTransfer?.getData('text/plain');
-                      if (variable && variable.startsWith('{') && variable.endsWith('}')) {
-                        e.preventDefault();
-                        const quill = quotationEditorRef.current?.getEditor();
-                        if (quill) {
-                          const range = quill.getSelection(true);
-                          quill.insertText(range.index, variable);
-                          quill.setSelection(range.index + variable.length);
-                        }
-                      }
+                  <TiptapEditor
+                    editor={editor}
+                    onImageUpload={async (file) => {
+                      const formData = new FormData();
+                      formData.append('file', file);
+                      const response = await fetch('/api/upload-image', {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'include',
+                      });
+                      if (!response.ok) throw new Error('Upload failed');
+                      const json = await response.json();
+                      return json.location;
                     }}
-                    onDragOver={(e: React.DragEvent) => e.preventDefault()}
-                  >
-                    <ReactQuill
-                      ref={quotationEditorRef}
-                      theme="snow"
-                      value={quotationHtmlContent}
-                      onChange={setQuotationHtmlContent}
-                      modules={quillModules}
-                      formats={quillFormats}
-                      style={{ height: '400px', marginBottom: '50px' }}
-                    />
-                  </div>
+                  />
                   <p className="text-xs text-muted-foreground">
-                    Kéo thả biến từ sidebar vào editor hoặc paste nội dung từ Word với định dạng và hình ảnh
+                    Kéo thả biến từ sidebar vào editor hoặc paste nội dung từ Word với định dạng bảng và hình ảnh
                   </p>
                 </div>
               </CardContent>
