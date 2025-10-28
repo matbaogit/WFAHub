@@ -23,6 +23,13 @@ WFA Hub is a Vietnamese-language web application offering ready-made automation 
     - Delete entire table
     - Resizable columns
     - **Paste from Word**: Preserves table structure, borders, and formatting when pasting from Microsoft Word
+  - **Clipboard Image Paste Support** (October 28, 2025):
+    - **Direct Image Paste**: Paste screenshots (PrtScn/Win+Shift+S) or images copied from file explorer
+    - **Word Document Images**: Paste images copied from Microsoft Word documents
+    - Automatic upload to server via `/api/upload-image` endpoint
+    - Base64 images from Word are converted to proper file uploads
+    - Seamless integration with editor - images appear immediately after upload
+    - Implementation via `editorProps.handlePaste` handler in editor configuration
   - Custom image upload handler integrates with existing `/api/upload-image` endpoint
   - Drag & drop variable support: CSV variables ({name}, {email}, {company}, etc.) can be dragged from sidebar into editor
   - Clean HTML output with proper table markup
@@ -38,6 +45,7 @@ WFA Hub is a Vietnamese-language web application offering ready-made automation 
   - Toolbar with conditional table operations (visible when table is active)
   - Custom CSS styling at `client/src/pages/tiptap-editor.css`
   - Editor initialization with `useEditor` hook in wizard component
+  - Clipboard paste handler in `editorProps` (lines 170-268 in wizard)
 - **Location**: `client/src/pages/bulk-campaign-wizard.tsx` Step 2, `client/src/components/TiptapEditor.tsx`
 
 **Previous Work - Bulk Email Campaign Module - PDF Attachment Feature (October 20, 2025)**
