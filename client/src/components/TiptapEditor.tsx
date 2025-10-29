@@ -546,6 +546,97 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
 
                 <div className="separator" />
 
+                <div className="flex gap-1">
+                  <input
+                    type="color"
+                    onInput={(e) => setColor((e.target as HTMLInputElement).value)}
+                    value={editor.getAttributes('textStyle').color || '#000000'}
+                    className="w-8 h-8 rounded cursor-pointer"
+                    title="Text Color"
+                  />
+                </div>
+
+                <div className="separator" />
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => editor.chain().focus().setTextAlign('left').run()}
+                  className={editor.isActive({ textAlign: 'left' }) ? 'is-active' : ''}
+                  title="Align Left"
+                >
+                  <AlignLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => editor.chain().focus().setTextAlign('center').run()}
+                  className={editor.isActive({ textAlign: 'center' }) ? 'is-active' : ''}
+                  title="Align Center"
+                >
+                  <AlignCenter className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => editor.chain().focus().setTextAlign('right').run()}
+                  className={editor.isActive({ textAlign: 'right' }) ? 'is-active' : ''}
+                  title="Align Right"
+                >
+                  <AlignRight className="w-4 h-4" />
+                </Button>
+
+                <div className="separator" />
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => editor.chain().focus().toggleBulletList().run()}
+                  className={editor.isActive('bulletList') ? 'is-active' : ''}
+                  title="Bullet List"
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                  className={editor.isActive('orderedList') ? 'is-active' : ''}
+                  title="Ordered List"
+                >
+                  <ListOrdered className="w-4 h-4" />
+                </Button>
+
+                <div className="separator" />
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                  className={editor.isActive('blockquote') ? 'is-active' : ''}
+                  title="Blockquote"
+                >
+                  <Quote className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                  className={editor.isActive('codeBlock') ? 'is-active' : ''}
+                  title="Code Block"
+                >
+                  <Code className="w-4 h-4" />
+                </Button>
+
+                <div className="separator" />
+
                 <Button
                   type="button"
                   size="sm"
@@ -555,6 +646,9 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
                 >
                   <ImageIcon className="w-4 h-4" />
                 </Button>
+
+                <div className="separator" />
+
                 <Button
                   type="button"
                   size="sm"
@@ -564,6 +658,94 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
                 >
                   <TableIcon className="w-4 h-4" />
                 </Button>
+
+                {editor.isActive('table') && (
+                  <>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={addColumnBefore}
+                      title="Add Column Before"
+                    >
+                      <Columns className="w-4 h-4" />➖
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={addColumnAfter}
+                      title="Add Column After"
+                    >
+                      <Columns className="w-4 h-4" />➕
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={deleteColumn}
+                      title="Delete Column"
+                    >
+                      <Columns className="w-4 h-4" />❌
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={addRowBefore}
+                      title="Add Row Before"
+                    >
+                      <Rows className="w-4 h-4" />➖
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={addRowAfter}
+                      title="Add Row After"
+                    >
+                      <Rows className="w-4 h-4" />➕
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={deleteRow}
+                      title="Delete Row"
+                    >
+                      <Rows className="w-4 h-4" />❌
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={mergeCells}
+                      title="Merge Cells"
+                      disabled={!editor.can().mergeCells()}
+                    >
+                      <TableProperties className="w-4 h-4" />🔗
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={splitCell}
+                      title="Split Cell"
+                      disabled={!editor.can().splitCell()}
+                    >
+                      <TableProperties className="w-4 h-4" />✂️
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={deleteTable}
+                      title="Delete Table"
+                    >
+                      ❌ Table
+                    </Button>
+                  </>
+                )}
               </div>
               <div className="h-[calc(100%-3rem)] overflow-y-auto">
                 {isFullscreen && renderEditor()}
