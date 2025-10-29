@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Editor, EditorContent } from '@tiptap/react';
 import { 
   Bold, 
@@ -40,6 +40,10 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
   if (!editor) {
     return null;
   }
+  
+  const renderEditor = () => (
+    <EditorContent editor={editor} className={isFullscreen ? "h-full" : ""} />
+  );
 
   const addImage = async () => {
     if (!onImageUpload) return;
@@ -432,7 +436,7 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
           <Maximize2 className="w-4 h-4" />
         </Button>
       </div>
-      {!isFullscreen && <EditorContent editor={editor} />}
+      {!isFullscreen && renderEditor()}
 
       {/* Fullscreen Dialog */}
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
@@ -573,7 +577,7 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
                 </Button>
               </div>
               <div className="h-[calc(100%-3rem)] overflow-y-auto">
-                <EditorContent editor={editor} className="h-full" />
+                {isFullscreen && renderEditor()}
               </div>
             </div>
           </div>
