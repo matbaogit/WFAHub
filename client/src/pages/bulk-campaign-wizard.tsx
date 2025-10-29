@@ -714,8 +714,12 @@ export default function BulkCampaignWizard() {
     const handleTemplateSelect = (templateId: string) => {
       setSelectedTemplateId(templateId);
       const template = quotationTemplates.find(t => t.id === templateId);
-      if (template) {
+      if (template && template.htmlContent) {
         setQuotationHtmlContent(template.htmlContent);
+        // Update editor content immediately
+        if (editor && !editor.isDestroyed) {
+          editor.commands.setContent(template.htmlContent);
+        }
       }
     };
 
