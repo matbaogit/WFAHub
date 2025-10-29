@@ -36,6 +36,7 @@ interface TiptapEditorProps {
 
 export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   
   if (!editor) {
     return null;
@@ -109,17 +110,31 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
     editor.chain().focus().setColor(color).run();
   };
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    const variable = e.dataTransfer?.getData('text/plain');
+    if (variable && variable.startsWith('{') && variable.endsWith('}')) {
+      e.preventDefault();
+      editor.chain().focus().insertContent(variable).run();
+    }
+    setIsDragOver(false);
+  };
+
   return (
     <div 
-      className="tiptap-editor"
-      onDrop={(e: React.DragEvent) => {
-        const variable = e.dataTransfer?.getData('text/plain');
-        if (variable && variable.startsWith('{') && variable.endsWith('}')) {
-          e.preventDefault();
-          editor.chain().focus().insertContent(variable).run();
-        }
-      }}
-      onDragOver={(e: React.DragEvent) => e.preventDefault()}
+      className={`tiptap-editor ${isDragOver ? 'drag-over' : ''}`}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
       data-testid="editor-quotation-html"
     >
       <div className="tiptap-toolbar">
