@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Editor, EditorContent } from '@tiptap/react';
 import { 
   Bold, 
@@ -22,8 +23,11 @@ import {
   TableProperties,
   Columns,
   Rows,
+  Maximize2,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface TiptapEditorProps {
   editor: Editor | null;
@@ -31,6 +35,8 @@ interface TiptapEditorProps {
 }
 
 export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  
   if (!editor) {
     return null;
   }
@@ -412,8 +418,167 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
             </Button>
           </>
         )}
+
+        <div className="separator" />
+
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() => setIsFullscreen(true)}
+          title="Phóng to trình soạn thảo"
+          data-testid="button-fullscreen-editor"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </Button>
       </div>
       <EditorContent editor={editor} />
+
+      {/* Fullscreen Dialog */}
+      <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
+        <DialogContent className="max-w-[95vw] h-[95vh] flex flex-col p-0">
+          <DialogHeader className="px-6 py-4 border-b">
+            <div className="flex items-center justify-between">
+              <DialogTitle>Trình soạn thảo - Chế độ phóng to</DialogTitle>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => setIsFullscreen(false)}
+                data-testid="button-close-fullscreen"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden p-6">
+            <div className="h-full tiptap-editor">
+              <div className="tiptap-toolbar">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => editor.chain().focus().undo().run()}
+                  disabled={!editor.can().undo()}
+                  title="Undo"
+                >
+                  <Undo className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => editor.chain().focus().redo().run()}
+                  disabled={!editor.can().redo()}
+                  title="Redo"
+                >
+                  <Redo className="w-4 h-4" />
+                </Button>
+
+                <div className="separator" />
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                  className={editor.isActive('heading', { level: 1 }) ? 'is-active' : ''}
+                  title="Heading 1"
+                >
+                  <Heading1 className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                  className={editor.isActive('heading', { level: 2 }) ? 'is-active' : ''}
+                  title="Heading 2"
+                >
+                  <Heading2 className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                  className={editor.isActive('heading', { level: 3 }) ? 'is-active' : ''}
+                  title="Heading 3"
+                >
+                  <Heading3 className="w-4 h-4" />
+                </Button>
+
+                <div className="separator" />
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => editor.chain().focus().toggleBold().run()}
+                  className={editor.isActive('bold') ? 'is-active' : ''}
+                  title="Bold"
+                >
+                  <Bold className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => editor.chain().focus().toggleItalic().run()}
+                  className={editor.isActive('italic') ? 'is-active' : ''}
+                  title="Italic"
+                >
+                  <Italic className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => editor.chain().focus().toggleUnderline().run()}
+                  className={editor.isActive('underline') ? 'is-active' : ''}
+                  title="Underline"
+                >
+                  <UnderlineIcon className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => editor.chain().focus().toggleStrike().run()}
+                  className={editor.isActive('strike') ? 'is-active' : ''}
+                  title="Strikethrough"
+                >
+                  <Strikethrough className="w-4 h-4" />
+                </Button>
+
+                <div className="separator" />
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={addImage}
+                  title="Insert Image"
+                >
+                  <ImageIcon className="w-4 h-4" />
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={insertTable}
+                  title="Insert Table"
+                >
+                  <TableIcon className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="h-[calc(100%-3rem)] overflow-y-auto">
+                <EditorContent editor={editor} className="h-full" />
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -62,6 +62,13 @@
   line-height: 1.6;
 }
 
+/* Fullscreen editor styles */
+.tiptap-editor .h-full .ProseMirror {
+  min-height: 100%;
+  max-height: none;
+  height: 100%;
+}
+
 .ProseMirror:focus {
   outline: none;
 }
