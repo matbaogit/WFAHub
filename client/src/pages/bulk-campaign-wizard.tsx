@@ -130,13 +130,9 @@ export default function BulkCampaignWizard() {
   const [scheduledTime, setScheduledTime] = useState("09:00");
   const [showCreditDialog, setShowCreditDialog] = useState(false);
 
-  const { data: quotationTemplates = [], isLoading: loadingTemplates } = useQuery<QuotationTemplate[]>({
+  const { data: quotationTemplates = [] } = useQuery<QuotationTemplate[]>({
     queryKey: ["/api/quotation-templates"],
   });
-
-  // Debug logging
-  console.log('[DEBUG] Quotation Templates:', quotationTemplates);
-  console.log('[DEBUG] Loading Templates:', loadingTemplates);
 
   const { data: emailTemplates = [] } = useQuery<EmailTemplate[]>({
     queryKey: ["/api/email-templates"],
