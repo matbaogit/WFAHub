@@ -432,7 +432,7 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
           <Maximize2 className="w-4 h-4" />
         </Button>
       </div>
-      <EditorContent editor={editor} />
+      {!isFullscreen && <EditorContent editor={editor} />}
 
       {/* Fullscreen Dialog */}
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
