@@ -442,18 +442,7 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
         <DialogContent className="max-w-[95vw] h-[95vh] flex flex-col p-0">
           <DialogHeader className="px-6 py-4 border-b">
-            <div className="flex items-center justify-between">
-              <DialogTitle>Trình soạn thảo - Chế độ phóng to</DialogTitle>
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => setIsFullscreen(false)}
-                data-testid="button-close-fullscreen"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
+            <DialogTitle>Trình soạn thảo - Chế độ phóng to</DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-hidden p-6">
             <div className="h-full tiptap-editor">
