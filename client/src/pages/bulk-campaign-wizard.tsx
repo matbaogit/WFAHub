@@ -174,69 +174,22 @@ export default function BulkCampaignWizard() {
         const items = Array.from(event.clipboardData?.items || []);
         
         // Case 1: Check for direct image files (screenshots, copy from file explorer)
-        for (const item of items) {
-          if (item.type.indexOf("image") === 0) {
-            event.preventDefault();
-            const file = item.getAsFile();
-            if (!file) continue;
-            
-            // Upload image to server
-            const formData = new FormData();
-            formData.append('file', file);
-            fetch('/api/upload-image', {
-              method: 'POST',
-              body: formData,
-              credentials: 'include',
-            })
-              .then(response => {
-                if (!response.ok) throw new Error('Upload failed');
-                return response.json();
-              })
-              .then(json => {
-                // Use TipTap command to insert image safely
-                if (editor && !editor.isDestroyed) {
-                  editor.chain().focus().setImage({ src: json.location }).run();
-                }
-              })
-              .catch(error => {
-                console.error('Image upload failed:', error);
-                toast({
-                  variant: "destructive",
-                  title: "Upload ảnh thất bại",
-                  description: "Không thể tải ảnh lên server.",
-                });
-              });
-            
-            return true; // Handled - prevent default paste behavior
-          }
-        }
-        
-        // Case 2: Check for base64 images in HTML (from Word documents)
-        const html = event.clipboardData?.getData('text/html');
-        if (html && html.includes('<img')) {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
-          const images = doc.querySelectorAll('img');
-          
-          let hasBase64Images = false;
-          images.forEach(img => {
-            const src = img.getAttribute('src');
-            if (src && src.startsWith('data:image')) {
-              hasBase64Images = true;
-              event.preventDefault();
+        const hasDirectImageFile = items.some(item => item.type.indexOf("image") === 0);
+        if (hasDirectImageFile) {
+          event.preventDefault();
+          for (const item of items) {
+            if (item.type.indexOf("image") === 0) {
+              const file = item.getAsFile();
+              if (!file) continue;
               
-              // Convert base64 to blob, then upload
-              fetch(src)
-                .then(res => res.blob())
-                .then(blob => {
-                  const formData = new FormData();
-                  formData.append('file', blob, 'pasted-image.png');
-                  return fetch('/api/upload-image', {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'include',
-                  });
-                })
+              // Upload image to server
+              const formData = new FormData();
+              formData.append('file', file);
+              fetch('/api/upload-image', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include',
+              })
                 .then(response => {
                   if (!response.ok) throw new Error('Upload failed');
                   return response.json();
@@ -252,13 +205,81 @@ export default function BulkCampaignWizard() {
                   toast({
                     variant: "destructive",
                     title: "Upload ảnh thất bại",
-                    description: "Không thể tải ảnh từ Word lên server.",
+                    description: "Không thể tải ảnh lên server.",
                   });
                 });
             }
+          }
+          return true; // Handled - prevent default paste behavior
+        }
+        
+        // Case 2: Check for base64 images in HTML (from Word documents)
+        const html = event.clipboardData?.getData('text/html');
+        if (html && html.includes('<img')) {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const images = doc.querySelectorAll('img');
+          
+          const base64Images: Array<{ img: HTMLImageElement; src: string }> = [];
+          images.forEach(img => {
+            const src = img.getAttribute('src');
+            if (src && src.startsWith('data:image')) {
+              base64Images.push({ img: img as HTMLImageElement, src });
+            }
           });
           
-          if (hasBase64Images) {
+          if (base64Images.length > 0) {
+            event.preventDefault();
+            
+            // Upload all base64 images in parallel
+            const uploadPromises = base64Images.map(({ img, src }) => {
+              return fetch(src)
+                .then(res => res.blob())
+                .then(blob => {
+                  const formData = new FormData();
+                  formData.append('file', blob, 'pasted-image.png');
+                  return fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include',
+                  });
+                })
+                .then(response => {
+                  if (!response.ok) throw new Error('Upload failed');
+                  return response.json();
+                })
+                .then(json => ({ img, newUrl: json.location }))
+                .catch(error => {
+                  console.error('Image upload failed:', error);
+                  return { img, newUrl: null };
+                });
+            });
+            
+            // Wait for all uploads, then insert HTML with replaced URLs
+            Promise.all(uploadPromises)
+              .then(results => {
+                // Replace base64 src with uploaded URLs
+                results.forEach(({ img, newUrl }) => {
+                  if (newUrl) {
+                    img.setAttribute('src', newUrl);
+                  }
+                });
+                
+                // Get the modified HTML and insert into editor
+                const modifiedHtml = doc.body.innerHTML;
+                if (editor && !editor.isDestroyed) {
+                  editor.chain().focus().insertContent(modifiedHtml).run();
+                }
+              })
+              .catch(error => {
+                console.error('Failed to process images:', error);
+                toast({
+                  variant: "destructive",
+                  title: "Upload ảnh thất bại",
+                  description: "Không thể tải ảnh từ Word lên server.",
+                });
+              });
+            
             return true; // Handled - prevent default paste behavior
           }
         }
