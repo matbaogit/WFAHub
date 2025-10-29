@@ -723,6 +723,19 @@ export default function BulkCampaignWizard() {
       }
     };
 
+    // Extract sample data from first recipient for preview
+    const sampleData: Record<string, string> = {};
+    if (parsedRecipients.length > 0) {
+      const firstRecipient = parsedRecipients[0];
+      sampleData.email = firstRecipient.email;
+      if (firstRecipient.name) {
+        sampleData.name = firstRecipient.name;
+      }
+      if (firstRecipient.customData) {
+        Object.assign(sampleData, firstRecipient.customData);
+      }
+    }
+
     return (
       <div className="space-y-6">
         <div>
@@ -738,6 +751,7 @@ export default function BulkCampaignWizard() {
               variables={availableVariables} 
               title="Biến từ CSV"
               description="Kéo và thả vào khung HTML"
+              sampleData={sampleData}
             />
           </div>
 
@@ -845,6 +859,19 @@ export default function BulkCampaignWizard() {
       e.dataTransfer.dropEffect = "copy";
     };
 
+    // Extract sample data from first recipient for preview
+    const sampleData: Record<string, string> = {};
+    if (parsedRecipients.length > 0) {
+      const firstRecipient = parsedRecipients[0];
+      sampleData.email = firstRecipient.email;
+      if (firstRecipient.name) {
+        sampleData.name = firstRecipient.name;
+      }
+      if (firstRecipient.customData) {
+        Object.assign(sampleData, firstRecipient.customData);
+      }
+    }
+
     return (
       <div className="space-y-6">
         <div>
@@ -860,6 +887,7 @@ export default function BulkCampaignWizard() {
               variables={availableVariables} 
               title="Biến từ CSV"
               description="Kéo và thả vào email"
+              sampleData={sampleData}
             />
           </div>
 

@@ -12,12 +12,14 @@ interface VariablePickerProps {
   variables: Variable[];
   title?: string;
   description?: string;
+  sampleData?: Record<string, string>;
 }
 
 export function VariablePicker({ 
   variables, 
   title = "Biến có sẵn",
-  description = "Kéo và thả biến vào khung soạn thảo"
+  description = "Kéo và thả biến vào khung soạn thảo",
+  sampleData = {}
 }: VariablePickerProps) {
   
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, variable: Variable) => {
