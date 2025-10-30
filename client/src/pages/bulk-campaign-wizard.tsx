@@ -938,8 +938,9 @@ export default function BulkCampaignWizard() {
             <VariablePicker 
               variables={availableVariables} 
               title="Biến từ CSV"
-              description="Kéo và thả vào email"
+              description="Kéo và thả hoặc nhấp đôi để chèn"
               sampleData={sampleData}
+              onVariableDoubleClick={handleVariableDoubleClick}
             />
           </div>
 
@@ -986,6 +987,8 @@ export default function BulkCampaignWizard() {
                     id="email-subject"
                     value={emailSubject}
                     onChange={(e) => setEmailSubject(e.target.value)}
+                    onFocus={() => setActiveField('subject')}
+                    onBlur={() => setActiveField(null)}
                     onDrop={handleEmailSubjectDrop}
                     onDragOver={handleDragOver}
                     placeholder="Email dành riêng cho {name}"
@@ -993,7 +996,7 @@ export default function BulkCampaignWizard() {
                     data-testid="input-email-subject"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Kéo thả biến từ sidebar vào tiêu đề
+                    Kéo thả biến từ sidebar hoặc nhấp đôi khi trường này đang focus
                   </p>
                 </div>
 
@@ -1004,6 +1007,8 @@ export default function BulkCampaignWizard() {
                     id="email-body"
                     value={emailBody}
                     onChange={(e) => setEmailBody(e.target.value)}
+                    onFocus={() => setActiveField('body')}
+                    onBlur={() => setActiveField(null)}
                     onDrop={handleEmailBodyDrop}
                     onDragOver={handleDragOver}
                     placeholder="Xin chào {name},&#10;&#10;Chúng tôi gửi đến bạn thông tin chi tiết...&#10;&#10;Trân trọng."
@@ -1012,7 +1017,7 @@ export default function BulkCampaignWizard() {
                     data-testid="input-email-body"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Kéo thả biến từ sidebar hoặc nhập trực tiếp nội dung
+                    Kéo thả biến từ sidebar hoặc nhấp đôi khi trường này đang focus
                   </p>
                 </div>
               </CardContent>
