@@ -28,6 +28,7 @@ import { Underline } from '@tiptap/extension-underline';
 import { Image as TiptapImage } from '@tiptap/extension-image';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
+import { Dropcursor } from '@tiptap/extension-dropcursor';
 import './tiptap-editor.css';
 import { 
   Upload, 
@@ -159,6 +160,10 @@ export default function BulkCampaignWizard() {
       TiptapImage,
       TextStyle,
       Color,
+      Dropcursor.configure({
+        color: 'hsl(var(--primary))',
+        width: 3,
+      }),
     ],
     content: quotationHtmlContent,
     onUpdate: ({ editor }) => {
