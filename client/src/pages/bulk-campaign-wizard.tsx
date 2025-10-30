@@ -755,8 +755,9 @@ export default function BulkCampaignWizard() {
             <VariablePicker 
               variables={availableVariables} 
               title="Biến từ CSV"
-              description="Kéo và thả vào khung HTML"
+              description="Kéo và thả hoặc nhấp đôi để chèn"
               sampleData={sampleData}
+              editor={editor}
             />
           </div>
 
