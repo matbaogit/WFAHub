@@ -3,6 +3,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Grip, Info } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Editor } from '@tiptap/react';
 
 interface Variable {
   label: string;
@@ -14,13 +15,15 @@ interface VariablePickerProps {
   title?: string;
   description?: string;
   sampleData?: Record<string, string>;
+  editor?: Editor | null;
 }
 
 export function VariablePicker({ 
   variables, 
   title = "Biến có sẵn",
-  description = "Kéo và thả biến vào khung soạn thảo",
-  sampleData = {}
+  description = "Kéo và thả biến vào khung soạn thảo hoặc nhấp đôi",
+  sampleData = {},
+  editor = null
 }: VariablePickerProps) {
   
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, variable: Variable) => {
@@ -57,6 +60,24 @@ export function VariablePicker({
     setTimeout(() => {
       document.body.removeChild(dragPreview);
     }, 0);
+  };
+
+  // Handle double-click to insert variable into editor
+  const handleDoubleClick = (variable: Variable) => {
+    if (!editor || editor.isDestroyed) return;
+    
+    // Insert variable at current cursor position
+    editor.chain().focus().insertContent(variable.value).run();
+    
+    // Add temporary flash effect to show insertion happened
+    const editorElement = document.querySelector('.ProseMirror') as HTMLElement;
+    if (editorElement) {
+      editorElement.style.transition = 'background-color 0.3s ease';
+      editorElement.style.backgroundColor = 'hsl(var(--primary) / 0.1)';
+      setTimeout(() => {
+        editorElement.style.backgroundColor = '';
+      }, 300);
+    }
   };
 
   // Helper function to extract variable name from {variableName} format
@@ -102,8 +123,10 @@ export function VariablePicker({
                         <div
                           draggable
                           onDragStart={(e) => handleDragStart(e, variable)}
+                          onDoubleClick={() => handleDoubleClick(variable)}
                           className="cursor-grab active:cursor-grabbing"
                           data-testid={`variable-chip-${index}`}
+                          title="Kéo thả hoặc nhấp đôi để chèn vào editor"
                         >
                           <Badge
                             variant="outline"
