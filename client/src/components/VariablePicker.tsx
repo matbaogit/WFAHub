@@ -16,6 +16,7 @@ interface VariablePickerProps {
   description?: string;
   sampleData?: Record<string, string>;
   editor?: Editor | null;
+  onVariableDoubleClick?: (variableValue: string) => void;
 }
 
 export function VariablePicker({ 
@@ -23,7 +24,8 @@ export function VariablePicker({
   title = "Biến có sẵn",
   description = "Kéo và thả biến vào khung soạn thảo hoặc nhấp đôi",
   sampleData = {},
-  editor = null
+  editor = null,
+  onVariableDoubleClick
 }: VariablePickerProps) {
   
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, variable: Variable) => {
@@ -62,8 +64,15 @@ export function VariablePicker({
     }, 0);
   };
 
-  // Handle double-click to insert variable into editor
+  // Handle double-click to insert variable into editor or custom field
   const handleDoubleClick = (variable: Variable) => {
+    // If custom handler provided (for Input/Textarea), use it
+    if (onVariableDoubleClick) {
+      onVariableDoubleClick(variable.value);
+      return;
+    }
+    
+    // Otherwise use TipTap editor (for Step 2)
     if (!editor || editor.isDestroyed) return;
     
     // Insert variable at current cursor position
