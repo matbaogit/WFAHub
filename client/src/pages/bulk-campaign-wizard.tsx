@@ -131,6 +131,7 @@ export default function BulkCampaignWizard() {
   const [scheduledTime, setScheduledTime] = useState("09:00");
   const [showCreditDialog, setShowCreditDialog] = useState(false);
   const [activeField, setActiveField] = useState<'subject' | 'body' | null>(null);
+  const activeFieldRef = useRef<'subject' | 'body' | null>(null);
 
   const { data: quotationTemplates = [] } = useQuery<QuotationTemplate[]>({
     queryKey: ["/api/quotation-templates"],
@@ -868,7 +869,10 @@ export default function BulkCampaignWizard() {
 
     // Handle double-click on variable to insert into active field
     const handleVariableDoubleClick = (variableValue: string) => {
-      if (activeField === 'subject' && emailSubjectRef.current) {
+      // Use ref instead of state to avoid race condition with onBlur
+      const currentActiveField = activeFieldRef.current;
+      
+      if (currentActiveField === 'subject' && emailSubjectRef.current) {
         const input = emailSubjectRef.current;
         const start = input.selectionStart || 0;
         const end = input.selectionEnd || 0;
@@ -888,7 +892,7 @@ export default function BulkCampaignWizard() {
           input.focus();
           input.setSelectionRange(start + variableValue.length, start + variableValue.length);
         }, 0);
-      } else if (activeField === 'body' && emailBodyRef.current) {
+      } else if (currentActiveField === 'body' && emailBodyRef.current) {
         const textarea = emailBodyRef.current;
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
@@ -987,8 +991,17 @@ export default function BulkCampaignWizard() {
                     id="email-subject"
                     value={emailSubject}
                     onChange={(e) => setEmailSubject(e.target.value)}
-                    onFocus={() => setActiveField('subject')}
-                    onBlur={() => setActiveField(null)}
+                    onFocus={() => {
+                      setActiveField('subject');
+                      activeFieldRef.current = 'subject';
+                    }}
+                    onBlur={() => {
+                      // Delay clearing to allow double-click handler to complete
+                      setTimeout(() => {
+                        setActiveField(null);
+                        activeFieldRef.current = null;
+                      }, 200);
+                    }}
                     onDrop={handleEmailSubjectDrop}
                     onDragOver={handleDragOver}
                     placeholder="Email dành riêng cho {name}"
@@ -1007,8 +1020,17 @@ export default function BulkCampaignWizard() {
                     id="email-body"
                     value={emailBody}
                     onChange={(e) => setEmailBody(e.target.value)}
-                    onFocus={() => setActiveField('body')}
-                    onBlur={() => setActiveField(null)}
+                    onFocus={() => {
+                      setActiveField('body');
+                      activeFieldRef.current = 'body';
+                    }}
+                    onBlur={() => {
+                      // Delay clearing to allow double-click handler to complete
+                      setTimeout(() => {
+                        setActiveField(null);
+                        activeFieldRef.current = null;
+                      }, 200);
+                    }}
                     onDrop={handleEmailBodyDrop}
                     onDragOver={handleDragOver}
                     placeholder="Xin chào {name},&#10;&#10;Chúng tôi gửi đến bạn thông tin chi tiết...&#10;&#10;Trân trọng."
