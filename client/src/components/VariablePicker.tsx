@@ -27,6 +27,36 @@ export function VariablePicker({
     e.dataTransfer.effectAllowed = "copy";
     e.dataTransfer.setData("text/plain", variable.value);
     e.dataTransfer.setData("application/json", JSON.stringify(variable));
+    
+    // Create custom drag preview
+    const dragPreview = document.createElement('div');
+    dragPreview.className = 'variable-drag-preview';
+    dragPreview.style.cssText = `
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+      padding: 12px 20px;
+      background: hsl(var(--primary));
+      color: white;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 16px;
+      font-weight: 600;
+      box-shadow: 0 8px 24px -4px hsl(var(--primary) / 0.4);
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 9999;
+    `;
+    dragPreview.textContent = variable.value;
+    document.body.appendChild(dragPreview);
+    
+    // Set custom drag image with offset
+    e.dataTransfer.setDragImage(dragPreview, 0, 0);
+    
+    // Clean up after drag starts
+    setTimeout(() => {
+      document.body.removeChild(dragPreview);
+    }, 0);
   };
 
   // Helper function to extract variable name from {variableName} format
