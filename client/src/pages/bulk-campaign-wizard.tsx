@@ -130,6 +130,7 @@ export default function BulkCampaignWizard() {
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
   const [scheduledTime, setScheduledTime] = useState("09:00");
   const [showCreditDialog, setShowCreditDialog] = useState(false);
+  const [activeField, setActiveField] = useState<'subject' | 'body' | null>(null);
 
   const { data: quotationTemplates = [] } = useQuery<QuotationTemplate[]>({
     queryKey: ["/api/quotation-templates"],
@@ -863,6 +864,51 @@ export default function BulkCampaignWizard() {
     const handleDragOver = (e: React.DragEvent) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = "copy";
+    };
+
+    // Handle double-click on variable to insert into active field
+    const handleVariableDoubleClick = (variableValue: string) => {
+      if (activeField === 'subject' && emailSubjectRef.current) {
+        const input = emailSubjectRef.current;
+        const start = input.selectionStart || 0;
+        const end = input.selectionEnd || 0;
+        const currentValue = emailSubject;
+        
+        const newValue = currentValue.substring(0, start) + variableValue + currentValue.substring(end);
+        setEmailSubject(newValue);
+        
+        // Flash effect
+        input.style.transition = 'background-color 0.3s ease';
+        input.style.backgroundColor = 'hsl(var(--primary) / 0.1)';
+        setTimeout(() => {
+          input.style.backgroundColor = '';
+        }, 300);
+        
+        setTimeout(() => {
+          input.focus();
+          input.setSelectionRange(start + variableValue.length, start + variableValue.length);
+        }, 0);
+      } else if (activeField === 'body' && emailBodyRef.current) {
+        const textarea = emailBodyRef.current;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const currentValue = emailBody;
+        
+        const newValue = currentValue.substring(0, start) + variableValue + currentValue.substring(end);
+        setEmailBody(newValue);
+        
+        // Flash effect
+        textarea.style.transition = 'background-color 0.3s ease';
+        textarea.style.backgroundColor = 'hsl(var(--primary) / 0.1)';
+        setTimeout(() => {
+          textarea.style.backgroundColor = '';
+        }, 300);
+        
+        setTimeout(() => {
+          textarea.focus();
+          textarea.setSelectionRange(start + variableValue.length, start + variableValue.length);
+        }, 0);
+      }
     };
 
     // Extract sample data from first recipient for preview
