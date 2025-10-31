@@ -683,14 +683,28 @@ export default function BulkCampaignWizard() {
         )}
 
         {parsedRecipients.length > 0 && (() => {
-          // Get all unique customData keys from all recipients, excluding 'email' to avoid duplicate
-          const customDataKeys = Array.from(
-            new Set(
-              parsedRecipients.flatMap(r => 
-                r.customData ? Object.keys(r.customData).filter(k => k !== 'email') : []
-              )
-            )
-          );
+          // Helper function to normalize column names (must match backend normalizeVariableName)
+          const normalizeVariableName = (columnName: string): string => {
+            return columnName
+              .toLowerCase()
+              .trim()
+              .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, 'a')
+              .replace(/[èéẹẻẽêềếệểễ]/g, 'e')
+              .replace(/[ìíịỉĩ]/g, 'i')
+              .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, 'o')
+              .replace(/[ùúụủũưừứựửữ]/g, 'u')
+              .replace(/[ỳýỵỷỹ]/g, 'y')
+              .replace(/đ/g, 'd')
+              .replace(/[^a-z0-9]/g, '_');
+          };
+
+          // Get field mappings with normalized column names for lookup
+          const displayFields = fieldMappings
+            .filter(m => m.fieldName.toLowerCase() !== 'email' && m.columnName)
+            .map(m => ({
+              fieldName: m.fieldName,
+              normalizedColumnName: normalizeVariableName(m.columnName)
+            }));
 
           return (
             <Card>
@@ -706,9 +720,9 @@ export default function BulkCampaignWizard() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Email</TableHead>
-                        {customDataKeys.map(key => (
-                          <TableHead key={key} className="capitalize">
-                            {key}
+                        {displayFields.map(field => (
+                          <TableHead key={field.fieldName} className="capitalize">
+                            {field.fieldName}
                           </TableHead>
                         ))}
                       </TableRow>
@@ -717,9 +731,9 @@ export default function BulkCampaignWizard() {
                       {parsedRecipients.slice(0, 10).map((recipient, idx) => (
                         <TableRow key={idx} data-testid={`row-recipient-${idx}`}>
                           <TableCell>{recipient.email}</TableCell>
-                          {customDataKeys.map(key => (
-                            <TableCell key={key}>
-                              {recipient.customData?.[key] || "-"}
+                          {displayFields.map(field => (
+                            <TableCell key={field.fieldName}>
+                              {recipient.customData?.[field.normalizedColumnName] || "-"}
                             </TableCell>
                           ))}
                         </TableRow>
