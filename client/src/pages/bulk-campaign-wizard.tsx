@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import ColumnMappingTable from "@/components/ColumnMappingTable";
+import DynamicFieldMapping, { type FieldMapping } from "@/components/DynamicFieldMapping";
 import { VariablePicker } from "@/components/VariablePicker";
 import { TiptapEditor } from "@/components/TiptapEditor";
 import { useEditor } from '@tiptap/react';
@@ -116,7 +116,9 @@ export default function BulkCampaignWizard() {
   const [campaignName, setCampaignName] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<FilePreviewData | null>(null);
-  const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
+  const [fieldMappings, setFieldMappings] = useState<FieldMapping[]>([
+    { fieldName: 'email', columnName: '' }
+  ]);
   const [parsedRecipients, setParsedRecipients] = useState<ParsedRecipient[]>([]);
   const [availableVariables, setAvailableVariables] = useState<Array<{label: string, value: string}>>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
@@ -319,7 +321,15 @@ export default function BulkCampaignWizard() {
         autoMapping: data.autoMapping || {},
         availableVariables: data.availableVariables || []
       });
-      setColumnMapping(data.autoMapping || {});
+      
+      // Convert autoMapping to fieldMappings array
+      // Start with email (required), then auto-detect email column if available
+      const emailColumn = data.autoMapping?.email || '';
+      const newMappings: FieldMapping[] = [
+        { fieldName: 'email', columnName: emailColumn }
+      ];
+      setFieldMappings(newMappings);
+      
       setAvailableVariables(data.availableVariables || []);
       setShowMappingView(true);
       toast({
@@ -339,6 +349,14 @@ export default function BulkCampaignWizard() {
   const applyMappingMutation = useMutation({
     mutationFn: async () => {
       if (!uploadedFile) throw new Error("No file uploaded");
+      
+      // Convert fieldMappings array to Record<string, string> format for backend
+      const columnMapping: Record<string, string> = {};
+      fieldMappings.forEach(mapping => {
+        if (mapping.fieldName && mapping.columnName) {
+          columnMapping[mapping.fieldName] = mapping.columnName;
+        }
+      });
       
       const formData = new FormData();
       formData.append("file", uploadedFile);
@@ -550,10 +568,10 @@ export default function BulkCampaignWizard() {
 
   const renderStep1 = () => {
     const handleApplyMapping = async () => {
-      console.log("[DEBUG] Current columnMapping state:", columnMapping);
-      console.log("[DEBUG] columnMapping.email:", columnMapping.email);
+      // Check if email field has a column selected
+      const emailMapping = fieldMappings.find(m => m.fieldName.toLowerCase() === 'email');
       
-      if (!columnMapping.email || columnMapping.email === "NONE") {
+      if (!emailMapping || !emailMapping.columnName) {
         toast({
           variant: "destructive",
           title: "Thiếu cột Email",
@@ -620,6 +638,7 @@ export default function BulkCampaignWizard() {
                     setFilePreview(null);
                     setUploadedFile(null);
                     setParsedRecipients([]);
+                    setFieldMappings([{ fieldName: 'email', columnName: '' }]);
                   }}
                   data-testid="button-change-file"
                 >
@@ -628,28 +647,32 @@ export default function BulkCampaignWizard() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {!columnMapping.email && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Vui lòng chọn cột Email (bắt buộc)
-                  </AlertDescription>
-                </Alert>
-              )}
+              {(() => {
+                const emailMapping = fieldMappings.find(m => m.fieldName.toLowerCase() === 'email');
+                return !emailMapping?.columnName && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Vui lòng chọn cột Email (bắt buộc)
+                    </AlertDescription>
+                  </Alert>
+                );
+              })()}
               
-              <ColumnMappingTable
+              <DynamicFieldMapping
                 headers={filePreview?.headers || []}
                 preview={filePreview?.preview || []}
-                mapping={columnMapping}
-                onMappingChange={(field, column) => {
-                  setColumnMapping((prev) => ({ ...prev, [field]: column }));
-                }}
+                mappings={fieldMappings}
+                onMappingsChange={setFieldMappings}
               />
 
               <div className="flex justify-end">
                 <Button
                   onClick={handleApplyMapping}
-                  disabled={!columnMapping.email || columnMapping.email === "NONE" || applyMappingMutation.isPending}
+                  disabled={
+                    !fieldMappings.find(m => m.fieldName.toLowerCase() === 'email')?.columnName ||
+                    applyMappingMutation.isPending
+                  }
                   data-testid="button-apply-mapping"
                 >
                   {applyMappingMutation.isPending ? "Đang xử lý..." : "Áp dụng mapping"}
