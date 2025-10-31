@@ -611,7 +611,7 @@ export default function BulkCampaignWizard() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Mapping cột dữ liệu</CardTitle>
+                <CardTitle>Liên kết cột dữ liệu</CardTitle>
                 <Button
                   variant="outline"
                   size="sm"
