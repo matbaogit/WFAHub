@@ -148,6 +148,7 @@ export default function BulkCampaignWizard() {
     retry: false,
   });
 
+  // Editor for quotation template (Step 2)
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -175,7 +176,35 @@ export default function BulkCampaignWizard() {
     },
   });
 
-  // Add clipboard paste handler after editor is created
+  // Editor for email body (Step 3)
+  const emailEditor = useEditor({
+    extensions: [
+      StarterKit,
+      TiptapTable.configure({
+        resizable: true,
+      }),
+      TiptapTableRow,
+      TiptapTableHeader,
+      TiptapTableCell,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      Underline,
+      TiptapImage,
+      TextStyle,
+      Color,
+      Dropcursor.configure({
+        color: 'hsl(var(--primary))',
+        width: 3,
+      }),
+    ],
+    content: emailBody,
+    onUpdate: ({ editor }) => {
+      setEmailBody(editor.getHTML());
+    },
+  });
+
+  // Add clipboard paste handler for quotation editor (Step 2)
   if (editor) {
     editor.options.editorProps = {
       ...editor.options.editorProps,
@@ -278,6 +307,129 @@ export default function BulkCampaignWizard() {
                 const modifiedHtml = doc.body.innerHTML;
                 if (editor && !editor.isDestroyed) {
                   editor.chain().focus().insertContent(modifiedHtml).run();
+                }
+              })
+              .catch(error => {
+                console.error('Failed to process images:', error);
+                toast({
+                  variant: "destructive",
+                  title: "Upload ảnh thất bại",
+                  description: "Không thể tải ảnh từ Word lên server.",
+                });
+              });
+            
+            return true; // Handled - prevent default paste behavior
+          }
+        }
+        
+        return false; // Not handled - use default paste behavior
+      },
+    };
+  }
+
+  // Add clipboard paste handler for email editor (Step 3)
+  if (emailEditor) {
+    emailEditor.options.editorProps = {
+      ...emailEditor.options.editorProps,
+      handlePaste: (view, event, slice) => {
+        const items = Array.from(event.clipboardData?.items || []);
+        
+        // Case 1: Check for direct image files (screenshots, copy from file explorer)
+        const hasDirectImageFile = items.some(item => item.type.indexOf("image") === 0);
+        if (hasDirectImageFile) {
+          event.preventDefault();
+          for (const item of items) {
+            if (item.type.indexOf("image") === 0) {
+              const file = item.getAsFile();
+              if (!file) continue;
+              
+              // Upload image to server
+              const formData = new FormData();
+              formData.append('file', file);
+              fetch('/api/upload-image', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include',
+              })
+                .then(response => {
+                  if (!response.ok) throw new Error('Upload failed');
+                  return response.json();
+                })
+                .then(json => {
+                  // Use TipTap command to insert image safely
+                  if (emailEditor && !emailEditor.isDestroyed) {
+                    emailEditor.chain().focus().setImage({ src: json.location }).run();
+                  }
+                })
+                .catch(error => {
+                  console.error('Image upload failed:', error);
+                  toast({
+                    variant: "destructive",
+                    title: "Upload ảnh thất bại",
+                    description: "Không thể tải ảnh lên server.",
+                  });
+                });
+            }
+          }
+          return true; // Handled - prevent default paste behavior
+        }
+        
+        // Case 2: Check for base64 images in HTML (from Word documents)
+        const html = event.clipboardData?.getData('text/html');
+        if (html && html.includes('<img')) {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const images = doc.querySelectorAll('img');
+          
+          const base64Images: Array<{ img: HTMLImageElement; src: string }> = [];
+          images.forEach(img => {
+            const src = img.getAttribute('src');
+            if (src && src.startsWith('data:image')) {
+              base64Images.push({ img: img as HTMLImageElement, src });
+            }
+          });
+          
+          if (base64Images.length > 0) {
+            event.preventDefault();
+            
+            // Upload all base64 images in parallel
+            const uploadPromises = base64Images.map(({ img, src }) => {
+              return fetch(src)
+                .then(res => res.blob())
+                .then(blob => {
+                  const formData = new FormData();
+                  formData.append('file', blob, 'pasted-image.png');
+                  return fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include',
+                  });
+                })
+                .then(response => {
+                  if (!response.ok) throw new Error('Upload failed');
+                  return response.json();
+                })
+                .then(json => ({ img, newUrl: json.location }))
+                .catch(error => {
+                  console.error('Image upload failed:', error);
+                  return { img, newUrl: null };
+                });
+            });
+            
+            // Wait for all uploads, then insert HTML with replaced URLs
+            Promise.all(uploadPromises)
+              .then(results => {
+                // Replace base64 src with uploaded URLs
+                results.forEach(({ img, newUrl }) => {
+                  if (newUrl) {
+                    img.setAttribute('src', newUrl);
+                  }
+                });
+                
+                // Get the modified HTML and insert into editor
+                const modifiedHtml = doc.body.innerHTML;
+                if (emailEditor && !emailEditor.isDestroyed) {
+                  emailEditor.chain().focus().insertContent(modifiedHtml).run();
                 }
               })
               .catch(error => {
@@ -981,7 +1133,7 @@ export default function BulkCampaignWizard() {
               title="Biến từ CSV"
               description="Kéo và thả hoặc nhấp đôi để chèn"
               sampleData={sampleData}
-              onVariableDoubleClick={handleVariableDoubleClick}
+              editor={emailEditor}
             />
           </div>
 
@@ -998,6 +1150,10 @@ export default function BulkCampaignWizard() {
                       if (template) {
                         setEmailSubject(template.subject);
                         setEmailBody(template.htmlContent);
+                        // Update email editor content
+                        if (emailEditor && !emailEditor.isDestroyed) {
+                          emailEditor.commands.setContent(template.htmlContent);
+                        }
                       }
                     }}
                   >
@@ -1052,31 +1208,23 @@ export default function BulkCampaignWizard() {
 
                 <div className="space-y-2">
                   <Label htmlFor="email-body">Nội dung thư</Label>
-                  <Textarea
-                    ref={emailBodyRef}
-                    id="email-body"
-                    value={emailBody}
-                    onChange={(e) => setEmailBody(e.target.value)}
-                    onFocus={() => {
-                      setActiveField('body');
-                      activeFieldRef.current = 'body';
+                  <TiptapEditor
+                    editor={emailEditor}
+                    onImageUpload={async (file) => {
+                      const formData = new FormData();
+                      formData.append('file', file);
+                      const response = await fetch('/api/upload-image', {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'include',
+                      });
+                      if (!response.ok) throw new Error('Upload failed');
+                      const json = await response.json();
+                      return json.location;
                     }}
-                    onBlur={() => {
-                      // Delay clearing to allow double-click handler to complete
-                      setTimeout(() => {
-                        setActiveField(null);
-                        activeFieldRef.current = null;
-                      }, 200);
-                    }}
-                    onDrop={handleEmailBodyDrop}
-                    onDragOver={handleDragOver}
-                    placeholder="Xin chào {name},&#10;&#10;Chúng tôi gửi đến bạn thông tin chi tiết...&#10;&#10;Trân trọng."
-                    rows={12}
-                    className="bg-muted/30"
-                    data-testid="input-email-body"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Kéo thả biến từ sidebar hoặc nhấp đôi khi trường này đang focus
+                    Kéo thả biến từ sidebar vào editor hoặc paste nội dung từ Word với định dạng bảng và hình ảnh
                   </p>
                 </div>
               </CardContent>
