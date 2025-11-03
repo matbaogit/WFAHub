@@ -1220,8 +1220,9 @@ export default function BulkCampaignWizard() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
-          <div className="lg:col-span-1">
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Left Sidebar - Variables */}
+          <div className="w-full lg:w-32 flex-shrink-0">
             <VariablePicker 
               variables={availableVariables} 
               title="Biến từ CSV"
@@ -1231,7 +1232,8 @@ export default function BulkCampaignWizard() {
             />
           </div>
 
-          <div className="lg:col-span-3 space-y-4">
+          {/* Center - Editor */}
+          <div className="flex-1 min-w-0 space-y-4">
             <Card>
               <CardContent className="pt-6 space-y-4">
                 <div className="space-y-2">
@@ -1325,12 +1327,15 @@ export default function BulkCampaignWizard() {
             </Card>
           </div>
 
-          <div className="lg:col-span-2">
-            <PreviewPane 
-              htmlContent={emailBody}
-              sampleData={sampleData}
-              title="Xem trước email"
-            />
+          {/* Right Sidebar - Preview (Fixed) */}
+          <div className="w-full lg:w-96 flex-shrink-0">
+            <div className="lg:sticky lg:top-4">
+              <PreviewPane 
+                htmlContent={emailBody}
+                sampleData={sampleData}
+                title="Xem trước email"
+              />
+            </div>
           </div>
         </div>
       </div>
