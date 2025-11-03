@@ -1361,6 +1361,7 @@ export default function BulkCampaignWizard() {
               htmlContent={emailBody}
               sampleData={sampleData}
               title="Xem trước email"
+              subject={emailSubject}
             />
           </div>
         )}
