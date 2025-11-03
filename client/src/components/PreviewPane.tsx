@@ -31,8 +31,8 @@ export default function PreviewPane({
   const isEmpty = !htmlContent || htmlContent.trim() === '' || htmlContent === '<p></p>';
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
+    <Card className="h-full flex flex-col max-h-[calc(100vh-8rem)]">
+      <CardHeader className="pb-3 flex-shrink-0">
         <CardTitle className="text-base font-medium flex items-center gap-2">
           <Eye className="w-4 h-4" />
           {title}
@@ -44,14 +44,14 @@ export default function PreviewPane({
           </p>
         )}
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 overflow-hidden flex flex-col">
         {isEmpty ? (
           <div className="flex items-center justify-center h-40 text-sm text-muted-foreground border border-dashed rounded-md">
             Nhập nội dung vào editor để xem trước
           </div>
         ) : (
           <div 
-            className="prose prose-sm max-w-none border rounded-md p-4 bg-muted/30 min-h-40 max-h-96 overflow-y-auto"
+            className="prose prose-sm max-w-none border rounded-md p-4 bg-muted/30 overflow-y-auto flex-1"
             dangerouslySetInnerHTML={{ __html: mergedHtml }}
             data-testid="preview-content"
           />
