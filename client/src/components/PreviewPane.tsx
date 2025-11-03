@@ -19,10 +19,13 @@ export default function PreviewPane({
     
     let result = htmlContent;
     
-    // Replace all {variable} with actual sample data
+    // Replace all {variable} with actual sample data highlighted in blue
     Object.entries(sampleData).forEach(([key, value]) => {
       const pattern = new RegExp(`\\{${key}\\}`, 'g');
-      result = result.replace(pattern, value || `{${key}}`);
+      const highlightedValue = value 
+        ? `<span style="color: #2094f3; font-weight: 500;">${value}</span>` 
+        : `{${key}}`;
+      result = result.replace(pattern, highlightedValue);
     });
     
     return result;

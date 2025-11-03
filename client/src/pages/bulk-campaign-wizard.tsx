@@ -1038,7 +1038,7 @@ export default function BulkCampaignWizard() {
 
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Left Sidebar - Variables */}
-          <div className="w-full lg:w-32 flex-shrink-0">
+          <div className="w-full lg:w-56 flex-shrink-0">
             <VariablePicker 
               variables={availableVariables} 
               title="Biến từ CSV"
@@ -1248,7 +1248,7 @@ export default function BulkCampaignWizard() {
 
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Left Sidebar - Variables */}
-          <div className="w-full lg:w-32 flex-shrink-0">
+          <div className="w-full lg:w-56 flex-shrink-0">
             <VariablePicker 
               variables={availableVariables} 
               title="Biến từ CSV"
