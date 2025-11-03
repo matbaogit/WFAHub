@@ -91,7 +91,7 @@ export const FloatingImage = Image.extend({
     ];
   },
 
-  renderHTML({ HTMLAttributes }) {
+  renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, any> }) {
     return ['img', mergeAttributes(HTMLAttributes)];
   },
 });

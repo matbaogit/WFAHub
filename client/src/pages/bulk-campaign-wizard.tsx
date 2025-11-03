@@ -25,10 +25,10 @@ import { TableCell as TiptapTableCell } from '@tiptap/extension-table-cell';
 import { TableHeader as TiptapTableHeader } from '@tiptap/extension-table-header';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Underline } from '@tiptap/extension-underline';
-import { Image as TiptapImage } from '@tiptap/extension-image';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import { Dropcursor } from '@tiptap/extension-dropcursor';
+import { FloatingImage } from '@/extensions/FloatingImage';
 import './tiptap-editor.css';
 import { 
   Upload, 
@@ -162,7 +162,7 @@ export default function BulkCampaignWizard() {
         types: ['heading', 'paragraph'],
       }),
       Underline,
-      TiptapImage,
+      FloatingImage,
       TextStyle,
       Color,
       Dropcursor.configure({
@@ -173,6 +173,32 @@ export default function BulkCampaignWizard() {
     content: quotationHtmlContent,
     onUpdate: ({ editor }) => {
       setQuotationHtmlContent(editor.getHTML());
+    },
+    editorProps: {
+      transformPastedHTML(html) {
+        // Parse Word HTML and convert float styles to classes
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        doc.querySelectorAll('img').forEach(img => {
+          const style = img.getAttribute('style') || '';
+          
+          // Detect Word float patterns
+          if (style.includes('float:left') || style.includes('float: left')) {
+            img.classList.add('float-left');
+          } else if (style.includes('float:right') || style.includes('float: right')) {
+            img.classList.add('float-right');
+          }
+          
+          // Preserve width/height from style or attributes
+          const width = img.style.width || img.getAttribute('width');
+          const height = img.style.height || img.getAttribute('height');
+          if (width) img.setAttribute('width', width);
+          if (height) img.setAttribute('height', height);
+        });
+        
+        return doc.body.innerHTML;
+      },
     },
   });
 
@@ -190,7 +216,7 @@ export default function BulkCampaignWizard() {
         types: ['heading', 'paragraph'],
       }),
       Underline,
-      TiptapImage,
+      FloatingImage,
       TextStyle,
       Color,
       Dropcursor.configure({
@@ -201,6 +227,32 @@ export default function BulkCampaignWizard() {
     content: emailBody,
     onUpdate: ({ editor }) => {
       setEmailBody(editor.getHTML());
+    },
+    editorProps: {
+      transformPastedHTML(html) {
+        // Parse Word HTML and convert float styles to classes
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        doc.querySelectorAll('img').forEach(img => {
+          const style = img.getAttribute('style') || '';
+          
+          // Detect Word float patterns
+          if (style.includes('float:left') || style.includes('float: left')) {
+            img.classList.add('float-left');
+          } else if (style.includes('float:right') || style.includes('float: right')) {
+            img.classList.add('float-right');
+          }
+          
+          // Preserve width/height from style or attributes
+          const width = img.style.width || img.getAttribute('width');
+          const height = img.style.height || img.getAttribute('height');
+          if (width) img.setAttribute('width', width);
+          if (height) img.setAttribute('height', height);
+        });
+        
+        return doc.body.innerHTML;
+      },
     },
   });
 
