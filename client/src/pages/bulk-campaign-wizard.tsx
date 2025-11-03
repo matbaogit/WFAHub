@@ -907,7 +907,7 @@ export default function BulkCampaignWizard() {
                   }
                   data-testid="button-apply-mapping"
                 >
-                  {applyMappingMutation.isPending ? "Đang xử lý..." : "Áp dụng mapping"}
+                  {applyMappingMutation.isPending ? "Đang xử lý..." : "Áp dụng"}
                 </Button>
               </div>
             </CardContent>
