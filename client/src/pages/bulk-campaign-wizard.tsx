@@ -17,6 +17,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import DynamicFieldMapping, { type FieldMapping } from "@/components/DynamicFieldMapping";
 import { VariablePicker } from "@/components/VariablePicker";
 import { TiptapEditor } from "@/components/TiptapEditor";
+import PreviewPane from "@/components/PreviewPane";
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Table as TiptapTable } from '@tiptap/extension-table';
@@ -1021,7 +1022,7 @@ export default function BulkCampaignWizard() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
           <div className="lg:col-span-1">
             <VariablePicker 
               variables={availableVariables} 
@@ -1084,6 +1085,14 @@ export default function BulkCampaignWizard() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+
+          <div className="lg:col-span-2">
+            <PreviewPane 
+              htmlContent={quotationHtmlContent}
+              sampleData={sampleData}
+              title="Xem trước tệp đính kèm"
+            />
           </div>
         </div>
       </div>
