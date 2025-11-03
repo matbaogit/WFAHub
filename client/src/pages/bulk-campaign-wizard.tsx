@@ -135,6 +135,7 @@ export default function BulkCampaignWizard() {
   const [showCreditDialog, setShowCreditDialog] = useState(false);
   const [activeField, setActiveField] = useState<'subject' | 'body' | null>(null);
   const activeFieldRef = useRef<'subject' | 'body' | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(true);
 
   const { data: quotationTemplates = [] } = useQuery<QuotationTemplate[]>({
     queryKey: ["/api/quotation-templates"],
@@ -1015,11 +1016,23 @@ export default function BulkCampaignWizard() {
 
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Chọn mẫu tệp đính kèm</h2>
-          <p className="text-sm text-muted-foreground">
-            Chọn mẫu hoặc soạn nội dung tùy chỉnh. Kéo thả biến từ sidebar vào khung soạn thảo hoặc paste từ Word.
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Chọn mẫu tệp đính kèm</h2>
+            <p className="text-sm text-muted-foreground">
+              Chọn mẫu hoặc soạn nội dung tùy chỉnh. Kéo thả biến từ sidebar vào khung soạn thảo hoặc paste từ Word.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsPreviewOpen(!isPreviewOpen)}
+            className="flex items-center gap-2"
+            data-testid="button-toggle-preview"
+          >
+            <Eye className="w-4 h-4" />
+            {isPreviewOpen ? "Ẩn xem trước" : "Hiện xem trước"}
+          </Button>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-4">
@@ -1034,7 +1047,7 @@ export default function BulkCampaignWizard() {
             />
           </div>
 
-          {/* Center - Editor */}
+          {/* Main Editor - Full Width */}
           <div className="flex-1 min-w-0 space-y-4">
             <Card>
               <CardContent className="pt-6 space-y-4">
@@ -1088,18 +1101,18 @@ export default function BulkCampaignWizard() {
               </CardContent>
             </Card>
           </div>
-
-          {/* Right Sidebar - Preview (Fixed) */}
-          <div className="w-full lg:w-96 flex-shrink-0">
-            <div className="lg:sticky lg:top-4">
-              <PreviewPane 
-                htmlContent={quotationHtmlContent}
-                sampleData={sampleData}
-                title="Xem trước tệp đính kèm"
-              />
-            </div>
-          </div>
         </div>
+
+        {/* Floating Preview Panel */}
+        {isPreviewOpen && (
+          <div className="fixed right-4 top-24 w-96 max-h-[calc(100vh-8rem)] z-50 hidden lg:block">
+            <PreviewPane 
+              htmlContent={quotationHtmlContent}
+              sampleData={sampleData}
+              title="Xem trước tệp đính kèm"
+            />
+          </div>
+        )}
       </div>
     );
   };
