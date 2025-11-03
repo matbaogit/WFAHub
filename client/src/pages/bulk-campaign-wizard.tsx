@@ -345,14 +345,28 @@ export default function BulkCampaignWizard() {
                 });
             });
             
-            // Wait for all uploads, then insert HTML with replaced URLs
+            // Wait for all uploads, then insert HTML with replaced URLs and float classes
             Promise.all(uploadPromises)
               .then(results => {
-                // Replace base64 src with uploaded URLs
+                // Replace base64 src with uploaded URLs and add float classes
                 results.forEach(({ img, newUrl }) => {
                   if (newUrl) {
                     img.setAttribute('src', newUrl);
                   }
+                  
+                  // Detect Word float patterns and add classes
+                  const style = img.getAttribute('style') || '';
+                  if (style.includes('float:left') || style.includes('float: left')) {
+                    img.classList.add('float-left');
+                  } else if (style.includes('float:right') || style.includes('float: right')) {
+                    img.classList.add('float-right');
+                  }
+                  
+                  // Preserve width/height
+                  const width = img.style.width || img.getAttribute('width');
+                  const height = img.style.height || img.getAttribute('height');
+                  if (width) img.setAttribute('width', width);
+                  if (height) img.setAttribute('height', height);
                 });
                 
                 // Get the modified HTML and insert into editor
@@ -468,14 +482,28 @@ export default function BulkCampaignWizard() {
                 });
             });
             
-            // Wait for all uploads, then insert HTML with replaced URLs
+            // Wait for all uploads, then insert HTML with replaced URLs and float classes
             Promise.all(uploadPromises)
               .then(results => {
-                // Replace base64 src with uploaded URLs
+                // Replace base64 src with uploaded URLs and add float classes
                 results.forEach(({ img, newUrl }) => {
                   if (newUrl) {
                     img.setAttribute('src', newUrl);
                   }
+                  
+                  // Detect Word float patterns and add classes
+                  const style = img.getAttribute('style') || '';
+                  if (style.includes('float:left') || style.includes('float: left')) {
+                    img.classList.add('float-left');
+                  } else if (style.includes('float:right') || style.includes('float: right')) {
+                    img.classList.add('float-right');
+                  }
+                  
+                  // Preserve width/height
+                  const width = img.style.width || img.getAttribute('width');
+                  const height = img.style.height || img.getAttribute('height');
+                  if (width) img.setAttribute('width', width);
+                  if (height) img.setAttribute('height', height);
                 });
                 
                 // Get the modified HTML and insert into editor
