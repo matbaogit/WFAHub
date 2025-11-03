@@ -6,14 +6,33 @@ interface PreviewPaneProps {
   htmlContent: string;
   sampleData: Record<string, string>;
   title?: string;
+  subject?: string;
 }
 
 export default function PreviewPane({ 
   htmlContent, 
   sampleData, 
-  title = "Xem trước" 
+  title = "Xem trước",
+  subject
 }: PreviewPaneProps) {
   
+  const mergedSubject = useMemo(() => {
+    if (!subject) return "";
+    
+    let result = subject;
+    
+    // Replace all {variable} with actual sample data highlighted in blue
+    Object.entries(sampleData).forEach(([key, value]) => {
+      const pattern = new RegExp(`\\{${key}\\}`, 'g');
+      const highlightedValue = value 
+        ? `<span style="color: #2094f3; font-weight: 500;">${value}</span>` 
+        : `{${key}}`;
+      result = result.replace(pattern, highlightedValue);
+    });
+    
+    return result;
+  }, [subject, sampleData]);
+
   const mergedHtml = useMemo(() => {
     if (!htmlContent) return "";
     
@@ -53,11 +72,23 @@ export default function PreviewPane({
             Nhập nội dung vào editor để xem trước
           </div>
         ) : (
-          <div 
-            className="prose prose-sm max-w-none border rounded-md p-4 bg-muted/30 overflow-y-auto flex-1"
-            dangerouslySetInnerHTML={{ __html: mergedHtml }}
-            data-testid="preview-content"
-          />
+          <div className="border rounded-md bg-muted/30 overflow-y-auto flex-1 flex flex-col">
+            {subject && (
+              <div className="border-b bg-background/50 px-4 py-3">
+                <div className="text-xs font-medium text-muted-foreground mb-1">Tiêu đề thư:</div>
+                <div 
+                  className="text-sm font-medium"
+                  dangerouslySetInnerHTML={{ __html: mergedSubject }}
+                  data-testid="preview-subject"
+                />
+              </div>
+            )}
+            <div 
+              className="prose prose-sm max-w-none p-4 flex-1"
+              dangerouslySetInnerHTML={{ __html: mergedHtml }}
+              data-testid="preview-content"
+            />
+          </div>
         )}
       </CardContent>
     </Card>
