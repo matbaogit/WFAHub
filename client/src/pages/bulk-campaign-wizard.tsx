@@ -1215,7 +1215,7 @@ export default function BulkCampaignWizard() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
           <div className="lg:col-span-1">
             <VariablePicker 
               variables={availableVariables} 
@@ -1318,28 +1318,14 @@ export default function BulkCampaignWizard() {
                 </div>
               </CardContent>
             </Card>
+          </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Xem trước thư</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="p-3 border rounded-md bg-muted/30">
-                    <p className="text-xs text-muted-foreground mb-1">Tiêu đề:</p>
-                    <p className="font-medium">{emailSubject || "Chưa có tiêu đề"}</p>
-                  </div>
-                  <div className="p-3 border rounded-md bg-muted/30 min-h-32 max-h-96 overflow-y-auto">
-                    <p className="text-xs text-muted-foreground mb-1">Nội dung:</p>
-                    {emailBody.startsWith('<') ? (
-                      <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: emailBody }} />
-                    ) : (
-                      <div className="whitespace-pre-wrap text-sm">{emailBody || "Chưa có nội dung"}</div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="lg:col-span-2">
+            <PreviewPane 
+              htmlContent={emailBody}
+              sampleData={sampleData}
+              title="Xem trước email"
+            />
           </div>
         </div>
       </div>
