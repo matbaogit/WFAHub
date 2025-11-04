@@ -193,8 +193,14 @@ export async function generateQuotationPDF(
   templateHtml: string,
   recipientData: Record<string, any>
 ): Promise<Buffer> {
+  // Get base URL for converting relative image paths
+  const baseUrl = getBaseUrl();
+  
+  // Convert relative image URLs to absolute URLs (so Puppeteer can load them)
+  const htmlWithAbsoluteUrls = convertRelativeUrlsToAbsolute(templateHtml, baseUrl);
+  
   // Replace {field} and {{field}} placeholders with actual data
-  const renderedHtml = mergeVariables(templateHtml, recipientData);
+  const renderedHtml = mergeVariables(htmlWithAbsoluteUrls, recipientData);
 
   // Find Chromium executable path
   let chromiumPath: string;
