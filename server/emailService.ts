@@ -151,6 +151,43 @@ function mergeVariables(template: string, data: Record<string, any>): string {
   return result;
 }
 
+// Helper function to get base URL for the application
+function getBaseUrl(): string {
+  // Try to get from REPLIT_DOMAINS environment variable first
+  const replitDomains = process.env.REPLIT_DOMAINS;
+  if (replitDomains) {
+    const domains = replitDomains.split(',');
+    if (domains.length > 0) {
+      return `https://${domains[0]}`;
+    }
+  }
+  
+  // Fallback to REPLIT_DEV_DOMAIN
+  const devDomain = process.env.REPLIT_DEV_DOMAIN;
+  if (devDomain) {
+    return `https://${devDomain}`;
+  }
+  
+  // Last resort fallback to localhost
+  return 'http://localhost:5000';
+}
+
+// Helper function to convert relative image URLs to absolute URLs
+function convertRelativeUrlsToAbsolute(html: string, baseUrl: string): string {
+  // Match all <img> tags with src attributes
+  const imgRegex = /<img([^>]*?)src=["']([^"']+)["']([^>]*?)>/gi;
+  
+  return html.replace(imgRegex, (match, beforeSrc, src, afterSrc) => {
+    // Only convert relative URLs (starting with / but not //)
+    if (src.startsWith('/') && !src.startsWith('//')) {
+      const absoluteSrc = baseUrl + src;
+      return `<img${beforeSrc}src="${absoluteSrc}"${afterSrc}>`;
+    }
+    // Return unchanged for absolute URLs or protocol-relative URLs
+    return match;
+  });
+}
+
 // Generate PDF from quotation template HTML with merged data
 export async function generateQuotationPDF(
   templateHtml: string,
