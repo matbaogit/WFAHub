@@ -690,24 +690,6 @@ export default function BulkCampaignWizard() {
       return;
     }
 
-    if (currentStep === 2 && !selectedTemplateId) {
-      toast({
-        variant: "destructive",
-        title: "Chưa chọn mẫu",
-        description: "Vui lòng chọn mẫu tệp cá nhân hoá.",
-      });
-      return;
-    }
-
-    if (currentStep === 3 && (!emailSubject || !emailBody)) {
-      toast({
-        variant: "destructive",
-        title: "Email chưa đầy đủ",
-        description: "Vui lòng nhập đầy đủ tiêu đề và nội dung thư.",
-      });
-      return;
-    }
-
     if (currentStep < 4) {
       setCurrentStep((currentStep + 1) as WizardStep);
     }
