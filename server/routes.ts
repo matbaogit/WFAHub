@@ -1566,11 +1566,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all column headers
       const headers = data.length > 0 ? Object.keys(data[0]) : [];
       
-      // Create available variables mapping (column name -> variable name)
-      const availableVariables: Array<{label: string, value: string}> = headers.map(header => ({
-        label: header,
-        value: `{${normalizeVariableName(header)}}`
+      // Create available variables ONLY for mapped fields
+      // Extract all mapped field names from the mapping object
+      const mappedFields = Object.entries(mapping)
+        .filter(([fieldName, columnName]) => {
+          // Only include if columnName is valid (not empty/null)
+          return columnName && typeof columnName === 'string' && columnName.trim() !== '';
+        })
+        .map(([fieldName, columnName]) => ({
+          fieldName,
+          columnName: columnName as string
+        }));
+      
+      console.log("[DEBUG] Mapped fields:", mappedFields);
+      
+      // Create available variables from mapped fields only
+      const availableVariables: Array<{label: string, value: string}> = mappedFields.map(field => ({
+        label: field.columnName,  // Original column name from CSV
+        value: `{${field.fieldName}}`  // Use fieldName as variable name (not normalized)
       }));
+      
+      console.log("[DEBUG] Available variables:", availableVariables);
 
       // Apply mapping to convert raw data to recipients
       const recipients = data.map(row => {
