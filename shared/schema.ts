@@ -352,6 +352,7 @@ export const campaignRecipients = pgTable("campaign_recipients", {
   
   status: varchar("status", { length: 20 }).notNull().default("pending"),
   sentAt: timestamp("sent_at"),
+  scheduledAt: timestamp("scheduled_at"),
   openedAt: timestamp("opened_at"),
   errorMessage: text("error_message"),
   
