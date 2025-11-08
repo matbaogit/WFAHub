@@ -741,6 +741,8 @@ export default function BulkCampaignWizard() {
       quotationTemplateId: selectedTemplateId || null,
       sendRate,
       scheduledAt,
+      schedulingMode,
+      csvDateField: schedulingMode === "csv" ? csvDateField : null,
       userId: user?.id,
       availableVariables,
     });
