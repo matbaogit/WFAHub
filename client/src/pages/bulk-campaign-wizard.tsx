@@ -130,9 +130,10 @@ export default function BulkCampaignWizard() {
   const [emailBody, setEmailBody] = useState("");
   const [sendRate, setSendRate] = useState(50);
   const [showMappingView, setShowMappingView] = useState(false);
-  const [schedulingMode, setSchedulingMode] = useState<"now" | "scheduled">("now");
+  const [schedulingMode, setSchedulingMode] = useState<"now" | "scheduled" | "csv">("now");
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
   const [scheduledTime, setScheduledTime] = useState("09:00");
+  const [csvDateField, setCsvDateField] = useState("");
   const [showCreditDialog, setShowCreditDialog] = useState(false);
   const [activeField, setActiveField] = useState<'subject' | 'body' | null>(null);
   const activeFieldRef = useRef<'subject' | 'body' | null>(null);
@@ -1445,7 +1446,7 @@ export default function BulkCampaignWizard() {
           <CardContent className="space-y-4">
             <RadioGroup
               value={schedulingMode}
-              onValueChange={(value) => setSchedulingMode(value as "now" | "scheduled")}
+              onValueChange={(value) => setSchedulingMode(value as "now" | "scheduled" | "csv")}
               data-testid="radio-scheduling-mode"
             >
               <div className="flex items-center space-x-2">
@@ -1455,6 +1456,10 @@ export default function BulkCampaignWizard() {
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="scheduled" id="scheduling-later" data-testid="radio-send-scheduled" />
                 <Label htmlFor="scheduling-later" className="cursor-pointer">Lên lịch gửi sau</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="csv" id="scheduling-csv" data-testid="radio-send-csv" />
+                <Label htmlFor="scheduling-csv" className="cursor-pointer">Lịch theo file CSV</Label>
               </div>
             </RadioGroup>
 
@@ -1496,6 +1501,28 @@ export default function BulkCampaignWizard() {
                     data-testid="input-scheduled-time"
                   />
                 </div>
+              </div>
+            )}
+
+            {schedulingMode === "csv" && (
+              <div className="pl-6 border-l-2 border-primary/20 space-y-2">
+                <Label htmlFor="csv-date-field">Chọn cột chứa ngày gửi</Label>
+                <Select value={csvDateField} onValueChange={setCsvDateField}>
+                  <SelectTrigger id="csv-date-field" className="bg-muted/30" data-testid="select-csv-date-field">
+                    <SelectValue placeholder="-- Chọn cột ngày --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableVariables.map((variable, index) => (
+                      <SelectItem key={index} value={variable.value}>
+                        {variable.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Hệ thống sẽ lấy ngày từ cột này để gửi email tự động cho từng người nhận.
+                  Định dạng hỗ trợ: DD/MM/YYYY, YYYY-MM-DD, hoặc ISO 8601.
+                </p>
               </div>
             )}
           </CardContent>
