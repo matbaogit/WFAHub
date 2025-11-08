@@ -1813,9 +1813,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           for (const recipient of campaign.recipients) {
             try {
-              // Generate tracking pixel URL
-              const trackingPixelUrl = `${process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : 'http://localhost:5000'}/api/track/open/${campaignId}/${recipient.id}`;
-
               // Send email
               await sendCampaignEmail({
                 recipientEmail: recipient.recipientEmail,
@@ -1824,7 +1821,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 subject: campaign.emailSubject || '',
                 body: campaign.emailBody || '',
                 smtpConfig,
-                trackingPixelUrl,
                 quotationTemplateHtml,
               });
 

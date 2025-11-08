@@ -123,7 +123,6 @@ interface CampaignEmailData {
   subject: string;
   body: string;
   smtpConfig: SmtpConfig;
-  trackingPixelUrl?: string;
   quotationTemplateHtml?: string;
 }
 
@@ -249,7 +248,7 @@ export async function generateQuotationPDF(
 }
 
 export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> {
-  const { recipientEmail, recipientName, customData, subject, body, smtpConfig, trackingPixelUrl, quotationTemplateHtml } = data;
+  const { recipientEmail, recipientName, customData, subject, body, smtpConfig, quotationTemplateHtml } = data;
 
   // Merge customData into subject and body
   const mergedData = {
@@ -260,12 +259,7 @@ export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> 
 
   // Replace {field} and {{field}} placeholders with actual data
   const renderedSubject = mergeVariables(subject, mergedData);
-  let renderedBody = mergeVariables(body, mergedData);
-
-  // Add tracking pixel if provided
-  if (trackingPixelUrl) {
-    renderedBody += `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none" />`;
-  }
+  const renderedBody = mergeVariables(body, mergedData);
 
   // Decrypt SMTP password only if it's in encrypted format (hex:hex:hex)
   let decryptedPassword = smtpConfig.password;
