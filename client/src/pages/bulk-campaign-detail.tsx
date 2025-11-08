@@ -153,25 +153,19 @@ export default function BulkCampaignDetail() {
     ? Math.round((campaign.sentCount / campaign.totalRecipients) * 100)
     : 0;
 
-  const openRate = campaign.sentCount > 0
-    ? Math.round((campaign.openedCount / campaign.sentCount) * 100)
-    : 0;
-
   const chartData = [
     { name: "Tổng số", value: campaign.totalRecipients, fill: "#3b82f6" },
     { name: "Đã gửi", value: campaign.sentCount, fill: "#10b981" },
-    { name: "Đã mở", value: campaign.openedCount, fill: "#8b5cf6" },
     { name: "Thất bại", value: campaign.failedCount, fill: "#ef4444" },
   ];
 
   const handleExportCSV = () => {
-    const headers = ["Email", "Tên", "Trạng thái", "Đã gửi", "Đã mở", "Lỗi"];
+    const headers = ["Email", "Tên", "Trạng thái", "Đã gửi", "Lỗi"];
     const rows = filteredRecipients.map((r) => [
       r.recipientEmail,
       r.recipientName || "",
       r.status,
       r.sentAt ? format(new Date(r.sentAt), "dd/MM/yyyy HH:mm") : "",
-      r.openedAt ? format(new Date(r.openedAt), "dd/MM/yyyy HH:mm") : "",
       r.errorMessage || "",
     ]);
 
@@ -237,23 +231,6 @@ export default function BulkCampaignDetail() {
                 <p className="text-2xl font-bold" data-testid="text-sent-count">
                   {campaign.sentCount}
                 </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/20">
-                <Eye className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Đã mở</p>
-                <p className="text-2xl font-bold" data-testid="text-opened-count">
-                  {campaign.openedCount}
-                </p>
-                <p className="text-xs text-muted-foreground">{openRate}% tỷ lệ mở</p>
               </div>
             </div>
           </CardContent>
@@ -367,14 +344,13 @@ export default function BulkCampaignDetail() {
                   <TableHead>Tên</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead>Đã gửi lúc</TableHead>
-                  <TableHead>Đã mở lúc</TableHead>
                   <TableHead>Lỗi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRecipients.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                       Không tìm thấy người nhận
                     </TableCell>
                   </TableRow>
@@ -399,16 +375,6 @@ export default function BulkCampaignDetail() {
                             <span className="text-xs text-muted-foreground">
                               Ước tính: {format(estimatedSendTime, "HH:mm")}
                             </span>
-                          ) : (
-                            "-"
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {recipient.openedAt ? (
-                            <div className="flex items-center gap-1 text-purple-600">
-                              <Eye className="w-3 h-3" />
-                              {format(new Date(recipient.openedAt), "dd/MM/yyyy HH:mm")}
-                            </div>
                           ) : (
                             "-"
                           )}
