@@ -18,6 +18,7 @@ import DynamicFieldMapping, { type FieldMapping } from "@/components/DynamicFiel
 import { VariablePicker } from "@/components/VariablePicker";
 import { TiptapEditor } from "@/components/TiptapEditor";
 import PreviewPane from "@/components/PreviewPane";
+import { SmtpConfigDialog } from "@/components/SmtpConfigDialog";
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Table as TiptapTable } from '@tiptap/extension-table';
@@ -48,6 +49,8 @@ import {
   Coins,
   Loader2,
   Eye,
+  Server,
+  Settings,
 } from "lucide-react";
 import {
   Table,
@@ -138,6 +141,7 @@ export default function BulkCampaignWizard() {
   const [activeField, setActiveField] = useState<'subject' | 'body' | null>(null);
   const activeFieldRef = useRef<'subject' | 'body' | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(true);
+  const [isSmtpDialogOpen, setIsSmtpDialogOpen] = useState(false);
 
   const { data: quotationTemplates = [] } = useQuery<QuotationTemplate[]>({
     queryKey: ["/api/quotation-templates"],
@@ -1386,21 +1390,31 @@ export default function BulkCampaignWizard() {
         </div>
 
         {!smtpConfig && (
-          <Alert variant="destructive" data-testid="alert-smtp-not-configured">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Chưa cấu hình SMTP! Vui lòng{" "}
-              <a 
-                href="/smtp-config" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="underline font-semibold hover:text-destructive-foreground"
-                data-testid="link-smtp-config"
-              >
-                cấu hình SMTP ngay
-              </a>
-              {" "}để gửi email.
-            </AlertDescription>
+          <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800" data-testid="alert-smtp-not-configured">
+            <div className="flex items-start gap-4">
+              <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900">
+                <Server className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  <h4 className="font-semibold text-amber-900 dark:text-amber-100">Chưa cấu hình SMTP</h4>
+                </div>
+                <AlertDescription className="text-amber-800 dark:text-amber-200">
+                  Bạn cần cấu hình máy chủ email (SMTP) để có thể gửi chiến dịch báo giá. 
+                  Hệ thống hỗ trợ Gmail, Outlook và các SMTP server khác.
+                </AlertDescription>
+                <Button 
+                  onClick={() => setIsSmtpDialogOpen(true)}
+                  className="mt-2"
+                  size="sm"
+                  data-testid="button-open-smtp-config"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Cấu hình SMTP ngay
+                </Button>
+              </div>
+            </div>
           </Alert>
         )}
 
@@ -1756,6 +1770,14 @@ export default function BulkCampaignWizard() {
           </div>
         </CardContent>
       </Card>
+
+      <SmtpConfigDialog 
+        open={isSmtpDialogOpen} 
+        onOpenChange={setIsSmtpDialogOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/smtp-config"] });
+        }}
+      />
     </div>
   );
 }

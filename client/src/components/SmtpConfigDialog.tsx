@@ -36,7 +36,7 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
       username: config?.username || "",
       password: "",
       fromEmail: config?.fromEmail || "",
-      fromName: config?.fromName || "",
+      fromName: config?.fromName || undefined,
     },
   });
 
