@@ -327,6 +327,8 @@ export const bulkCampaigns = pgTable("bulk_campaigns", {
   openedCount: integer("opened_count").default(0).notNull(),
   
   scheduledAt: timestamp("scheduled_at"),
+  schedulingMode: varchar("scheduling_mode", { length: 20 }),
+  csvDateField: varchar("csv_date_field", { length: 255 }),
   startedAt: timestamp("started_at"),
   completedAt: timestamp("completed_at"),
   

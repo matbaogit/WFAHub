@@ -1619,6 +1619,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper function to parse date from various formats
+  const parseDate = (dateString: any): Date | null => {
+    if (!dateString) return null;
+    
+    try {
+      // Try ISO 8601 format
+      const isoDate = new Date(dateString);
+      if (!isNaN(isoDate.getTime())) {
+        return isoDate;
+      }
+      
+      // Try DD/MM/YYYY format
+      const ddmmyyyyMatch = String(dateString).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (ddmmyyyyMatch) {
+        const [, day, month, year] = ddmmyyyyMatch;
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      }
+      
+      // Try YYYY-MM-DD format
+      const yyyymmddMatch = String(dateString).match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (yyyymmddMatch) {
+        const [, year, month, day] = yyyymmddMatch;
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      }
+      
+      return null;
+    } catch (e) {
+      return null;
+    }
+  };
+
   // Add recipients to campaign
   app.post("/api/bulk-campaigns/:id/recipients", isAuthenticated, async (req: any, res) => {
     try {
@@ -1633,13 +1664,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
-      const recipients = req.body.recipients.map((r: any) => ({
-        campaignId,
-        recipientEmail: r.email,
-        recipientName: r.name || null,
-        customData: r.customData || {},
-        status: r.status || 'pending',
-      }));
+      const recipients = req.body.recipients.map((r: any) => {
+        const recipient: any = {
+          campaignId,
+          recipientEmail: r.email,
+          recipientName: r.name || null,
+          customData: r.customData || {},
+          status: r.status || 'pending',
+        };
+
+        // If scheduling mode is CSV-based, parse scheduled date from customData
+        if (campaign.schedulingMode === 'csv' && campaign.csvDateField) {
+          const normalizedField = normalizeVariableName(campaign.csvDateField);
+          const dateValue = r.customData?.[normalizedField];
+          
+          if (dateValue) {
+            const parsedDate = parseDate(dateValue);
+            if (parsedDate && !isNaN(parsedDate.getTime())) {
+              recipient.scheduledAt = parsedDate;
+            }
+          }
+        }
+
+        return recipient;
+      });
 
       const created = await storage.createCampaignRecipients(recipients);
       
