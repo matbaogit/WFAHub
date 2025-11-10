@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Server, Edit, TestTube, Mail } from "lucide-react";
+import { Server, Edit, TestTube, Mail, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -7,6 +7,16 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SmtpConfig, InsertSmtpConfig } from "@shared/schema";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
@@ -146,6 +156,7 @@ export default function SmtpConfiguration() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [testEmail, setTestEmail] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const { data: config, isLoading } = useQuery<SmtpConfig | null>({
     queryKey: ["/api/smtp-config"],
@@ -203,6 +214,27 @@ export default function SmtpConfiguration() {
       toast({
         title: "Lỗi kết nối SMTP",
         description: error.message || "Không thể gửi email test",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("DELETE", "/api/smtp-config");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/smtp-config"] });
+      toast({
+        title: "Thành công",
+        description: "Đã xóa cấu hình SMTP",
+      });
+      setIsDeleteDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể xóa cấu hình SMTP",
         variant: "destructive",
       });
     },
@@ -349,6 +381,17 @@ export default function SmtpConfiguration() {
                 <Edit className="w-4 h-4 mr-2" />
                 Sửa
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsDeleteDialogOpen(true)}
+                disabled={deleteMutation.isPending}
+                className="rounded-xl text-destructive hover:bg-destructive/10"
+                data-testid="button-delete-smtp"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Xóa
+              </Button>
             </div>
           </div>
 
@@ -435,6 +478,32 @@ export default function SmtpConfiguration() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa cấu hình SMTP</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa cấu hình SMTP này không? Hành động này không thể hoàn tác.
+              Bạn sẽ cần thiết lập lại SMTP để gửi email.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending} data-testid="button-cancel-delete">
+              Hủy
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              {deleteMutation.isPending ? "Đang xóa..." : "Xóa cấu hình"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
