@@ -60,3 +60,4 @@ vite.config.ts.*
 *.sql
 *.sql.gz
 backups/
+database-backups/

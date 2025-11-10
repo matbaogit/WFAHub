@@ -125,6 +125,113 @@ Restart PostgreSQL:
 sudo systemctl restart postgresql
 ```
 
+### 2.3. Migration Database từ Replit/Neon (Nếu bạn đang migrate từ môi trường cũ)
+
+Nếu bạn đã có dữ liệu trên Replit/Neon DB và muốn chuyển sang server mới, làm theo các bước sau:
+
+#### A. Export Database từ Replit (Chạy trên Replit)
+
+```bash
+# Trên môi trường Replit cũ, chạy script export
+./export-database.sh
+```
+
+Script sẽ tạo file backup tại `./database-backups/wfahub_backup_YYYYMMDD_HHMMSS.sql.gz`
+
+**Kích thước file:** Thường khoảng 30-50KB (tùy lượng dữ liệu)
+
+#### B. Copy File Backup sang Server Mới
+
+Có nhiều cách để copy file:
+
+**Cách 1: Sử dụng SCP (từ máy local)**
+```bash
+# Download từ Replit về máy local
+# (Replit không có SSH trực tiếp, bạn cần download qua web interface hoặc Git)
+
+# Upload từ máy local lên server mới
+scp ./database-backups/wfahub_backup_*.sql.gz user@your-server:/var/www/wfahub/database-backups/
+```
+
+**Cách 2: Sử dụng Git**
+```bash
+# Trên Replit: Commit file backup vào Git
+git add database-backups/wfahub_backup_*.sql.gz
+git commit -m "Add database backup for migration"
+git push
+
+# Trên server mới: Pull code (đã bao gồm backup file)
+git pull origin main
+```
+
+**Cách 3: Sử dụng Dropbox/Google Drive**
+```bash
+# Upload file backup lên cloud storage, sau đó download trên server mới
+wget <shared-link-to-backup-file> -O wfahub_backup.sql.gz
+```
+
+#### C. Import Database vào PostgreSQL Mới
+
+**Option 1: Sử dụng Script Import (Khuyến nghị)**
+
+```bash
+# Đảm bảo DATABASE_URL trong .env đã trỏ đến database mới
+cat .env | grep DATABASE_URL
+
+# Chạy script import
+./import-database.sh ./database-backups/wfahub_backup_20241110_065440.sql.gz
+```
+
+Script sẽ hỏi xác nhận trước khi import. Nhập `y` để tiếp tục.
+
+**Option 2: Import Thủ Công**
+
+```bash
+# Giải nén và import trực tiếp
+gunzip -c ./database-backups/wfahub_backup_*.sql.gz | psql postgresql://wfahub_user:your_password@localhost:5432/wfahub
+
+# Hoặc import file đã giải nén
+gunzip ./database-backups/wfahub_backup_*.sql.gz
+psql postgresql://wfahub_user:your_password@localhost:5432/wfahub < ./database-backups/wfahub_backup_*.sql
+```
+
+#### D. Verify Data đã Import
+
+```bash
+# Kết nối vào database
+psql postgresql://wfahub_user:your_password@localhost:5432/wfahub
+
+# Kiểm tra các tables
+\dt
+
+# Kiểm tra số lượng records
+SELECT 'users' as table_name, COUNT(*) FROM users
+UNION ALL
+SELECT 'templates', COUNT(*) FROM templates
+UNION ALL
+SELECT 'quotations', COUNT(*) FROM quotations
+UNION ALL
+SELECT 'customers', COUNT(*) FROM customers;
+
+# Thoát psql
+\q
+```
+
+#### E. Lưu ý quan trọng
+
+- ⚠️ **Backup file chứa tất cả dữ liệu nhạy cảm** (users, passwords đã hash, SMTP configs, v.v.)
+  - Không commit file backup vào Git repository công khai
+  - Xóa file backup sau khi import xong: `rm ./database-backups/*.sql.gz`
+  
+- 📊 **Nếu import thất bại:**
+  - Drop database và tạo lại từ đầu
+  - Kiểm tra version PostgreSQL (nên dùng 14.x trở lên)
+  - Kiểm tra user có đủ quyền CREATE TABLE không
+  
+- 🔄 **Nếu bạn không có dữ liệu cần migrate:**
+  - Bỏ qua bước 2.3 này
+  - Chạy `npm run db:push` ở bước 5 để tạo schema mới
+
 ---
 
 ## 📥 Bước 3: Clone Code từ Git
