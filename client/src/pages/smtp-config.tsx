@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { SmtpConfig, InsertSmtpConfig } from "@shared/schema";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -17,8 +17,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertSmtpConfigSchema } from "@shared/schema";
@@ -32,52 +34,101 @@ interface SmtpFormProps {
 }
 
 function SmtpConfigForm({ form, onSubmit, isPending, onCancel, isEditing }: SmtpFormProps) {
+  const provider = form.watch("provider");
+
+  useEffect(() => {
+    if (provider === "matbao") {
+      form.setValue("host", "smtp.matbao.net");
+      form.setValue("port", 587);
+    }
+  }, [provider, form]);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="host"
+          name="provider"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>SMTP Host</FormLabel>
+            <FormItem className="space-y-3">
+              <FormLabel>Loại mail</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="smtp.gmail.com" data-testid="input-smtp-host" />
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex flex-col space-y-1"
+                >
+                  <div className="flex items-center space-x-3 space-y-0">
+                    <RadioGroupItem value="matbao" id="matbao" data-testid="radio-matbao" />
+                    <Label htmlFor="matbao" className="font-normal cursor-pointer">
+                      Mắt Bão mail (đơn giản)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-3 space-y-0">
+                    <RadioGroupItem value="other" id="other" data-testid="radio-other" />
+                    <Label htmlFor="other" className="font-normal cursor-pointer">
+                      Mail nơi khác (cấu hình đầy đủ)
+                    </Label>
+                  </div>
+                </RadioGroup>
               </FormControl>
+              <FormDescription>
+                {provider === "matbao" 
+                  ? "Tự động cấu hình smtp.matbao.net - Chỉ cần nhập Email và Password" 
+                  : "Cấu hình đầy đủ cho Gmail, Outlook hoặc SMTP khác"}
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="port"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Port</FormLabel>
-              <FormControl>
-                <Input 
-                  {...field} 
-                  type="number" 
-                  placeholder="587" 
-                  onChange={(e) => field.onChange(parseInt(e.target.value))}
-                  data-testid="input-smtp-port" 
-                />
-              </FormControl>
-              <FormMessage />
-              <p className="text-xs text-muted-foreground">
-                Port 587 (STARTTLS) hoặc 465 (SSL)
-              </p>
-            </FormItem>
-          )}
-        />
+        {provider === "other" && (
+          <>
+            <FormField
+              control={form.control}
+              name="host"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>SMTP Host</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="smtp.gmail.com" data-testid="input-smtp-host" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="port"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Port</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      type="number" 
+                      placeholder="587" 
+                      onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      data-testid="input-smtp-port" 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  <FormDescription>
+                    Port 587 (STARTTLS) hoặc 465 (SSL)
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+          </>
+        )}
 
         <FormField
           control={form.control}
           name="username"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Username / Email</FormLabel>
+              <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input {...field} placeholder="your-email@gmail.com" data-testid="input-smtp-username" />
               </FormControl>
@@ -91,7 +142,7 @@ function SmtpConfigForm({ form, onSubmit, isPending, onCancel, isEditing }: Smtp
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password / App Password</FormLabel>
+              <FormLabel>Password</FormLabel>
               <FormControl>
                 <Input 
                   {...field} 
@@ -101,10 +152,10 @@ function SmtpConfigForm({ form, onSubmit, isPending, onCancel, isEditing }: Smtp
                 />
               </FormControl>
               <FormMessage />
-              {!isEditing && (
-                <p className="text-xs text-muted-foreground">
+              {!isEditing && provider === "other" && (
+                <FormDescription>
                   Gmail: Dùng App Password (không phải mật khẩu thường)
-                </p>
+                </FormDescription>
               )}
             </FormItem>
           )}
@@ -115,7 +166,7 @@ function SmtpConfigForm({ form, onSubmit, isPending, onCancel, isEditing }: Smtp
           name="fromEmail"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>From Email</FormLabel>
+              <FormLabel>Email gửi đi</FormLabel>
               <FormControl>
                 <Input {...field} placeholder="noreply@yourcompany.com" data-testid="input-smtp-fromemail" />
               </FormControl>
@@ -129,7 +180,7 @@ function SmtpConfigForm({ form, onSubmit, isPending, onCancel, isEditing }: Smtp
           name="fromName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>From Name</FormLabel>
+              <FormLabel>Tên người gửi</FormLabel>
               <FormControl>
                 <Input {...field} placeholder="Công ty ABC" data-testid="input-smtp-fromname" />
               </FormControl>
@@ -165,6 +216,7 @@ export default function SmtpConfiguration() {
   const form = useForm<InsertSmtpConfig>({
     resolver: zodResolver(insertSmtpConfigSchema.omit({ userId: true })),
     defaultValues: {
+      provider: "other",
       host: "",
       port: 587,
       username: "",
@@ -253,7 +305,6 @@ export default function SmtpConfiguration() {
   };
 
   const onSubmit = (data: InsertSmtpConfig) => {
-    // If editing and password is empty, remove it from payload to preserve existing password
     if (config && !data.password) {
       const { password, ...dataWithoutPassword } = data;
       saveMutation.mutate(dataWithoutPassword as InsertSmtpConfig);
@@ -265,6 +316,7 @@ export default function SmtpConfiguration() {
   const openEditDialog = () => {
     if (config) {
       form.reset({
+        provider: config.provider || "other",
         host: config.host,
         port: config.port,
         username: config.username,
@@ -274,6 +326,7 @@ export default function SmtpConfiguration() {
       });
     } else {
       form.reset({
+        provider: "other",
         host: "",
         port: 587,
         username: "",
@@ -334,6 +387,12 @@ export default function SmtpConfiguration() {
                 <h3 className="text-xl font-bold mb-3">Thông tin SMTP</h3>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground w-32">Loại mail:</span>
+                    <span className="font-mono text-sm" data-testid="text-smtp-provider">
+                      {config.provider === "matbao" ? "Mắt Bão mail" : "Mail nơi khác"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground w-32">Host:</span>
                     <span className="font-mono text-sm" data-testid="text-smtp-host">{config.host}</span>
                   </div>
@@ -342,16 +401,16 @@ export default function SmtpConfiguration() {
                     <span className="font-mono text-sm" data-testid="text-smtp-port">{config.port}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground w-32">Username:</span>
+                    <span className="text-sm text-muted-foreground w-32">Email:</span>
                     <span className="font-mono text-sm" data-testid="text-smtp-username">{config.username}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground w-32">From Email:</span>
+                    <span className="text-sm text-muted-foreground w-32">Email gửi đi:</span>
                     <span className="font-mono text-sm" data-testid="text-smtp-fromemail">{config.fromEmail}</span>
                   </div>
                   {config.fromName && (
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground w-32">From Name:</span>
+                      <span className="text-sm text-muted-foreground w-32">Tên người gửi:</span>
                       <span className="font-mono text-sm" data-testid="text-smtp-fromname">{config.fromName}</span>
                     </div>
                   )}
@@ -395,25 +454,26 @@ export default function SmtpConfiguration() {
             </div>
           </div>
 
-          <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-            <div className="flex gap-3">
-              <Mail className="w-5 h-5 text-blue-600 mt-0.5" />
-              <div>
-                <h4 className="font-semibold text-blue-900 mb-1">Hướng dẫn Gmail</h4>
-                <p className="text-sm text-blue-700">
-                  1. Bật xác thực 2 bước cho tài khoản Gmail
-                  <br />
-                  2. Tạo App Password tại: <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener" className="underline">myaccount.google.com/apppasswords</a>
-                  <br />
-                  3. Sử dụng App Password thay vì mật khẩu thường
-                </p>
+          {config.provider === "other" && (
+            <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+              <div className="flex gap-3">
+                <Mail className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-blue-900 mb-1">Hướng dẫn Gmail</h4>
+                  <p className="text-sm text-blue-700">
+                    1. Bật xác thực 2 bước cho tài khoản Gmail
+                    <br />
+                    2. Tạo App Password tại: <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener" className="underline">myaccount.google.com/apppasswords</a>
+                    <br />
+                    3. Sử dụng App Password thay vì mật khẩu thường
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </Card>
       )}
 
-      {/* Edit/Create Dialog */}
       <Dialog open={isEditOpen} onOpenChange={(open) => !open && setIsEditOpen(false)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -432,7 +492,6 @@ export default function SmtpConfiguration() {
         </DialogContent>
       </Dialog>
 
-      {/* Test Email Dialog */}
       <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -479,7 +538,6 @@ export default function SmtpConfiguration() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
