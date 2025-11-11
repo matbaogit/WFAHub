@@ -220,6 +220,8 @@ export const smtpConfigs = pgTable("smtp_configs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id).unique(),
   
+  provider: varchar("provider", { length: 20 }).default("other").notNull(),
+  
   host: varchar("host", { length: 255 }).notNull(),
   port: integer("port").notNull().default(587),
   secure: integer("secure").default(0).notNull(),
