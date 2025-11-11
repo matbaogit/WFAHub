@@ -4,8 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { SmtpConfig, InsertSmtpConfig } from "@shared/schema";
-import { useState, useEffect } from "react";
+import type { SmtpConfig } from "@shared/schema";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -17,190 +17,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { insertSmtpConfigSchema } from "@shared/schema";
-
-interface SmtpFormProps {
-  form: any;
-  onSubmit: (data: InsertSmtpConfig) => void;
-  isPending: boolean;
-  onCancel: () => void;
-  isEditing?: boolean;
-}
-
-function SmtpConfigForm({ form, onSubmit, isPending, onCancel, isEditing }: SmtpFormProps) {
-  const provider = form.watch("provider");
-
-  useEffect(() => {
-    if (provider === "matbao") {
-      form.setValue("host", "smtp.matbao.net");
-      form.setValue("port", 587);
-    }
-  }, [provider, form]);
-
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="provider"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>Loại mail</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="flex flex-col space-y-1"
-                >
-                  <div className="flex items-center space-x-3 space-y-0">
-                    <RadioGroupItem value="matbao" id="matbao" data-testid="radio-matbao" />
-                    <Label htmlFor="matbao" className="font-normal cursor-pointer">
-                      Mắt Bão mail (đơn giản)
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-3 space-y-0">
-                    <RadioGroupItem value="other" id="other" data-testid="radio-other" />
-                    <Label htmlFor="other" className="font-normal cursor-pointer">
-                      Mail nơi khác (cấu hình đầy đủ)
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </FormControl>
-              <FormDescription>
-                {provider === "matbao" 
-                  ? "Tự động cấu hình smtp.matbao.net - Chỉ cần nhập Email và Password" 
-                  : "Cấu hình đầy đủ cho Gmail, Outlook hoặc SMTP khác"}
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {provider === "other" && (
-          <>
-            <FormField
-              control={form.control}
-              name="host"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>SMTP Host</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="smtp.gmail.com" data-testid="input-smtp-host" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="port"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Port</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      type="number" 
-                      placeholder="587" 
-                      onChange={(e) => field.onChange(parseInt(e.target.value))}
-                      data-testid="input-smtp-port" 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                  <FormDescription>
-                    Port 587 (STARTTLS) hoặc 465 (SSL)
-                  </FormDescription>
-                </FormItem>
-              )}
-            />
-          </>
-        )}
-
-        <FormField
-          control={form.control}
-          name="username"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="your-email@gmail.com" data-testid="input-smtp-username" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input 
-                  {...field} 
-                  type="password" 
-                  placeholder={isEditing ? "Để trống nếu không đổi" : "••••••••••••"}
-                  data-testid="input-smtp-password" 
-                />
-              </FormControl>
-              <FormMessage />
-              {!isEditing && provider === "other" && (
-                <FormDescription>
-                  Gmail: Dùng App Password (không phải mật khẩu thường)
-                </FormDescription>
-              )}
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="fromEmail"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email gửi đi</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="noreply@yourcompany.com" data-testid="input-smtp-fromemail" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="fromName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tên người gửi</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Công ty ABC" data-testid="input-smtp-fromname" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isPending} data-testid="button-cancel-smtp">
-            Hủy
-          </Button>
-          <Button type="submit" disabled={isPending} data-testid="button-submit-smtp">
-            {isPending ? "Đang lưu..." : "Lưu cấu hình"}
-          </Button>
-        </div>
-      </form>
-    </Form>
-  );
-}
+import { SmtpConfigDialog } from "@/components/SmtpConfigDialog";
 
 export default function SmtpConfiguration() {
   const { toast } = useToast();
@@ -211,41 +29,6 @@ export default function SmtpConfiguration() {
 
   const { data: config, isLoading } = useQuery<SmtpConfig | null>({
     queryKey: ["/api/smtp-config"],
-  });
-
-  const form = useForm<InsertSmtpConfig>({
-    resolver: zodResolver(insertSmtpConfigSchema.omit({ userId: true })),
-    defaultValues: {
-      provider: "other",
-      host: "",
-      port: 587,
-      username: "",
-      password: "",
-      fromEmail: "",
-      fromName: "",
-    },
-  });
-
-  const saveMutation = useMutation({
-    mutationFn: async (data: InsertSmtpConfig) => {
-      return await apiRequest("POST", "/api/smtp-config", data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/smtp-config"] });
-      toast({
-        title: "Thành công",
-        description: "Đã lưu cấu hình SMTP",
-      });
-      setIsEditOpen(false);
-      form.reset();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Lỗi",
-        description: error.message || "Không thể lưu cấu hình SMTP",
-        variant: "destructive",
-      });
-    },
   });
 
   const testMutation = useMutation({
@@ -304,39 +87,6 @@ export default function SmtpConfiguration() {
     testMutation.mutate(testEmail);
   };
 
-  const onSubmit = (data: InsertSmtpConfig) => {
-    if (config && !data.password) {
-      const { password, ...dataWithoutPassword } = data;
-      saveMutation.mutate(dataWithoutPassword as InsertSmtpConfig);
-    } else {
-      saveMutation.mutate(data);
-    }
-  };
-
-  const openEditDialog = () => {
-    if (config) {
-      form.reset({
-        provider: config.provider || "other",
-        host: config.host,
-        port: config.port,
-        username: config.username,
-        password: "",
-        fromEmail: config.fromEmail,
-        fromName: config.fromName || "",
-      });
-    } else {
-      form.reset({
-        provider: "other",
-        host: "",
-        port: 587,
-        username: "",
-        password: "",
-        fromEmail: "",
-        fromName: "",
-      });
-    }
-    setIsEditOpen(true);
-  };
 
   if (isLoading) {
     return (
@@ -371,7 +121,7 @@ export default function SmtpConfiguration() {
           <p className="text-muted-foreground mb-6">
             Thêm cấu hình SMTP để bắt đầu gửi email báo giá
           </p>
-          <Button onClick={openEditDialog} data-testid="button-setup-smtp">
+          <Button onClick={() => setIsEditOpen(true)} data-testid="button-setup-smtp">
             <Server className="w-4 h-4 mr-2" />
             Thiết lập SMTP
           </Button>
@@ -433,7 +183,7 @@ export default function SmtpConfiguration() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={openEditDialog}
+                onClick={() => setIsEditOpen(true)}
                 className="rounded-xl"
                 data-testid="button-edit-smtp"
               >
@@ -474,23 +224,13 @@ export default function SmtpConfiguration() {
         </Card>
       )}
 
-      <Dialog open={isEditOpen} onOpenChange={(open) => !open && setIsEditOpen(false)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{config ? "Chỉnh sửa cấu hình SMTP" : "Thiết lập SMTP"}</DialogTitle>
-            <DialogDescription>
-              Nhập thông tin máy chủ email để gửi báo giá
-            </DialogDescription>
-          </DialogHeader>
-          <SmtpConfigForm
-            form={form}
-            onSubmit={onSubmit}
-            isPending={saveMutation.isPending}
-            onCancel={() => setIsEditOpen(false)}
-            isEditing={!!config}
-          />
-        </DialogContent>
-      </Dialog>
+      <SmtpConfigDialog
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/smtp-config"] });
+        }}
+      />
 
       <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
         <DialogContent>
