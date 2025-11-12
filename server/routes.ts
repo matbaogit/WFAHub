@@ -1000,6 +1000,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check email service from Mat Bao API
+  app.post("/api/check-email-service", isAuthenticated, async (req: any, res) => {
+    try {
+      const { keyword } = req.body;
+      
+      if (!keyword) {
+        return res.status(400).json({ message: "Thiếu tên miền email" });
+      }
+
+      // Call Mat Bao API
+      const response = await fetch("https://matbao.support/api/check-email-service", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ keyword }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Extract SMTP hostname if data available
+      if (data.status && data.data && data.data.length > 0) {
+        const smtpHost = data.data[0].s_hostname;
+        res.json({
+          success: true,
+          smtpHost,
+          port: 587,
+          fullData: data.data[0],
+        });
+      } else {
+        res.json({
+          success: false,
+          message: "Không tìm thấy thông tin email service cho tên miền này",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error checking email service:", error);
+      res.status(500).json({ 
+        message: error.message || "Không thể kiểm tra email service"
+      });
+    }
+  });
+
   // Test SMTP configuration
   app.post("/api/smtp-config/test", isAuthenticated, async (req: any, res) => {
     try {
