@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Server, TestTube, ExternalLink, AlertCircle, Trash2 } from "lucide-react";
+import { Server, TestTube, ExternalLink, AlertCircle, Trash2, Loader2, CheckCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,8 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
   const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
   const [testEmail, setTestEmail] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [detectedServer, setDetectedServer] = useState<string | null>(null);
 
   const { data: config } = useQuery<SmtpConfig | null>({
     queryKey: ["/api/smtp-config"],
@@ -139,6 +141,53 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
       });
     },
   });
+
+  const checkEmailServiceMutation = useMutation({
+    mutationFn: async (keyword: string) => {
+      return await apiRequest("POST", "/api/check-email-service", { keyword });
+    },
+    onSuccess: (data: any) => {
+      if (data.success && data.smtpHost) {
+        setDetectedServer(data.smtpHost);
+        form.setValue("host", data.smtpHost);
+        form.setValue("port", data.port || 587);
+        toast({
+          title: "Đã phát hiện server",
+          description: `Server email: ${data.smtpHost}`,
+        });
+      } else {
+        setDetectedServer(null);
+        form.setValue("host", "smtp.matbao.net");
+        form.setValue("port", 587);
+        toast({
+          title: "Không tìm thấy server",
+          description: "Sử dụng mặc định smtp.matbao.net",
+        });
+      }
+    },
+    onError: () => {
+      setDetectedServer(null);
+      form.setValue("host", "smtp.matbao.net");
+      form.setValue("port", 587);
+    },
+  });
+
+  const handleEmailBlur = async (email: string) => {
+    if (!email || provider !== "other") return;
+    
+    const emailMatch = email.match(/@(.+)$/);
+    if (!emailMatch) return;
+    
+    const domain = emailMatch[1];
+    setIsCheckingEmail(true);
+    setDetectedServer(null);
+    
+    try {
+      await checkEmailServiceMutation.mutateAsync(domain);
+    } finally {
+      setIsCheckingEmail(false);
+    }
+  };
 
   const handleTestEmail = () => {
     if (!testEmail.trim()) {
@@ -261,9 +310,31 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="your-email@gmail.com" data-testid="input-smtp-username" />
+                      <div className="relative">
+                        <Input 
+                          {...field} 
+                          placeholder="your-email@gmail.com" 
+                          data-testid="input-smtp-username"
+                          onBlur={(e) => handleEmailBlur(e.target.value)}
+                        />
+                        {isCheckingEmail && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                          </div>
+                        )}
+                        {detectedServer && !isCheckingEmail && (
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                          </div>
+                        )}
+                      </div>
                     </FormControl>
                     <FormMessage />
+                    {detectedServer && provider === "other" && (
+                      <FormDescription className="text-green-600">
+                        ✓ Đã phát hiện server: {detectedServer}
+                      </FormDescription>
+                    )}
                   </FormItem>
                 )}
               />
