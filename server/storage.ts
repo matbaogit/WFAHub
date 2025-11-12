@@ -52,6 +52,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   registerUser(userData: Omit<RegisterUser, "confirmPassword">): Promise<User>;
   updateUserCredits(userId: string, credits: number): Promise<User>;
+  upsertUser(userData: { id: string; email: string; firstName?: string; lastName?: string; profileImageUrl?: string }): Promise<User>;
   
   // Template operations
   getAllTemplates(): Promise<Template[]>;
@@ -192,6 +193,40 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return user;
+  }
+
+  async upsertUser(userData: { id: string; email: string; firstName?: string; lastName?: string; profileImageUrl?: string }): Promise<User> {
+    const existingUser = await this.getUser(userData.id);
+    
+    if (existingUser) {
+      const [user] = await db
+        .update(users)
+        .set({
+          email: userData.email,
+          firstName: userData.firstName || existingUser.firstName,
+          lastName: userData.lastName || existingUser.lastName,
+          profileImageUrl: userData.profileImageUrl || existingUser.profileImageUrl,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userData.id))
+        .returning();
+      return user;
+    } else {
+      const [user] = await db
+        .insert(users)
+        .values({
+          username: userData.email.split('@')[0],
+          email: userData.email,
+          firstName: userData.firstName || null,
+          lastName: userData.lastName || null,
+          profileImageUrl: userData.profileImageUrl || null,
+          passwordHash: await bcrypt.hash('oauth-user-no-password', 10),
+          role: "user",
+          credits: 100,
+        } as any)
+        .returning();
+      return user;
+    }
   }
 
   // Template operations
