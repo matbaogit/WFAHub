@@ -142,36 +142,6 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
     },
   });
 
-  const checkEmailServiceMutation = useMutation({
-    mutationFn: async (domain: string) => {
-      return await apiRequest("POST", "/api/check-email-service", { domain });
-    },
-    onSuccess: (data: any) => {
-      if (data.success && data.smtpHost) {
-        setDetectedServer(data.smtpHost);
-        form.setValue("host", data.smtpHost);
-        form.setValue("port", data.port || 587);
-        toast({
-          title: "Đã phát hiện server",
-          description: `Server email: ${data.smtpHost}`,
-        });
-      } else {
-        setDetectedServer(null);
-        form.setValue("host", "smtp.matbao.net");
-        form.setValue("port", 587);
-        toast({
-          title: "Không tìm thấy server",
-          description: "Sử dụng mặc định smtp.matbao.net",
-        });
-      }
-    },
-    onError: () => {
-      setDetectedServer(null);
-      form.setValue("host", "smtp.matbao.net");
-      form.setValue("port", 587);
-    },
-  });
-
   const handleEmailBlur = async (email: string) => {
     if (!email) return;
     
@@ -183,7 +153,47 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
     setDetectedServer(null);
     
     try {
-      await checkEmailServiceMutation.mutateAsync(domain);
+      // Call Mat Bao API directly from frontend
+      const response = await fetch("https://matbao.support/api/get-mx", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ domain }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Extract SMTP hostname from response (response is an array)
+        if (Array.isArray(data) && data.length > 0 && data[0].hostname) {
+          const smtpHost = data[0].hostname;
+          setDetectedServer(smtpHost);
+          form.setValue("host", smtpHost);
+          form.setValue("port", 587);
+          toast({
+            title: "Đã phát hiện server",
+            description: `Server email: ${smtpHost}`,
+          });
+        } else {
+          setDetectedServer(null);
+          form.setValue("host", "smtp.matbao.net");
+          form.setValue("port", 587);
+          toast({
+            title: "Không tìm thấy server",
+            description: "Sử dụng mặc định smtp.matbao.net",
+          });
+        }
+      } else {
+        setDetectedServer(null);
+        form.setValue("host", "smtp.matbao.net");
+        form.setValue("port", 587);
+      }
+    } catch (error) {
+      console.error("Error checking email service:", error);
+      setDetectedServer(null);
+      form.setValue("host", "smtp.matbao.net");
+      form.setValue("port", 587);
     } finally {
       setIsCheckingEmail(false);
     }
