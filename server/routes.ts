@@ -1024,13 +1024,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const data = await response.json();
       
-      // Extract SMTP hostname from response
-      if (data && data.hostname) {
+      // Extract SMTP hostname from response (response is an array)
+      if (Array.isArray(data) && data.length > 0 && data[0].hostname) {
         res.json({
           success: true,
-          smtpHost: data.hostname,
+          smtpHost: data[0].hostname,
           port: 587,
-          fullData: data,
+          fullData: data[0],
         });
       } else {
         res.json({
