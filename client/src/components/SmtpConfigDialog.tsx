@@ -59,11 +59,11 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
   const provider = form.watch("provider");
 
   useEffect(() => {
-    if (provider === "matbao") {
+    if (provider === "matbao" && !detectedServer) {
       form.setValue("host", "smtp.matbao.net");
       form.setValue("port", 587);
     }
-  }, [provider, form]);
+  }, [provider, form, detectedServer]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: InsertSmtpConfig) => {
@@ -173,7 +173,7 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
   });
 
   const handleEmailBlur = async (email: string) => {
-    if (!email || provider !== "other") return;
+    if (!email) return;
     
     const emailMatch = email.match(/@(.+)$/);
     if (!emailMatch) return;
