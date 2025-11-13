@@ -376,9 +376,20 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
                   <FormItem>
                     <FormLabel>Email gửi đi</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="noreply@yourcompany.com" data-testid="input-smtp-fromemail" />
+                      <Input 
+                        {...field} 
+                        placeholder="noreply@yourcompany.com" 
+                        data-testid="input-smtp-fromemail"
+                        onBlur={(e) => handleEmailBlur(e.target.value)}
+                      />
                     </FormControl>
                     <FormMessage />
+                    {isCheckingEmail && (
+                      <FormDescription className="flex items-center gap-2">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Đang phát hiện server email...
+                      </FormDescription>
+                    )}
                   </FormItem>
                 )}
               />
