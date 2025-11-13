@@ -212,10 +212,14 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
   };
 
   const onSubmit = (data: InsertSmtpConfig) => {
+    console.log("[DEBUG] onSubmit data:", data);
+    console.log("[DEBUG] onSubmit host value:", data.host);
     if (config && !data.password) {
       const { password, ...dataWithoutPassword } = data;
+      console.log("[DEBUG] Submitting without password:", dataWithoutPassword);
       saveMutation.mutate(dataWithoutPassword as InsertSmtpConfig);
     } else {
+      console.log("[DEBUG] Submitting with password:", data);
       saveMutation.mutate(data);
     }
   };
