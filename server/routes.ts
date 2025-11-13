@@ -1003,19 +1003,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Check email service from Mat Bao API
   app.post("/api/check-email-service", isAuthenticated, async (req: any, res) => {
     try {
-      const { keyword } = req.body;
+      const { domain } = req.body;
       
-      if (!keyword) {
+      if (!domain) {
         return res.status(400).json({ message: "Thiếu tên miền email" });
       }
 
-      // Call Mat Bao API
-      const response = await fetch("https://matbao.support/api/check-email-service", {
+      // Call Mat Bao API - New endpoint get-mx
+      const response = await fetch("https://matbao.support/api/get-mx", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ keyword }),
+        body: JSON.stringify({ domain }),
       });
 
       if (!response.ok) {
@@ -1024,14 +1024,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const data = await response.json();
       
-      // Extract SMTP hostname if data available
-      if (data.status && data.data && data.data.length > 0) {
-        const smtpHost = data.data[0].s_hostname;
+      // Extract SMTP hostname from response
+      if (data && data.hostname) {
         res.json({
           success: true,
-          smtpHost,
+          smtpHost: data.hostname,
           port: 587,
-          fullData: data.data[0],
+          fullData: data,
         });
       } else {
         res.json({
