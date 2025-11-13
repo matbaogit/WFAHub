@@ -157,11 +157,13 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
       const response = await fetch(`https://help.matbao.support/mx.php?domain=${domain}`);
 
       if (response.ok) {
-        const data = await response.json();
+        // API returns plain text like "pro65.emailserver.vn" (with quotes)
+        const rawText = await response.text();
         
-        // Extract SMTP hostname from response (response is an array)
-        if (Array.isArray(data) && data.length > 0 && data[0].hostname) {
-          const smtpHost = data[0].hostname;
+        // Remove quotes and trim whitespace
+        const smtpHost = rawText.replace(/^["']|["']$/g, '').trim();
+        
+        if (smtpHost && smtpHost.length > 0) {
           setDetectedServer(smtpHost);
           form.setValue("host", smtpHost);
           form.setValue("port", 587);
