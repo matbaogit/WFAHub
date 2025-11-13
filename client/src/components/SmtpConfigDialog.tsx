@@ -143,8 +143,8 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
   });
 
   const checkEmailServiceMutation = useMutation({
-    mutationFn: async (keyword: string) => {
-      return await apiRequest("POST", "/api/check-email-service", { keyword });
+    mutationFn: async (domain: string) => {
+      return await apiRequest("POST", "/api/check-email-service", { domain });
     },
     onSuccess: (data: any) => {
       if (data.success && data.smtpHost) {
