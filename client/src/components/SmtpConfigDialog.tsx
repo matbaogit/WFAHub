@@ -153,14 +153,8 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
     setDetectedServer(null);
     
     try {
-      // Call Mat Bao API directly from frontend
-      const response = await fetch("https://matbao.support/api/get-mx", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ domain }),
-      });
+      // Call Mat Bao API directly from frontend - GET request with query param
+      const response = await fetch(`https://help.matbao.support/mx.php?domain=${domain}`);
 
       if (response.ok) {
         const data = await response.json();
