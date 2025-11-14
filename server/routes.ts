@@ -921,15 +921,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // SMTP config routes (UPSERT)
   app.post("/api/smtp-config", isAuthenticated, async (req: any, res) => {
     try {
-      console.log("[DEBUG Backend] POST /api/smtp-config req.body:", req.body);
-      console.log("[DEBUG Backend] req.body.host:", req.body.host);
-      
       // Validate and extract only mutable fields (exclude userId)
       const updateSchema = insertSmtpConfigSchema.omit({ userId: true }).partial({ password: true });
       const validatedData = updateSchema.parse(req.body);
-      
-      console.log("[DEBUG Backend] validatedData:", validatedData);
-      console.log("[DEBUG Backend] validatedData.host:", validatedData.host);
 
       // Check if user already has SMTP config
       const existing = await storage.getSmtpConfig(req.user.id);
