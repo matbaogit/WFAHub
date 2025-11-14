@@ -159,30 +159,18 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
       if (response.ok) {
         // API returns plain text like "pro65.emailserver.vn" (with quotes)
         const rawText = await response.text();
-        console.log("[DEBUG] Mat Bao API rawText:", rawText);
         
         // Remove quotes and trim whitespace
         const smtpHost = rawText.replace(/^["']|["']$/g, '').trim();
-        console.log("[DEBUG] Parsed smtpHost:", smtpHost);
         
         if (smtpHost && smtpHost.length > 0) {
           setDetectedServer(smtpHost);
           form.setValue("host", smtpHost);
-          console.log("[DEBUG] Form setValue host:", smtpHost);
-          console.log("[DEBUG] Form getValues host:", form.getValues("host"));
           form.setValue("port", 587);
-          toast({
-            title: "Đã phát hiện server",
-            description: `Server email: ${smtpHost}`,
-          });
         } else {
           setDetectedServer(null);
           form.setValue("host", "smtp.matbao.net");
           form.setValue("port", 587);
-          toast({
-            title: "Không tìm thấy server",
-            description: "Sử dụng mặc định smtp.matbao.net",
-          });
         }
       } else {
         setDetectedServer(null);
