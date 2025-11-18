@@ -33,6 +33,7 @@ import BulkCampaignDetail from "@/pages/bulk-campaign-detail";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminTemplates from "@/pages/admin/templates";
+import AdminSystemSmtp from "@/pages/admin/system-smtp";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -68,6 +69,7 @@ function Router() {
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/admin/users" component={AdminUsers} />
           <Route path="/admin/templates" component={AdminTemplates} />
+          <Route path="/admin/system-smtp" component={AdminSystemSmtp} />
           <Route path="/admin/stats" component={AdminDashboard} />
         </>
       )}

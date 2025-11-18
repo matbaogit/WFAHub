@@ -110,6 +110,11 @@ const adminMenuItems = [
     icon: Zap,
   },
   {
+    title: "SMTP Hệ thống",
+    url: "/admin/system-smtp",
+    icon: Server,
+  },
+  {
     title: "Thống kê",
     url: "/admin/stats",
     icon: BarChart3,
