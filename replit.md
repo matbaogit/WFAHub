@@ -20,10 +20,10 @@ Preferred communication style: Simple, everyday language.
 ### Backend
 
 **Technology Stack:** Express.js (TypeScript, ESM), Drizzle ORM, Neon Serverless PostgreSQL.
-**Authentication & Session Management:** Username/Password Authentication (Passport Local Strategy), bcrypt hashing, PostgreSQL-backed sessions.
+**Authentication & Session Management:** Email-based authentication with verification (Passport Local Strategy), bcrypt hashing, PostgreSQL-backed sessions. New users must verify their email via a time-limited token (24-hour expiry) before login. Password reset functionality via email with 24-hour token expiry.
 **API Design:** RESTful, `/api` prefix, authentication middleware, centralized error handling, sanitized responses.
 **Data Layer:** `IStorage` abstraction, type-safe schema with Drizzle and Zod, JSONB for flexible configuration, automatic timestamps.
-**Key Design Decisions:** Separation of concerns, session-based authentication, credit-based usage, template-driven workflow execution. SMTP passwords and other sensitive data are encrypted using AES-256-GCM.
+**Key Design Decisions:** Separation of concerns, session-based authentication, credit-based usage, template-driven workflow execution. SMTP passwords and other sensitive data are encrypted using AES-256-GCM. System emails (verification, password reset) use admin-configured "system default" SMTP.
 
 ### Database Schema
 
