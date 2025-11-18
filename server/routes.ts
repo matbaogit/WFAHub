@@ -11,6 +11,9 @@ import multer from "multer";
 import * as XLSX from "xlsx";
 import * as fs from "fs";
 import * as path from "path";
+import { getEmailService } from "./email";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 // Sanitize user object by removing sensitive fields
 const sanitizeUser = (user: User | null): Omit<User, 'passwordHash'> | null => {
@@ -90,10 +93,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Register route
+  // Register route - with email verification
   app.post("/api/auth/register", async (req, res) => {
     try {
       const validatedData = registerUserSchema.parse(req.body);
+      
+      if (!validatedData.email) {
+        return res.status(400).json({ message: "Email là bắt buộc" });
+      }
       
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(validatedData.username);
@@ -101,15 +108,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Username đã tồn tại" });
       }
 
+      // Check if email already exists
+      const existingEmail = await storage.getUserByEmail(validatedData.email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email đã được sử dụng" });
+      }
+
       const user = await storage.registerUser(validatedData);
       
-      // Auto login after registration
-      req.login(user, (err) => {
-        if (err) {
-          return res.status(500).json({ message: "Đăng ký thành công nhưng đăng nhập thất bại" });
+      // Generate verification token
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const expiry = new Date();
+      expiry.setHours(expiry.getHours() + 24); // 24 hours from now
+      
+      await storage.setVerificationToken(user.id, verificationToken, expiry);
+      
+      // Send verification email
+      try {
+        const smtpConfig = await storage.getSystemDefaultSmtpConfig();
+        if (!smtpConfig) {
+          console.error("No system default SMTP config found");
+          return res.status(500).json({ 
+            message: "Đăng ký thành công nhưng không thể gửi email xác thực. Vui lòng liên hệ admin." 
+          });
         }
-        res.json(sanitizeUser(user));
-      });
+
+        const emailService = getEmailService();
+        emailService.configure({
+          host: smtpConfig.host,
+          port: smtpConfig.port,
+          secure: smtpConfig.secure === 1,
+          username: smtpConfig.username,
+          password: smtpConfig.password,
+          fromEmail: smtpConfig.fromEmail,
+          fromName: smtpConfig.fromName || undefined,
+        });
+
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        await emailService.sendVerificationEmail(
+          user.email!,
+          user.username,
+          verificationToken,
+          baseUrl
+        );
+
+        res.json({ 
+          message: "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.",
+          email: user.email
+        });
+      } catch (emailError) {
+        console.error("Error sending verification email:", emailError);
+        res.status(500).json({ 
+          message: "Đăng ký thành công nhưng không thể gửi email xác thực. Vui lòng liên hệ admin." 
+        });
+      }
     } catch (error: any) {
       console.error("Registration error:", error);
       res.status(400).json({ 
@@ -118,7 +170,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Login route
+  // Email verification route
+  app.post("/api/auth/verify-email", async (req, res) => {
+    try {
+      const { token } = req.body;
+      
+      if (!token) {
+        return res.status(400).json({ message: "Token là bắt buộc" });
+      }
+
+      const user = await storage.verifyEmail(token);
+      
+      if (!user) {
+        return res.status(400).json({ 
+          message: "Token không hợp lệ hoặc đã hết hạn" 
+        });
+      }
+
+      res.json({ 
+        message: "Xác thực email thành công! Bạn có thể đăng nhập ngay bây giờ.",
+        user: sanitizeUser(user)
+      });
+    } catch (error) {
+      console.error("Email verification error:", error);
+      res.status(500).json({ message: "Xác thực email thất bại" });
+    }
+  });
+
+  // Forgot password route
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email là bắt buộc" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        // Don't reveal if email exists or not for security
+        return res.json({ 
+          message: "Nếu email tồn tại, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu." 
+        });
+      }
+
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const expiry = new Date();
+      expiry.setHours(expiry.getHours() + 24); // 24 hours from now
+      
+      await storage.setResetToken(user.id, resetToken, expiry);
+      
+      // Send reset password email
+      try {
+        const smtpConfig = await storage.getSystemDefaultSmtpConfig();
+        if (!smtpConfig) {
+          console.error("No system default SMTP config found");
+          return res.json({ 
+            message: "Nếu email tồn tại, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu." 
+          });
+        }
+
+        const emailService = getEmailService();
+        emailService.configure({
+          host: smtpConfig.host,
+          port: smtpConfig.port,
+          secure: smtpConfig.secure === 1,
+          username: smtpConfig.username,
+          password: smtpConfig.password,
+          fromEmail: smtpConfig.fromEmail,
+          fromName: smtpConfig.fromName || undefined,
+        });
+
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        await emailService.sendPasswordResetEmail(
+          user.email!,
+          user.username,
+          resetToken,
+          baseUrl
+        );
+      } catch (emailError) {
+        console.error("Error sending reset email:", emailError);
+      }
+
+      res.json({ 
+        message: "Nếu email tồn tại, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu." 
+      });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ message: "Yêu cầu đặt lại mật khẩu thất bại" });
+    }
+  });
+
+  // Reset password route
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, password } = req.body;
+      
+      if (!token || !password) {
+        return res.status(400).json({ message: "Token và mật khẩu mới là bắt buộc" });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ message: "Mật khẩu phải có ít nhất 6 ký tự" });
+      }
+
+      const passwordHash = await bcrypt.hash(password, 10);
+      const user = await storage.resetPassword(token, passwordHash);
+      
+      if (!user) {
+        return res.status(400).json({ 
+          message: "Token không hợp lệ hoặc đã hết hạn" 
+        });
+      }
+
+      res.json({ 
+        message: "Đặt lại mật khẩu thành công! Bạn có thể đăng nhập với mật khẩu mới.",
+        user: sanitizeUser(user)
+      });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Đặt lại mật khẩu thất bại" });
+    }
+  });
+
+  // Login route - check email verification
   app.post("/api/auth/login", (req, res, next) => {
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) {
@@ -127,6 +304,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(401).json({ message: info?.message || "Đăng nhập thất bại" });
       }
+      
+      // Check if email is verified
+      if (user.emailVerified === 0) {
+        return res.status(403).json({ 
+          message: "Vui lòng xác thực email trước khi đăng nhập. Kiểm tra hộp thư của bạn.",
+          emailNotVerified: true,
+          email: user.email
+        });
+      }
+      
       req.login(user, (err) => {
         if (err) {
           return res.status(500).json({ message: "Lỗi đăng nhập" });
