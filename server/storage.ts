@@ -50,9 +50,20 @@ export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   registerUser(userData: Omit<RegisterUser, "confirmPassword">): Promise<User>;
   updateUserCredits(userId: string, credits: number): Promise<User>;
   upsertUser(userData: { id: string; email: string; firstName?: string; lastName?: string; profileImageUrl?: string }): Promise<User>;
+  
+  // Email verification operations
+  setVerificationToken(userId: string, token: string, expiry: Date): Promise<void>;
+  verifyEmail(token: string): Promise<User | undefined>;
+  getUserByVerificationToken(token: string): Promise<User | undefined>;
+  
+  // Password reset operations
+  setResetToken(userId: string, token: string, expiry: Date): Promise<void>;
+  getUserByResetToken(token: string): Promise<User | undefined>;
+  resetPassword(token: string, newPasswordHash: string): Promise<User | undefined>;
   
   // Template operations
   getAllTemplates(): Promise<Template[]>;
@@ -117,6 +128,8 @@ export interface IStorage {
   getSmtpConfig(userId: string): Promise<SmtpConfig | undefined>;
   updateSmtpConfig(userId: string, data: Partial<SmtpConfig>): Promise<SmtpConfig>;
   deleteSmtpConfig(userId: string): Promise<void>;
+  getSystemDefaultSmtpConfig(): Promise<SmtpConfig | undefined>;
+  setSystemDefaultSmtpConfig(userId: string): Promise<void>;
 
   // Quotation email sending
   getQuotationWithDetails(quotationId: string): Promise<any | undefined>;
@@ -169,6 +182,11 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
   async registerUser(userData: Omit<RegisterUser, "confirmPassword">): Promise<User> {
     const passwordHash = await bcrypt.hash(userData.password, 10);
     const [user] = await db
@@ -179,11 +197,94 @@ export class DatabaseStorage implements IStorage {
         firstName: userData.firstName,
         lastName: userData.lastName,
         email: userData.email || null,
+        emailVerified: 0,
         role: "user",
         credits: 100,
       })
       .returning();
     return user;
+  }
+
+  async setVerificationToken(userId: string, token: string, expiry: Date): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        verificationToken: token,
+        verificationTokenExpiry: expiry,
+      })
+      .where(eq(users.id, userId));
+  }
+
+  async getUserByVerificationToken(token: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.verificationToken, token));
+    return user;
+  }
+
+  async verifyEmail(token: string): Promise<User | undefined> {
+    const user = await this.getUserByVerificationToken(token);
+    if (!user || !user.verificationTokenExpiry) {
+      return undefined;
+    }
+
+    if (new Date() > user.verificationTokenExpiry) {
+      return undefined;
+    }
+
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        emailVerified: 1,
+        verificationToken: null,
+        verificationTokenExpiry: null,
+      })
+      .where(eq(users.id, user.id))
+      .returning();
+
+    return updatedUser;
+  }
+
+  async setResetToken(userId: string, token: string, expiry: Date): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        resetToken: token,
+        resetTokenExpiry: expiry,
+      })
+      .where(eq(users.id, userId));
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.resetToken, token));
+    return user;
+  }
+
+  async resetPassword(token: string, newPasswordHash: string): Promise<User | undefined> {
+    const user = await this.getUserByResetToken(token);
+    if (!user || !user.resetTokenExpiry) {
+      return undefined;
+    }
+
+    if (new Date() > user.resetTokenExpiry) {
+      return undefined;
+    }
+
+    const [updatedUser] = await db
+      .update(users)
+      .set({
+        passwordHash: newPasswordHash,
+        resetToken: null,
+        resetTokenExpiry: null,
+      })
+      .where(eq(users.id, user.id))
+      .returning();
+
+    return updatedUser;
   }
 
   async updateUserCredits(userId: string, credits: number): Promise<User> {
@@ -528,6 +629,23 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSmtpConfig(userId: string): Promise<void> {
     await db.delete(smtpConfigs).where(eq(smtpConfigs.userId, userId));
+  }
+
+  async getSystemDefaultSmtpConfig(): Promise<SmtpConfig | undefined> {
+    const [config] = await db
+      .select()
+      .from(smtpConfigs)
+      .where(eq(smtpConfigs.isSystemDefault, 1));
+    return config;
+  }
+
+  async setSystemDefaultSmtpConfig(userId: string): Promise<void> {
+    await db.update(smtpConfigs).set({ isSystemDefault: 0 });
+    
+    await db
+      .update(smtpConfigs)
+      .set({ isSystemDefault: 1 })
+      .where(eq(smtpConfigs.userId, userId));
   }
 
   // Quotation email sending operations
