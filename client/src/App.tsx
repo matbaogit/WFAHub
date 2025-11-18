@@ -13,6 +13,9 @@ import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import VerifyEmail from "@/pages/verify-email";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
 import Dashboard from "@/pages/dashboard";
 import Templates from "@/pages/templates";
 import Logs from "@/pages/logs";
@@ -39,6 +42,9 @@ function Router() {
       {/* Public routes - always accessible */}
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/verify-email" component={VerifyEmail} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       
       {/* Conditional routes based on auth */}
       {isLoading || !isAuthenticated ? (
@@ -83,7 +89,8 @@ function AppContent() {
   const isAdmin = user?.role === "admin";
   
   // Routes that should not show sidebar/topbar
-  const isAuthRoute = location === "/login" || location === "/register";
+  const authRoutes = ["/login", "/register", "/verify-email", "/forgot-password", "/reset-password"];
+  const isAuthRoute = authRoutes.includes(location);
   const shouldShowLayout = !isLoading && isAuthenticated && !isAuthRoute;
 
   if (!shouldShowLayout) {

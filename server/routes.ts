@@ -1247,6 +1247,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Set system default SMTP config (used for registration emails and password resets)
+  app.post("/api/admin/smtp-config/set-system-default", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ message: "userId là bắt buộc" });
+      }
+
+      // Check if the user's SMTP config exists
+      const config = await storage.getSmtpConfig(userId);
+      if (!config) {
+        return res.status(404).json({ message: "SMTP config không tồn tại cho user này" });
+      }
+
+      await storage.setSystemDefaultSmtpConfig(userId);
+      
+      res.json({ 
+        success: true, 
+        message: "Đã đặt SMTP config làm mặc định hệ thống"
+      });
+    } catch (error) {
+      console.error("Error setting system default SMTP:", error);
+      res.status(500).json({ message: "Không thể đặt SMTP mặc định hệ thống" });
+    }
+  });
+
   // Analytics endpoint
   app.get("/api/analytics", isAuthenticated, async (req: any, res) => {
     try {

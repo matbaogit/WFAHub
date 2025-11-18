@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
-import { Sparkles, UserPlus } from "lucide-react";
+import { Sparkles, UserPlus, Mail } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function RegisterPage() {
@@ -43,12 +43,16 @@ export default function RegisterPage() {
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       toast({
         title: "Đăng ký thành công!",
-        description: "Chào mừng bạn đến với WFA Hub",
+        description: (
+          <div className="flex items-start gap-2">
+            <Mail className="w-4 h-4 mt-0.5 text-cyan-600" />
+            <span>Vui lòng kiểm tra email để xác thực tài khoản của bạn.</span>
+          </div>
+        ),
       });
-      setLocation("/");
+      form.reset();
     },
     onError: (error: any) => {
       toast({
@@ -109,6 +113,26 @@ export default function RegisterPage() {
                   )}
                 />
 
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field}
+                          value={field.value || ""}
+                          type="email" 
+                          placeholder="email@example.com" 
+                          data-testid="input-email"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -148,26 +172,6 @@ export default function RegisterPage() {
                     )}
                   />
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email (tùy chọn)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field}
-                          value={field.value || ""}
-                          type="email" 
-                          placeholder="email@example.com" 
-                          data-testid="input-email"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 <FormField
                   control={form.control}

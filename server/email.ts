@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
-import { decrypt } from './utils/encryption';
+import { decryptPassword } from './utils/encryption';
 
 interface EmailConfig {
   host: string;
@@ -33,7 +33,7 @@ export class EmailService {
     this.config = config;
     
     // Decrypt password if it's encrypted
-    const password = decrypt(config.password);
+    const password = decryptPassword(config.password);
     
     this.transporter = nodemailer.createTransport({
       host: config.host,

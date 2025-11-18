@@ -110,7 +110,17 @@ export default function LoginPage() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Password</FormLabel>
+                        <button
+                          type="button"
+                          className="text-xs text-blue-600 hover:text-blue-700 underline"
+                          onClick={() => setLocation("/forgot-password")}
+                          data-testid="link-forgot-password"
+                        >
+                          Quên mật khẩu?
+                        </button>
+                      </div>
                       <FormControl>
                         <Input 
                           {...field} 
