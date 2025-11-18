@@ -126,6 +126,7 @@ export interface IStorage {
   // SMTP config operations
   createSmtpConfig(config: InsertSmtpConfig): Promise<SmtpConfig>;
   getSmtpConfig(userId: string): Promise<SmtpConfig | undefined>;
+  getAllSmtpConfigs(): Promise<SmtpConfig[]>;
   updateSmtpConfig(userId: string, data: Partial<SmtpConfig>): Promise<SmtpConfig>;
   deleteSmtpConfig(userId: string): Promise<void>;
   getSystemDefaultSmtpConfig(): Promise<SmtpConfig | undefined>;
@@ -616,6 +617,10 @@ export class DatabaseStorage implements IStorage {
   async getSmtpConfig(userId: string): Promise<SmtpConfig | undefined> {
     const [config] = await db.select().from(smtpConfigs).where(eq(smtpConfigs.userId, userId));
     return config;
+  }
+
+  async getAllSmtpConfigs(): Promise<SmtpConfig[]> {
+    return await db.select().from(smtpConfigs).orderBy(desc(smtpConfigs.isSystemDefault));
   }
 
   async updateSmtpConfig(userId: string, data: Partial<SmtpConfig>): Promise<SmtpConfig> {

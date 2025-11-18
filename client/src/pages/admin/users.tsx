@@ -1,12 +1,12 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Users, Shield, Coins, Crown } from "lucide-react";
+import { Users, Shield, Coins, Crown, Mail, Star } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState } from "react";
-import type { User } from "@shared/schema";
+import type { User, SmtpConfig } from "@shared/schema";
 import { AdminRoute } from "@/components/admin-route";
 
 function AdminUsersContent() {
@@ -16,6 +16,10 @@ function AdminUsersContent() {
 
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
+  });
+
+  const { data: smtpConfigs } = useQuery<SmtpConfig[]>({
+    queryKey: ["/api/admin/smtp-configs"],
   });
 
   const updateUserMutation = useMutation({
@@ -38,6 +42,30 @@ function AdminUsersContent() {
       });
     },
   });
+
+  const setSystemDefaultMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      return await apiRequest("POST", "/api/admin/smtp-config/set-system-default", { userId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/smtp-configs"] });
+      toast({
+        title: "Thành công",
+        description: "Đã đặt SMTP config làm mặc định hệ thống",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Lỗi",
+        description: "Không thể đặt SMTP mặc định hệ thống",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const getUserSmtpConfig = (userId: string) => {
+    return smtpConfigs?.find(config => config.userId === userId);
+  };
 
   if (isLoading) {
     return (
@@ -68,7 +96,9 @@ function AdminUsersContent() {
       </div>
 
       <div className="space-y-4">
-        {users?.map((user) => (
+        {users?.map((user) => {
+          const smtpConfig = getUserSmtpConfig(user.id);
+          return (
           <Card key={user.id} className="bg-gradient-to-br from-white to-slate-50/30 border-2 border-slate-200/60 shadow-lg p-6">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4 flex-1">
@@ -84,7 +114,7 @@ function AdminUsersContent() {
                   )}
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-bold text-slate-900">
                       {user.firstName && user.lastName 
                         ? `${user.firstName} ${user.lastName}` 
@@ -95,8 +125,27 @@ function AdminUsersContent() {
                         Admin
                       </span>
                     )}
+                    {smtpConfig && (
+                      <>
+                        <span className="px-2 py-1 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-600/10 border border-green-500/20 text-green-600 text-xs font-semibold flex items-center gap-1">
+                          <Mail className="w-3 h-3" />
+                          SMTP
+                        </span>
+                        {smtpConfig.isSystemDefault === 1 && (
+                          <span className="px-2 py-1 rounded-lg bg-gradient-to-r from-yellow-500/10 to-amber-600/10 border border-yellow-500/20 text-yellow-600 text-xs font-semibold flex items-center gap-1">
+                            <Star className="w-3 h-3" />
+                            Mặc định hệ thống
+                          </span>
+                        )}
+                      </>
+                    )}
                   </div>
                   <p className="text-sm text-slate-500">{user.email}</p>
+                  {smtpConfig && (
+                    <p className="text-xs text-slate-400 mt-1">
+                      SMTP: {smtpConfig.fromEmail} ({smtpConfig.host}:{smtpConfig.port})
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -144,9 +193,23 @@ function AdminUsersContent() {
                         setCredits(user.credits);
                       }}
                       className="rounded-xl"
+                      data-testid={`button-edit-${user.id}`}
                     >
                       Chỉnh sửa
                     </Button>
+                    {smtpConfig && smtpConfig.isSystemDefault !== 1 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSystemDefaultMutation.mutate(user.id)}
+                        className="bg-gradient-to-r from-yellow-500/10 to-amber-600/10 border-yellow-500/30 text-yellow-700 hover:from-yellow-500/20 hover:to-amber-600/20 rounded-xl"
+                        disabled={setSystemDefaultMutation.isPending}
+                        data-testid={`button-set-default-smtp-${user.id}`}
+                      >
+                        <Star className="w-4 h-4 mr-2" />
+                        Đặt SMTP mặc định
+                      </Button>
+                    )}
                     {user.role !== "admin" && (
                       <Button
                         size="sm"
@@ -155,6 +218,7 @@ function AdminUsersContent() {
                           data: { role: "admin" } 
                         })}
                         className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-xl"
+                        data-testid={`button-make-admin-${user.id}`}
                       >
                         <Shield className="w-4 h-4 mr-2" />
                         Cấp Admin
@@ -165,7 +229,8 @@ function AdminUsersContent() {
               </div>
             </div>
           </Card>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

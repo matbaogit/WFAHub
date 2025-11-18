@@ -1247,6 +1247,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Get all SMTP configs
+  app.get("/api/admin/smtp-configs", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const configs = await storage.getAllSmtpConfigs();
+      res.json(configs);
+    } catch (error) {
+      console.error("Error fetching SMTP configs:", error);
+      res.status(500).json({ message: "Không thể lấy danh sách SMTP configs" });
+    }
+  });
+
   // Admin: Set system default SMTP config (used for registration emails and password resets)
   app.post("/api/admin/smtp-config/set-system-default", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
