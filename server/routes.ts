@@ -1285,6 +1285,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Get system SMTP configuration
+  app.get("/api/admin/system-smtp", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const systemSmtp = await storage.getSystemDefaultSmtpConfig();
+      if (!systemSmtp) {
+        return res.status(404).json({ message: "Chưa có cấu hình SMTP hệ thống" });
+      }
+      res.json(systemSmtp);
+    } catch (error) {
+      console.error("Error fetching system SMTP:", error);
+      res.status(500).json({ message: "Không thể lấy cấu hình SMTP hệ thống" });
+    }
+  });
+
+  // Admin: Create or update system SMTP configuration
+  app.post("/api/admin/system-smtp", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const validatedData = insertSmtpConfigSchema.parse({
+        ...req.body,
+        userId,
+      });
+
+      // Check if admin already has SMTP config
+      const existingConfig = await storage.getSmtpConfig(userId);
+      
+      if (existingConfig) {
+        // Update existing config
+        await storage.updateSmtpConfig(userId, validatedData);
+      } else {
+        // Create new config
+        await storage.createSmtpConfig(validatedData);
+      }
+
+      // Always set as system default
+      await storage.setSystemDefaultSmtpConfig(userId);
+
+      const updatedConfig = await storage.getSmtpConfig(userId);
+      
+      res.json({ 
+        success: true,
+        message: "Đã lưu và đặt SMTP làm mặc định hệ thống",
+        config: updatedConfig
+      });
+    } catch (error: any) {
+      console.error("Error saving system SMTP:", error);
+      res.status(500).json({ 
+        message: error.message || "Không thể lưu cấu hình SMTP hệ thống" 
+      });
+    }
+  });
+
   // Analytics endpoint
   app.get("/api/analytics", isAuthenticated, async (req: any, res) => {
     try {
