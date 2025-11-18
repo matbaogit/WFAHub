@@ -29,6 +29,11 @@ export const users = pgTable("users", {
   username: varchar("username").unique().notNull(),
   passwordHash: varchar("password_hash").notNull(),
   email: varchar("email"),
+  emailVerified: integer("email_verified").default(0).notNull(),
+  verificationToken: varchar("verification_token", { length: 500 }),
+  verificationTokenExpiry: timestamp("verification_token_expiry"),
+  resetToken: varchar("reset_token", { length: 500 }),
+  resetTokenExpiry: timestamp("reset_token_expiry"),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
@@ -231,6 +236,8 @@ export const smtpConfigs = pgTable("smtp_configs", {
   
   fromEmail: varchar("from_email", { length: 255 }).notNull(),
   fromName: varchar("from_name", { length: 255 }),
+  
+  isSystemDefault: integer("is_system_default").default(0).notNull(),
   
   isVerified: integer("is_verified").default(0).notNull(),
   lastTestedAt: timestamp("last_tested_at"),
