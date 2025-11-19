@@ -9,14 +9,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
-import { Sparkles, LogIn } from "lucide-react";
+import { Sparkles, LogIn, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -122,12 +123,23 @@ export default function LoginPage() {
                         </button>
                       </div>
                       <FormControl>
-                        <Input 
-                          {...field} 
-                          type="password" 
-                          placeholder="••••••" 
-                          data-testid="input-password"
-                        />
+                        <div className="relative">
+                          <Input 
+                            {...field} 
+                            type={showPassword ? "text" : "password"} 
+                            placeholder="••••••" 
+                            data-testid="input-password"
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                            data-testid="button-toggle-password"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
