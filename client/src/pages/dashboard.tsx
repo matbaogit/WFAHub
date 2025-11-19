@@ -110,7 +110,11 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="hover-elevate" data-testid="card-campaigns">
+        <Card 
+          className="hover-elevate cursor-pointer" 
+          data-testid="card-campaigns"
+          onClick={() => navigate("/bulk-campaigns")}
+        >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Chiến dịch Email</CardTitle>
             <Send className="h-4 w-4 text-muted-foreground" />
@@ -125,7 +129,7 @@ export default function Dashboard() {
 
         <Card className="hover-elevate" data-testid="card-quotations">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Báo giá</CardTitle>
+            <CardTitle className="text-sm font-medium">Tệp đính kèm</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
