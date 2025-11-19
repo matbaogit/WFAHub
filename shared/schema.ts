@@ -96,7 +96,12 @@ export const registerUserSchema = createInsertSchema(users).pick({
   lastName: true,
   email: true,
 }).extend({
-  password: z.string().min(6, "Password phải ít nhất 6 ký tự"),
+  password: z.string()
+    .min(8, "Password phải có ít nhất 8 ký tự")
+    .regex(/[A-Z]/, "Password phải có ít nhất 1 chữ hoa")
+    .regex(/[a-z]/, "Password phải có ít nhất 1 chữ thường")
+    .regex(/[0-9]/, "Password phải có ít nhất 1 số")
+    .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password phải có ít nhất 1 ký tự đặc biệt"),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Password không khớp",
