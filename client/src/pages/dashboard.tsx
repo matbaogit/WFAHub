@@ -139,13 +139,6 @@ export default function Dashboard() {
 
       {/* Quick Actions */}
       <Card className="mb-8" data-testid="card-quick-actions">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-blue-600" />
-            Thao tác nhanh
-          </CardTitle>
-          <CardDescription>Các tính năng thường dùng</CardDescription>
-        </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Button
             variant="outline"
