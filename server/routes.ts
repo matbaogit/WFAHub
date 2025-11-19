@@ -14,6 +14,7 @@ import * as path from "path";
 import { getEmailService } from "./email";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { encryptPassword } from "./utils/encryption";
 
 // Sanitize user object by removing sensitive fields
 const sanitizeUser = (user: User | null): Omit<User, 'passwordHash'> | null => {
@@ -1108,9 +1109,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // SMTP config routes (UPSERT)
   app.post("/api/smtp-config", isAuthenticated, async (req: any, res) => {
     try {
+      // Encrypt password before validation
+      const dataToSave = { ...req.body };
+      if (dataToSave.password) {
+        dataToSave.password = encryptPassword(dataToSave.password);
+      }
+      
       // Validate and extract only mutable fields (exclude userId)
       const updateSchema = insertSmtpConfigSchema.omit({ userId: true }).partial({ password: true });
-      const validatedData = updateSchema.parse(req.body);
+      const validatedData = updateSchema.parse(dataToSave);
 
       // Check if user already has SMTP config
       const existing = await storage.getSmtpConfig(req.user.id);
@@ -1303,8 +1310,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/system-smtp", isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const userId = req.user.id;
+      
+      // Encrypt password before validation
+      const dataToSave = { ...req.body };
+      if (dataToSave.password) {
+        dataToSave.password = encryptPassword(dataToSave.password);
+      }
+      
       const validatedData = insertSmtpConfigSchema.parse({
-        ...req.body,
+        ...dataToSave,
         userId,
       });
 
@@ -1312,8 +1326,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingConfig = await storage.getSmtpConfig(userId);
       
       if (existingConfig) {
-        // Update existing config
-        await storage.updateSmtpConfig(userId, validatedData);
+        // Update existing config - only include password if provided
+        const updateData = dataToSave.password 
+          ? validatedData 
+          : { ...validatedData, password: existingConfig.password };
+        await storage.updateSmtpConfig(userId, updateData);
       } else {
         // Create new config
         await storage.createSmtpConfig(validatedData);
