@@ -77,7 +77,7 @@ export class EmailService {
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
             .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
-            .button { display: inline-block; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+            .button { display: inline-block; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); color: white !important; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
             .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
           </style>
         </head>
@@ -90,7 +90,7 @@ export class EmailService {
               <p>Xin chào <strong>${username}</strong>,</p>
               <p>Cảm ơn bạn đã đăng ký tài khoản WFA Hub! Vui lòng xác thực địa chỉ email của bạn bằng cách nhấn vào nút bên dưới:</p>
               <div style="text-align: center;">
-                <a href="${verificationUrl}" class="button">Xác thực Email</a>
+                <a href="${verificationUrl}" class="button" style="color: white !important;">Xác thực Email</a>
               </div>
               <p>Hoặc copy link sau vào trình duyệt:</p>
               <p style="background: #e5e7eb; padding: 10px; border-radius: 4px; word-break: break-all;">
@@ -142,7 +142,7 @@ Nếu bạn không tạo tài khoản này, vui lòng bỏ qua email này.
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
             .header { background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
             .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
-            .button { display: inline-block; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+            .button { display: inline-block; background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); color: white !important; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
             .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
             .warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin: 20px 0; }
           </style>
@@ -156,7 +156,7 @@ Nếu bạn không tạo tài khoản này, vui lòng bỏ qua email này.
               <p>Xin chào <strong>${username}</strong>,</p>
               <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Nhấn vào nút bên dưới để tạo mật khẩu mới:</p>
               <div style="text-align: center;">
-                <a href="${resetUrl}" class="button">Đặt lại mật khẩu</a>
+                <a href="${resetUrl}" class="button" style="color: white !important;">Đặt lại mật khẩu</a>
               </div>
               <p>Hoặc copy link sau vào trình duyệt:</p>
               <p style="background: #e5e7eb; padding: 10px; border-radius: 4px; word-break: break-all;">
