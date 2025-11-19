@@ -502,6 +502,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete user (admin only)
+  app.delete("/api/admin/users/:userId", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      
+      // Prevent admin from deleting themselves
+      if (userId === req.user.id) {
+        return res.status(400).json({ message: "Không thể xóa chính mình" });
+      }
+
+      // Check if user exists
+      const userToDelete = await storage.getUser(userId);
+      if (!userToDelete) {
+        return res.status(404).json({ message: "User không tồn tại" });
+      }
+
+      // Delete user
+      await storage.deleteUser(userId);
+      
+      res.json({ 
+        success: true, 
+        message: "Đã xóa user thành công" 
+      });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Không thể xóa user" });
+    }
+  });
+
   // Update user (admin only)
   app.patch("/api/admin/users/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {

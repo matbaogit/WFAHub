@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Users, Shield, Coins, Crown, Mail, Star } from "lucide-react";
+import { Users, Shield, Coins, Crown, Mail, Star, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,11 +8,24 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useState } from "react";
 import type { User, SmtpConfig } from "@shared/schema";
 import { AdminRoute } from "@/components/admin-route";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useAuth } from "@/hooks/useAuth";
 
 function AdminUsersContent() {
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [credits, setCredits] = useState<number>(0);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
@@ -58,6 +71,28 @@ function AdminUsersContent() {
       toast({
         title: "Lỗi",
         description: "Không thể đặt SMTP mặc định hệ thống",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await apiRequest("DELETE", `/api/admin/users/${userId}`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setUserToDelete(null);
+      toast({
+        title: "Thành công",
+        description: "Đã xóa người dùng",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể xóa người dùng",
         variant: "destructive",
       });
     },
@@ -224,6 +259,18 @@ function AdminUsersContent() {
                         Cấp Admin
                       </Button>
                     )}
+                    {user.id !== currentUser?.id && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setUserToDelete(user)}
+                        className="border-red-500/30 text-red-600 hover:bg-red-50 rounded-xl"
+                        data-testid={`button-delete-${user.id}`}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Xóa
+                      </Button>
+                    )}
                   </>
                 )}
               </div>
@@ -232,6 +279,33 @@ function AdminUsersContent() {
           );
         })}
       </div>
+
+      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa người dùng</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa người dùng <strong>{userToDelete?.email}</strong>?
+              <br />
+              <span className="text-red-600 font-semibold">
+                Hành động này không thể hoàn tác!
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">
+              Hủy
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => userToDelete && deleteUserMutation.mutate(userToDelete.id)}
+              className="bg-red-600 hover:bg-red-700"
+              data-testid="button-confirm-delete"
+            >
+              Xóa người dùng
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

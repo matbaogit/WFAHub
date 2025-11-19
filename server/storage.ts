@@ -76,6 +76,7 @@ export interface IStorage {
   // Admin operations
   getAllUsers(): Promise<User[]>;
   updateUser(userId: string, data: Partial<User>): Promise<User>;
+  deleteUser(userId: string): Promise<void>;
   getAllTemplatesAdmin(): Promise<Template[]>;
   createTemplate(template: Omit<Template, "id" | "createdAt">): Promise<Template>;
   updateTemplate(templateId: string, data: Partial<Template>): Promise<Template>;
@@ -370,6 +371,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return user;
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, userId));
   }
 
   async getAllTemplatesAdmin(): Promise<Template[]> {
