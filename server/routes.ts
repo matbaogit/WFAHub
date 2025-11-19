@@ -273,8 +273,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Token và mật khẩu mới là bắt buộc" });
       }
 
-      if (password.length < 6) {
-        return res.status(400).json({ message: "Mật khẩu phải có ít nhất 6 ký tự" });
+      // Strong password validation
+      if (password.length < 8) {
+        return res.status(400).json({ message: "Password phải có ít nhất 8 ký tự" });
+      }
+      if (!/[A-Z]/.test(password)) {
+        return res.status(400).json({ message: "Password phải có ít nhất 1 chữ hoa" });
+      }
+      if (!/[a-z]/.test(password)) {
+        return res.status(400).json({ message: "Password phải có ít nhất 1 chữ thường" });
+      }
+      if (!/[0-9]/.test(password)) {
+        return res.status(400).json({ message: "Password phải có ít nhất 1 số" });
+      }
+      if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+        return res.status(400).json({ message: "Password phải có ít nhất 1 ký tự đặc biệt" });
       }
 
       const passwordHash = await bcrypt.hash(password, 10);
