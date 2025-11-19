@@ -137,63 +137,6 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      <Card className="mb-8" data-testid="card-quick-actions">
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Button
-            variant="outline"
-            className="h-auto flex-col items-start p-4 hover-elevate"
-            onClick={() => navigate("/bulk-campaigns/new")}
-            data-testid="button-quick-bulk-campaign"
-          >
-            <Mail className="w-8 h-8 mb-2 text-blue-600" />
-            <span className="font-semibold">Gửi Email Hàng Loạt</span>
-            <span className="text-xs text-muted-foreground mt-1">
-              Tạo chiến dịch mới
-            </span>
-          </Button>
-
-          <Button
-            variant="outline"
-            className="h-auto flex-col items-start p-4 hover-elevate"
-            onClick={() => navigate("/quotations")}
-            data-testid="button-quick-quotation"
-          >
-            <FileText className="w-8 h-8 mb-2 text-blue-600" />
-            <span className="font-semibold">Tạo Báo Giá</span>
-            <span className="text-xs text-muted-foreground mt-1">
-              Quản lý báo giá
-            </span>
-          </Button>
-
-          <Button
-            variant="outline"
-            className="h-auto flex-col items-start p-4 hover-elevate"
-            onClick={() => navigate("/service-catalog")}
-            data-testid="button-quick-catalog"
-          >
-            <Package className="w-8 h-8 mb-2 text-blue-600" />
-            <span className="font-semibold">Bảng Giá</span>
-            <span className="text-xs text-muted-foreground mt-1">
-              Danh mục dịch vụ
-            </span>
-          </Button>
-
-          <Button
-            variant="outline"
-            className="h-auto flex-col items-start p-4 hover-elevate"
-            onClick={() => navigate("/templates")}
-            data-testid="button-quick-templates"
-          >
-            <Sparkles className="w-8 h-8 mb-2 text-blue-600" />
-            <span className="font-semibold">Tính Năng</span>
-            <span className="text-xs text-muted-foreground mt-1">
-              Xem tất cả
-            </span>
-          </Button>
-        </CardContent>
-      </Card>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Activities */}
         <Card data-testid="card-recent-activities">
