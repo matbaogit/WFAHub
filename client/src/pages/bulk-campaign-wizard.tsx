@@ -1095,7 +1095,7 @@ export default function BulkCampaignWizard() {
 
         {/* Floating Preview Panel */}
         {isPreviewOpen && (
-          <div className="fixed right-4 top-24 w-96 max-h-[calc(100vh-8rem)] z-50 hidden lg:block">
+          <div className="fixed right-8 top-32 w-96 max-h-[calc(100vh-12rem)] z-50 hidden lg:block">
             <PreviewPane 
               htmlContent={quotationHtmlContent}
               sampleData={sampleData}
@@ -1345,7 +1345,7 @@ export default function BulkCampaignWizard() {
 
         {/* Floating Preview Panel */}
         {isPreviewOpen && (
-          <div className="fixed right-4 top-24 w-96 max-h-[calc(100vh-8rem)] z-50 hidden lg:block">
+          <div className="fixed right-8 top-32 w-96 max-h-[calc(100vh-12rem)] z-50 hidden lg:block">
             <PreviewPane 
               htmlContent={emailBody}
               sampleData={sampleData}
