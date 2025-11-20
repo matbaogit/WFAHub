@@ -21,7 +21,7 @@ const seedTemplates = [
   },
   {
     name: "Send Quotation",
-    nameVi: "Gửi Báo Giá",
+    nameVi: "Chiến dịch gửi mail",
     description: "Create and send professional quotations automatically",
     descriptionVi: "Tạo và gửi báo giá chuyên nghiệp tự động",
     icon: "fileText",
