@@ -249,36 +249,40 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
 
         <div className="separator" />
 
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          onClick={() => editor.chain().focus().setTextAlign('left').run()}
-          className={editor.isActive({ textAlign: 'left' }) ? 'is-active' : ''}
-          title="Align Left"
-        >
-          <AlignLeft className="w-4 h-4" />
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          onClick={() => editor.chain().focus().setTextAlign('center').run()}
-          className={editor.isActive({ textAlign: 'center' }) ? 'is-active' : ''}
-          title="Align Center"
-        >
-          <AlignCenter className="w-4 h-4" />
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          onClick={() => editor.chain().focus().setTextAlign('right').run()}
-          className={editor.isActive({ textAlign: 'right' }) ? 'is-active' : ''}
-          title="Align Right"
-        >
-          <AlignRight className="w-4 h-4" />
-        </Button>
+        {!editor.isActive('floatingImage') && (
+          <>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => editor.chain().focus().setTextAlign('left').run()}
+              className={editor.isActive({ textAlign: 'left' }) ? 'is-active' : ''}
+              title="Align Left"
+            >
+              <AlignLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => editor.chain().focus().setTextAlign('center').run()}
+              className={editor.isActive({ textAlign: 'center' }) ? 'is-active' : ''}
+              title="Align Center"
+            >
+              <AlignCenter className="w-4 h-4" />
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => editor.chain().focus().setTextAlign('right').run()}
+              className={editor.isActive({ textAlign: 'right' }) ? 'is-active' : ''}
+              title="Align Right"
+            >
+              <AlignRight className="w-4 h-4" />
+            </Button>
+          </>
+        )}
 
         <div className="separator" />
 
@@ -608,36 +612,40 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
 
                 <div className="separator" />
 
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => editor.chain().focus().setTextAlign('left').run()}
-                  className={editor.isActive({ textAlign: 'left' }) ? 'is-active' : ''}
-                  title="Align Left"
-                >
-                  <AlignLeft className="w-4 h-4" />
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => editor.chain().focus().setTextAlign('center').run()}
-                  className={editor.isActive({ textAlign: 'center' }) ? 'is-active' : ''}
-                  title="Align Center"
-                >
-                  <AlignCenter className="w-4 h-4" />
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => editor.chain().focus().setTextAlign('right').run()}
-                  className={editor.isActive({ textAlign: 'right' }) ? 'is-active' : ''}
-                  title="Align Right"
-                >
-                  <AlignRight className="w-4 h-4" />
-                </Button>
+                {!editor.isActive('floatingImage') && (
+                  <>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => editor.chain().focus().setTextAlign('left').run()}
+                      className={editor.isActive({ textAlign: 'left' }) ? 'is-active' : ''}
+                      title="Align Left"
+                    >
+                      <AlignLeft className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => editor.chain().focus().setTextAlign('center').run()}
+                      className={editor.isActive({ textAlign: 'center' }) ? 'is-active' : ''}
+                      title="Align Center"
+                    >
+                      <AlignCenter className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => editor.chain().focus().setTextAlign('right').run()}
+                      className={editor.isActive({ textAlign: 'right' }) ? 'is-active' : ''}
+                      title="Align Right"
+                    >
+                      <AlignRight className="w-4 h-4" />
+                    </Button>
+                  </>
+                )}
 
                 <div className="separator" />
 
