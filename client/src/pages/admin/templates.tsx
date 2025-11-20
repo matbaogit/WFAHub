@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Zap, Plus, Edit, Trash2, Power, PowerOff } from "lucide-react";
+import { Zap, Plus, Edit, Trash2, Power, PowerOff, ChevronUp, ChevronDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -297,6 +297,22 @@ function AdminTemplatesContent() {
     },
   });
 
+  const reorderTemplateMutation = useMutation({
+    mutationFn: async ({ id, direction }: { id: string; direction: 'up' | 'down' }) => {
+      return await apiRequest("PUT", `/api/admin/templates/${id}/reorder`, { direction });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/templates"] });
+    },
+    onError: () => {
+      toast({
+        title: "Lỗi",
+        description: "Không thể sắp xếp template",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: InsertTemplate) => {
     if (editingTemplate) {
       updateMutation.mutate({ ...data, id: editingTemplate.id });
@@ -415,6 +431,28 @@ function AdminTemplatesContent() {
               </div>
 
               <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-1">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => reorderTemplateMutation.mutate({ id: template.id, direction: 'up' })}
+                    disabled={templates?.indexOf(template) === 0}
+                    className="h-6 w-6 rounded-md"
+                    data-testid={`button-reorder-up-${template.id}`}
+                  >
+                    <ChevronUp className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => reorderTemplateMutation.mutate({ id: template.id, direction: 'down' })}
+                    disabled={templates?.indexOf(template) === templates.length - 1}
+                    className="h-6 w-6 rounded-md"
+                    data-testid={`button-reorder-down-${template.id}`}
+                  >
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </div>
                 <Button
                   size="sm"
                   variant="outline"
