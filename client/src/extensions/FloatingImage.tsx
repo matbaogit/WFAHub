@@ -6,6 +6,8 @@ import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 const ResizableImageComponent = ({ node, updateAttributes, selected }: any) => {
   const { src, alt, width, height, align } = node.attrs;
   
+  console.log('ResizableImageComponent render - align:', align, 'selected:', selected);
+  
   const handleResize = (e: React.MouseEvent, corner: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -200,8 +202,20 @@ export const FloatingImage = Image.extend({
     ];
   },
 
-  renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, any> }) {
-    return ['img', mergeAttributes(HTMLAttributes)];
+  renderHTML({ HTMLAttributes, node }: { HTMLAttributes: Record<string, any>; node: any }) {
+    const { align, width, height } = node.attrs;
+    return [
+      'div',
+      { 
+        class: `resizable-image-wrapper image-align-${align || 'left'}`,
+        style: width ? `width: ${width}; height: ${height || 'auto'};` : undefined
+      },
+      [
+        'div',
+        { class: 'image-container' },
+        ['img', mergeAttributes(HTMLAttributes, { 'data-align': align })]
+      ]
+    ];
   },
 
   addNodeView() {
@@ -210,8 +224,11 @@ export const FloatingImage = Image.extend({
 
   addCommands() {
     return {
-      setImageAlign: (align: string) => ({ commands, tr, dispatch }: any) => {
-        return commands.updateAttributes('floatingImage', { align });
+      setImageAlign: (align: string) => ({ commands }: any) => {
+        console.log('setImageAlign called with:', align);
+        const result = commands.updateAttributes('floatingImage', { align });
+        console.log('updateAttributes result:', result);
+        return result;
       },
     };
   },
