@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const formSchema = insertQuotationTemplateSchema.extend({
-  name: z.string().min(1, "Tên template không được để trống"),
+  name: z.string().min(1, "Tên mẫu không được để trống"),
   htmlContent: z.string().min(1, "Nội dung HTML không được để trống"),
 });
 
@@ -86,10 +86,10 @@ export default function QuotationTemplates() {
       queryClient.invalidateQueries({ queryKey: ["/api/quotation-templates"] });
       setIsDialogOpen(false);
       form.reset();
-      toast({ title: "Template đã được tạo thành công!" });
+      toast({ title: "Mẫu đã được tạo thành công!" });
     },
     onError: () => {
-      toast({ title: "Lỗi khi tạo template", variant: "destructive" });
+      toast({ title: "Lỗi khi tạo mẫu", variant: "destructive" });
     },
   });
 
@@ -102,10 +102,10 @@ export default function QuotationTemplates() {
       setIsDialogOpen(false);
       setEditingTemplate(null);
       form.reset();
-      toast({ title: "Template đã được cập nhật!" });
+      toast({ title: "Mẫu đã được cập nhật!" });
     },
     onError: () => {
-      toast({ title: "Lỗi khi cập nhật template", variant: "destructive" });
+      toast({ title: "Lỗi khi cập nhật mẫu", variant: "destructive" });
     },
   });
 
@@ -115,10 +115,10 @@ export default function QuotationTemplates() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotation-templates"] });
-      toast({ title: "Template đã được xóa!" });
+      toast({ title: "Mẫu đã được xóa!" });
     },
     onError: () => {
-      toast({ title: "Lỗi khi xóa template", variant: "destructive" });
+      toast({ title: "Lỗi khi xóa mẫu", variant: "destructive" });
     },
   });
 
@@ -167,13 +167,13 @@ export default function QuotationTemplates() {
           <DialogTrigger asChild>
             <Button onClick={handleCreate} data-testid="button-create-template">
               <Plus className="w-4 h-4 mr-2" />
-              Tạo Template
+              Tạo mẫu
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingTemplate ? "Chỉnh sửa Template" : "Tạo Template Mới"}
+                {editingTemplate ? "Chỉnh sửa mẫu" : "Tạo mẫu mới"}
               </DialogTitle>
             </DialogHeader>
 
@@ -198,11 +198,11 @@ export default function QuotationTemplates() {
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Tên Template</FormLabel>
+                            <FormLabel>Tên mẫu</FormLabel>
                             <FormControl>
                               <Input 
                                 {...field} 
-                                placeholder="VD: Template cơ bản" 
+                                placeholder="VD: Mẫu cơ bản" 
                                 data-testid="input-template-name"
                               />
                             </FormControl>
@@ -221,7 +221,7 @@ export default function QuotationTemplates() {
                               <Input 
                                 {...field} 
                                 value={field.value || ""}
-                                placeholder="Mô tả ngắn về template" 
+                                placeholder="Mô tả ngắn về mẫu" 
                                 data-testid="input-template-description"
                               />
                             </FormControl>
@@ -255,7 +255,7 @@ export default function QuotationTemplates() {
                           <FormControl>
                             <Textarea 
                               {...field} 
-                              placeholder="Nhập HTML template..."
+                              placeholder="Nhập HTML cho mẫu..."
                               className="font-mono text-sm min-h-[400px]"
                               data-testid="textarea-html-content"
                             />
@@ -273,7 +273,7 @@ export default function QuotationTemplates() {
                           <FormItem className="flex items-center justify-between rounded-lg border p-4">
                             <div className="space-y-0.5">
                               <FormLabel className="text-base">Kích hoạt</FormLabel>
-                              <FormDescription>Template có thể sử dụng</FormDescription>
+                              <FormDescription>Mẫu có thể sử dụng</FormDescription>
                             </div>
                             <FormControl>
                               <Switch
@@ -293,7 +293,7 @@ export default function QuotationTemplates() {
                           <FormItem className="flex items-center justify-between rounded-lg border p-4">
                             <div className="space-y-0.5">
                               <FormLabel className="text-base">Mặc định</FormLabel>
-                              <FormDescription>Sử dụng làm template mặc định</FormDescription>
+                              <FormDescription>Sử dụng làm mẫu mặc định</FormDescription>
                             </div>
                             <FormControl>
                               <Switch
@@ -325,7 +325,7 @@ export default function QuotationTemplates() {
                         disabled={createMutation.isPending || updateMutation.isPending}
                         data-testid="button-save-template"
                       >
-                        {createMutation.isPending || updateMutation.isPending ? "Đang lưu..." : "Lưu Template"}
+                        {createMutation.isPending || updateMutation.isPending ? "Đang lưu..." : "Lưu mẫu"}
                       </Button>
                     </div>
                   </form>
@@ -337,7 +337,7 @@ export default function QuotationTemplates() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Sparkles className="w-5 h-5" />
-                      Xem trước Template
+                      Xem trước mẫu
                     </CardTitle>
                     <CardDescription>
                       Dữ liệu mẫu được sử dụng để hiển thị preview
@@ -363,10 +363,10 @@ export default function QuotationTemplates() {
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileText className="w-12 h-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground mb-4">Chưa có template nào</p>
+            <p className="text-muted-foreground mb-4">Chưa có mẫu nào</p>
             <Button onClick={handleCreate} data-testid="button-create-first">
               <Plus className="w-4 h-4 mr-2" />
-              Tạo Template Đầu Tiên
+              Tạo mẫu đầu tiên
             </Button>
           </CardContent>
         </Card>
@@ -403,7 +403,7 @@ export default function QuotationTemplates() {
                       size="sm"
                       variant="outline"
                       onClick={() => {
-                        if (confirm("Bạn có chắc muốn xóa template này?")) {
+                        if (confirm("Bạn có chắc muốn xóa mẫu này?")) {
                           deleteMutation.mutate(template.id);
                         }
                       }}
