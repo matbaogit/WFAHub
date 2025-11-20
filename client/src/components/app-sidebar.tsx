@@ -38,11 +38,6 @@ const topMenuItems = [
 // Quotation group submenu items
 const quotationMenuItems = [
   {
-    title: "Báo giá Đơn lẻ",
-    url: "/quotations",
-    icon: FileText,
-  },
-  {
     title: "Chiến dịch Báo Giá",
     url: "/bulk-campaigns",
     icon: SendHorizontal,
