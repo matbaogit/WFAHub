@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import type { Template } from "@shared/schema";
 import { LucideIcon, Sparkles } from "lucide-react";
 
@@ -10,6 +11,8 @@ interface TemplateCardProps {
 }
 
 export function TemplateCard({ template, icon: Icon, onExecute }: TemplateCardProps) {
+  const isInactive = template.isActive === 0;
+  
   return (
     <Card className="group relative overflow-hidden p-8 border-slate-200/60 shadow-lg shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-300/60 hover:-translate-y-2 transition-all duration-300 flex flex-col bg-gradient-to-br from-white to-slate-50/30">
       {/* Gradient overlay on hover */}
@@ -20,9 +23,16 @@ export function TemplateCard({ template, icon: Icon, onExecute }: TemplateCardPr
           <Icon className="w-8 h-8 text-white" />
         </div>
         
-        <h3 className="text-xl font-bold mb-3 text-slate-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
-          {template.nameVi}
-        </h3>
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-xl font-bold text-slate-900 line-clamp-1 group-hover:text-blue-600 transition-colors">
+            {template.nameVi}
+          </h3>
+          {isInactive && (
+            <Badge variant="outline" className="text-xs bg-slate-100 text-slate-600 border-slate-300">
+              Tạm dừng
+            </Badge>
+          )}
+        </div>
         
         <p className="text-sm text-slate-600 mb-6 line-clamp-2 flex-1 leading-relaxed">
           {template.descriptionVi}
@@ -40,7 +50,8 @@ export function TemplateCard({ template, icon: Icon, onExecute }: TemplateCardPr
           <Button 
             onClick={onExecute}
             size="sm"
-            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105"
+            disabled={isInactive}
+            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             data-testid={`button-run-${template.id}`}
           >
             Bắt đầu ngay
