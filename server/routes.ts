@@ -636,6 +636,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reorder template (admin only)
+  app.put("/api/admin/templates/:id/reorder", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { direction } = req.body; // 'up' or 'down'
+      
+      if (!direction || !['up', 'down'].includes(direction)) {
+        return res.status(400).json({ message: "Direction must be 'up' or 'down'" });
+      }
+      
+      await storage.reorderTemplate(id, direction);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error reordering template:", error);
+      res.status(500).json({ message: "Failed to reorder template" });
+    }
+  });
+
   // Get admin stats
   app.get("/api/admin/stats", isAuthenticated, isAdmin, async (req, res) => {
     try {

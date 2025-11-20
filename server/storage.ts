@@ -334,7 +334,7 @@ export class DatabaseStorage implements IStorage {
 
   // Template operations
   async getAllTemplates(): Promise<Template[]> {
-    return await db.select().from(templates).where(eq(templates.isActive, 1));
+    return await db.select().from(templates).orderBy(templates.sortOrder, desc(templates.createdAt));
   }
 
   async getTemplate(id: string): Promise<Template | undefined> {
@@ -378,7 +378,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllTemplatesAdmin(): Promise<Template[]> {
-    return await db.select().from(templates).orderBy(desc(templates.createdAt));
+    return await db.select().from(templates).orderBy(templates.sortOrder, desc(templates.createdAt));
   }
 
   async createTemplate(template: Omit<Template, "id" | "createdAt">): Promise<Template> {
@@ -400,6 +400,52 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTemplate(templateId: string): Promise<void> {
     await db.delete(templates).where(eq(templates.id, templateId));
+  }
+
+  async reorderTemplate(templateId: string, direction: 'up' | 'down'): Promise<void> {
+    // Get the current template
+    const [currentTemplate] = await db
+      .select()
+      .from(templates)
+      .where(eq(templates.id, templateId));
+    
+    if (!currentTemplate) {
+      throw new Error("Template not found");
+    }
+
+    // Get all templates sorted by sortOrder
+    const allTemplates = await db
+      .select()
+      .from(templates)
+      .orderBy(templates.sortOrder);
+
+    // Find current template index
+    const currentIndex = allTemplates.findIndex(t => t.id === templateId);
+    
+    if (currentIndex === -1) {
+      throw new Error("Template not found in list");
+    }
+
+    // Determine swap target
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    
+    if (targetIndex < 0 || targetIndex >= allTemplates.length) {
+      // Already at the edge, nothing to do
+      return;
+    }
+
+    const targetTemplate = allTemplates[targetIndex];
+
+    // Swap sortOrder values
+    await db
+      .update(templates)
+      .set({ sortOrder: targetTemplate.sortOrder })
+      .where(eq(templates.id, currentTemplate.id));
+
+    await db
+      .update(templates)
+      .set({ sortOrder: currentTemplate.sortOrder })
+      .where(eq(templates.id, targetTemplate.id));
   }
 
   async getStats(): Promise<{
