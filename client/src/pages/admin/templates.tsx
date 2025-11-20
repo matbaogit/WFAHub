@@ -1,12 +1,12 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Zap, Plus, Edit, Trash2, Power, PowerOff, ChevronUp, ChevronDown } from "lucide-react";
+import { Zap, Plus, Edit, Trash2, Power, PowerOff, GripVertical } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Template, InsertTemplate } from "@shared/schema";
 import { AdminRoute } from "@/components/admin-route";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,23 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTemplateSchema } from "@shared/schema";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface TemplateFormProps {
   form: any;
@@ -185,11 +202,137 @@ function TemplateForm({ form, onSubmit, isPending, onCancel }: TemplateFormProps
   );
 }
 
+interface SortableTemplateCardProps {
+  template: Template;
+  onEdit: (template: Template) => void;
+  onToggle: (id: string, isActive: number) => void;
+  onDelete: (template: Template) => void;
+}
+
+function SortableTemplateCard({ template, onEdit, onToggle, onDelete }: SortableTemplateCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: template.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <Card className={`bg-gradient-to-br from-white to-slate-50/30 border-2 shadow-lg p-6 transition-all ${
+        template.isActive === 1 
+          ? "border-purple-200/60" 
+          : "border-slate-200/60 opacity-60"
+      }`} data-testid={`card-template-${template.id}`}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4 flex-1">
+            <div 
+              {...attributes} 
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing mt-2"
+              data-testid={`drag-handle-${template.id}`}
+            >
+              <GripVertical className="w-5 h-5 text-slate-400 hover:text-slate-600 transition-colors" />
+            </div>
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
+              template.isActive === 1
+                ? "bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/30"
+                : "bg-gradient-to-br from-slate-400 to-slate-500"
+            }`}>
+              <Zap className="w-8 h-8 text-white" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-xl font-bold text-slate-900" data-testid={`text-template-name-${template.id}`}>{template.nameVi}</h3>
+                {template.isActive === 1 ? (
+                  <span className="px-3 py-1 rounded-lg bg-gradient-to-r from-green-500/10 to-green-600/10 border border-green-500/20 text-green-600 text-xs font-semibold flex items-center gap-1">
+                    <Power className="w-3 h-3" />
+                    Hoạt động
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 rounded-lg bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/20 text-red-600 text-xs font-semibold flex items-center gap-1">
+                    <PowerOff className="w-3 h-3" />
+                    Tắt
+                  </span>
+                )}
+              </div>
+              <p className="text-slate-600 mb-3">{template.descriptionVi}</p>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500/10 to-blue-600/10 border border-cyan-500/20">
+                  <span className="text-slate-600">Chi phí:</span>
+                  <span className="font-mono font-bold text-blue-600">{template.creditCost}</span>
+                  <span className="text-slate-500">tín dụng</span>
+                </div>
+                <div className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600">
+                  ID: <span className="font-mono text-xs">{template.id.slice(0, 8)}...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onEdit(template)}
+              className="rounded-xl"
+              data-testid={`button-edit-template-${template.id}`}
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Sửa
+            </Button>
+            <Button
+              size="sm"
+              variant={template.isActive === 1 ? "outline" : "default"}
+              onClick={() => onToggle(template.id, template.isActive)}
+              className={template.isActive === 1 
+                ? "rounded-xl" 
+                : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl"
+              }
+              data-testid={`button-toggle-template-${template.id}`}
+            >
+              {template.isActive === 1 ? (
+                <>
+                  <PowerOff className="w-4 h-4 mr-2" />
+                  Tắt
+                </>
+              ) : (
+                <>
+                  <Power className="w-4 h-4 mr-2" />
+                  Bật
+                </>
+              )}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onDelete(template)}
+              className="rounded-xl border-red-200 text-red-600 hover:bg-red-50"
+              data-testid={`button-delete-template-${template.id}`}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 function AdminTemplatesContent() {
   const { toast } = useToast();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [deletingTemplate, setDeletingTemplate] = useState<Template | null>(null);
+  const [localTemplates, setLocalTemplates] = useState<Template[]>([]);
 
   const { data: templates, isLoading } = useQuery<Template[]>({
     queryKey: ["/api/admin/templates"],
@@ -297,21 +440,60 @@ function AdminTemplatesContent() {
     },
   });
 
-  const reorderTemplateMutation = useMutation({
-    mutationFn: async ({ id, direction }: { id: string; direction: 'up' | 'down' }) => {
-      return await apiRequest("PUT", `/api/admin/templates/${id}/reorder`, { direction });
+  const bulkReorderMutation = useMutation({
+    mutationFn: async (templateOrders: Array<{ id: string; sortOrder: number }>) => {
+      return await apiRequest("PUT", "/api/admin/templates/bulk-reorder", { templateOrders });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/templates"] });
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật thứ tự templates",
+      });
     },
     onError: () => {
       toast({
         title: "Lỗi",
-        description: "Không thể sắp xếp template",
+        description: "Không thể sắp xếp templates",
         variant: "destructive",
       });
     },
   });
+
+  // Sync local templates with fetched templates
+  useEffect(() => {
+    if (templates) {
+      setLocalTemplates(templates);
+    }
+  }, [templates]);
+
+  // Setup drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = localTemplates.findIndex((t) => t.id === active.id);
+      const newIndex = localTemplates.findIndex((t) => t.id === over.id);
+
+      const newOrder = arrayMove(localTemplates, oldIndex, newIndex);
+      setLocalTemplates(newOrder);
+
+      // Update sort order in database
+      const templateOrders = newOrder.map((template, index) => ({
+        id: template.id,
+        sortOrder: index,
+      }));
+
+      bulkReorderMutation.mutate(templateOrders);
+    }
+  };
 
   const onSubmit = (data: InsertTemplate) => {
     if (editingTemplate) {
@@ -385,123 +567,30 @@ function AdminTemplatesContent() {
         </Button>
       </div>
 
-      <div className="space-y-4">
-        {templates?.map((template) => (
-          <Card key={template.id} className={`bg-gradient-to-br from-white to-slate-50/30 border-2 shadow-lg p-6 transition-all ${
-            template.isActive === 1 
-              ? "border-purple-200/60" 
-              : "border-slate-200/60 opacity-60"
-          }`} data-testid={`card-template-${template.id}`}>
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-4 flex-1">
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
-                  template.isActive === 1
-                    ? "bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/30"
-                    : "bg-gradient-to-br from-slate-400 to-slate-500"
-                }`}>
-                  <Zap className="w-8 h-8 text-white" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-bold text-slate-900" data-testid={`text-template-name-${template.id}`}>{template.nameVi}</h3>
-                    {template.isActive === 1 ? (
-                      <span className="px-3 py-1 rounded-lg bg-gradient-to-r from-green-500/10 to-green-600/10 border border-green-500/20 text-green-600 text-xs font-semibold flex items-center gap-1">
-                        <Power className="w-3 h-3" />
-                        Hoạt động
-                      </span>
-                    ) : (
-                      <span className="px-3 py-1 rounded-lg bg-gradient-to-r from-red-500/10 to-red-600/10 border border-red-500/20 text-red-600 text-xs font-semibold flex items-center gap-1">
-                        <PowerOff className="w-3 h-3" />
-                        Tắt
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-slate-600 mb-3">{template.descriptionVi}</p>
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500/10 to-blue-600/10 border border-cyan-500/20">
-                      <span className="text-slate-600">Chi phí:</span>
-                      <span className="font-mono font-bold text-blue-600">{template.creditCost}</span>
-                      <span className="text-slate-500">tín dụng</span>
-                    </div>
-                    <div className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600">
-                      ID: <span className="font-mono text-xs">{template.id.slice(0, 8)}...</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div className="flex flex-col gap-1">
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    onClick={() => reorderTemplateMutation.mutate({ id: template.id, direction: 'up' })}
-                    disabled={templates?.indexOf(template) === 0 || reorderTemplateMutation.isPending}
-                    className="h-6 w-6 rounded-md"
-                    data-testid={`button-reorder-up-${template.id}`}
-                  >
-                    <ChevronUp className="w-3 h-3" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    onClick={() => reorderTemplateMutation.mutate({ id: template.id, direction: 'down' })}
-                    disabled={templates?.indexOf(template) === templates.length - 1 || reorderTemplateMutation.isPending}
-                    className="h-6 w-6 rounded-md"
-                    data-testid={`button-reorder-down-${template.id}`}
-                  >
-                    <ChevronDown className="w-3 h-3" />
-                  </Button>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => openEditDialog(template)}
-                  className="rounded-xl"
-                  data-testid={`button-edit-template-${template.id}`}
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Sửa
-                </Button>
-                <Button
-                  size="sm"
-                  variant={template.isActive === 1 ? "outline" : "default"}
-                  onClick={() => toggleTemplateMutation.mutate({ 
-                    id: template.id, 
-                    isActive: template.isActive 
-                  })}
-                  className={template.isActive === 1 
-                    ? "rounded-xl" 
-                    : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-xl"
-                  }
-                  data-testid={`button-toggle-template-${template.id}`}
-                >
-                  {template.isActive === 1 ? (
-                    <>
-                      <PowerOff className="w-4 h-4 mr-2" />
-                      Tắt
-                    </>
-                  ) : (
-                    <>
-                      <Power className="w-4 h-4 mr-2" />
-                      Bật
-                    </>
-                  )}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setDeletingTemplate(template)}
-                  className="rounded-xl border-red-200 text-red-600 hover:bg-red-50"
-                  data-testid={`button-delete-template-${template.id}`}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={localTemplates.map((t) => t.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-4">
+            {localTemplates.map((template) => (
+              <SortableTemplateCard
+                key={template.id}
+                template={template}
+                onEdit={openEditDialog}
+                onToggle={(id, isActive) =>
+                  toggleTemplateMutation.mutate({ id, isActive })
+                }
+                onDelete={setDeletingTemplate}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
       {/* Create Template Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={(open) => !open && setIsCreateOpen(false)}>
