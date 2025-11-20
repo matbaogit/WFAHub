@@ -48,7 +48,7 @@ const quotationMenuItems = [
     icon: Layout,
   },
   {
-    title: "Mẫu Email",
+    title: "Mẫu nội dung email",
     url: "/email-templates",
     icon: Mail,
   },
