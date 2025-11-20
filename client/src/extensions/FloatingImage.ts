@@ -76,6 +76,17 @@ export const FloatingImage = Image.extend({
           return { height: attributes.height };
         },
       },
+      
+      // Alignment attribute
+      align: {
+        default: 'left',
+        parseHTML: (element: HTMLElement) => {
+          return element.getAttribute('data-align') || 'left';
+        },
+        renderHTML: (attributes: Record<string, any>) => {
+          return { 'data-align': attributes.align };
+        },
+      },
     };
   },
 
@@ -92,6 +103,14 @@ export const FloatingImage = Image.extend({
   },
 
   renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, any> }) {
-    return ['img', mergeAttributes(HTMLAttributes)];
+    return ['img', mergeAttributes(HTMLAttributes, { class: 'resizable-image' })];
+  },
+
+  addCommands() {
+    return {
+      setImageAlign: (align: string) => ({ commands }) => {
+        return commands.updateAttributes('floatingImage', { align });
+      },
+    };
   },
 });
