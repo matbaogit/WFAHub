@@ -77,19 +77,41 @@ const ResizableImageComponent = ({ node, updateAttributes, selected }: any) => {
                      align === 'right' ? 'image-align-right' : 'image-align-left';
 
   return (
-    <NodeViewWrapper className={`resizable-image-wrapper ${alignClass} ${selected ? 'selected' : ''}`}>
+    <NodeViewWrapper 
+      className={`resizable-image-wrapper ${alignClass} ${selected ? 'selected' : ''}`}
+      draggable={false}
+      data-drag-handle
+    >
       <div className="image-container" style={{ width: width || 'auto', height: height || 'auto' }}>
         <img 
           src={src} 
           alt={alt || ''} 
           style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          draggable={false}
+          onDragStart={(e) => e.preventDefault()}
         />
         {selected && (
           <>
-            <div className="resize-handle resize-handle-tl" onMouseDown={(e) => handleResize(e, 'top-left')} />
-            <div className="resize-handle resize-handle-tr" onMouseDown={(e) => handleResize(e, 'top-right')} />
-            <div className="resize-handle resize-handle-bl" onMouseDown={(e) => handleResize(e, 'bottom-left')} />
-            <div className="resize-handle resize-handle-br" onMouseDown={(e) => handleResize(e, 'bottom-right')} />
+            <div 
+              className="resize-handle resize-handle-tl" 
+              onMouseDown={(e) => handleResize(e, 'top-left')}
+              draggable={false}
+            />
+            <div 
+              className="resize-handle resize-handle-tr" 
+              onMouseDown={(e) => handleResize(e, 'top-right')}
+              draggable={false}
+            />
+            <div 
+              className="resize-handle resize-handle-bl" 
+              onMouseDown={(e) => handleResize(e, 'bottom-left')}
+              draggable={false}
+            />
+            <div 
+              className="resize-handle resize-handle-br" 
+              onMouseDown={(e) => handleResize(e, 'bottom-right')}
+              draggable={false}
+            />
           </>
         )}
       </div>
@@ -188,27 +210,8 @@ export const FloatingImage = Image.extend({
 
   addCommands() {
     return {
-      setImageAlign: (align: string) => ({ commands, state, tr }: any) => {
-        const { selection } = state;
-        let nodePos = null;
-        
-        // Try to find the floatingImage node at or near current selection
-        state.doc.nodesBetween(selection.from - 1, selection.to + 1, (node: any, pos: number) => {
-          if (node.type.name === 'floatingImage') {
-            nodePos = pos;
-            return false; // stop searching
-          }
-        });
-        
-        if (nodePos !== null) {
-          tr.setNodeMarkup(nodePos, null, { 
-            ...state.doc.nodeAt(nodePos).attrs, 
-            align 
-          });
-          return true;
-        }
-        
-        return false;
+      setImageAlign: (align: string) => ({ commands, tr, dispatch }: any) => {
+        return commands.updateAttributes('floatingImage', { align });
       },
     };
   },
