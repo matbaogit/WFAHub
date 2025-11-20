@@ -8,16 +8,19 @@ const ResizableImageComponent = ({ node, updateAttributes, selected }: any) => {
   
   const handleResize = (e: React.MouseEvent, corner: string) => {
     e.preventDefault();
-    const img = e.currentTarget.parentElement?.querySelector('img') as HTMLImageElement;
-    if (!img) return;
+    e.stopPropagation();
+    
+    const container = e.currentTarget.parentElement as HTMLElement;
+    if (!container) return;
 
     const startX = e.clientX;
     const startY = e.clientY;
-    const startWidth = img.offsetWidth;
-    const startHeight = img.offsetHeight;
+    const startWidth = container.offsetWidth;
+    const startHeight = container.offsetHeight;
     const aspectRatio = startWidth / startHeight;
 
     const onMouseMove = (moveEvent: MouseEvent) => {
+      moveEvent.preventDefault();
       let newWidth = startWidth;
       let newHeight = startHeight;
 
@@ -43,15 +46,27 @@ const ResizableImageComponent = ({ node, updateAttributes, selected }: any) => {
       newWidth = Math.max(50, newWidth);
       newHeight = Math.max(50, newHeight);
 
-      updateAttributes({
-        width: `${newWidth}px`,
-        height: `${newHeight}px`,
-      });
+      // Update container size directly for smooth resize
+      container.style.width = `${newWidth}px`;
+      container.style.height = `${newHeight}px`;
     };
 
     const onMouseUp = () => {
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
+      
+      // Only update attributes once when mouse is released
+      const finalWidth = container.offsetWidth;
+      const finalHeight = container.offsetHeight;
+      
+      // Clear inline styles and use attributes instead
+      container.style.width = '';
+      container.style.height = '';
+      
+      updateAttributes({
+        width: `${finalWidth}px`,
+        height: `${finalHeight}px`,
+      });
     };
 
     document.addEventListener('mousemove', onMouseMove);
@@ -173,8 +188,27 @@ export const FloatingImage = Image.extend({
 
   addCommands() {
     return {
-      setImageAlign: (align: string) => ({ commands }: any) => {
-        return commands.updateAttributes('floatingImage', { align });
+      setImageAlign: (align: string) => ({ commands, state, tr }: any) => {
+        const { selection } = state;
+        let nodePos = null;
+        
+        // Try to find the floatingImage node at or near current selection
+        state.doc.nodesBetween(selection.from - 1, selection.to + 1, (node: any, pos: number) => {
+          if (node.type.name === 'floatingImage') {
+            nodePos = pos;
+            return false; // stop searching
+          }
+        });
+        
+        if (nodePos !== null) {
+          tr.setNodeMarkup(nodePos, null, { 
+            ...state.doc.nodeAt(nodePos).attrs, 
+            align 
+          });
+          return true;
+        }
+        
+        return false;
       },
     };
   },
