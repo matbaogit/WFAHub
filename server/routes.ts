@@ -58,7 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup multer for file uploads (memory storage)
   const upload = multer({ 
     storage: multer.memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+    limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
   });
 
   // Image upload endpoint for TinyMCE editor
