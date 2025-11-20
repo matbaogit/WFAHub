@@ -83,8 +83,9 @@ const ResizableImageComponent = ({ node, updateAttributes, selected }: any) => {
       className={`resizable-image-wrapper ${alignClass} ${selected ? 'selected' : ''}`}
       draggable={false}
       data-drag-handle
+      style={{ width: width || 'auto', height: height || 'auto' }}
     >
-      <div className="image-container" style={{ width: width || 'auto', height: height || 'auto' }}>
+      <div className="image-container">
         <img 
           src={src} 
           alt={alt || ''} 
