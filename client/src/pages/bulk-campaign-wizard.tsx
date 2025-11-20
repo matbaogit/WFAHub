@@ -1712,17 +1712,6 @@ export default function BulkCampaignWizard() {
 
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
-      <div className="mb-6">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/bulk-campaigns")}
-          data-testid="button-back-to-list"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Quay lại danh sách
-        </Button>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl">Tạo chiến dịch gửi email hàng loạt</CardTitle>
