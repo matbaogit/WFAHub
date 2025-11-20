@@ -12,13 +12,14 @@ const ResizableImageComponent = ({ node, updateAttributes, selected }: any) => {
     e.preventDefault();
     e.stopPropagation();
     
-    const container = e.currentTarget.parentElement as HTMLElement;
-    if (!container) return;
+    // Find the wrapper (NodeViewWrapper)
+    const wrapper = (e.currentTarget.parentElement?.parentElement) as HTMLElement;
+    if (!wrapper) return;
 
     const startX = e.clientX;
     const startY = e.clientY;
-    const startWidth = container.offsetWidth;
-    const startHeight = container.offsetHeight;
+    const startWidth = wrapper.offsetWidth;
+    const startHeight = wrapper.offsetHeight;
     const aspectRatio = startWidth / startHeight;
 
     const onMouseMove = (moveEvent: MouseEvent) => {
@@ -48,9 +49,9 @@ const ResizableImageComponent = ({ node, updateAttributes, selected }: any) => {
       newWidth = Math.max(50, newWidth);
       newHeight = Math.max(50, newHeight);
 
-      // Update container size directly for smooth resize
-      container.style.width = `${newWidth}px`;
-      container.style.height = `${newHeight}px`;
+      // Update wrapper size directly for smooth resize
+      wrapper.style.width = `${newWidth}px`;
+      wrapper.style.height = `${newHeight}px`;
     };
 
     const onMouseUp = () => {
@@ -58,12 +59,12 @@ const ResizableImageComponent = ({ node, updateAttributes, selected }: any) => {
       document.removeEventListener('mouseup', onMouseUp);
       
       // Only update attributes once when mouse is released
-      const finalWidth = container.offsetWidth;
-      const finalHeight = container.offsetHeight;
+      const finalWidth = wrapper.offsetWidth;
+      const finalHeight = wrapper.offsetHeight;
       
       // Clear inline styles and use attributes instead
-      container.style.width = '';
-      container.style.height = '';
+      wrapper.style.width = '';
+      wrapper.style.height = '';
       
       updateAttributes({
         width: `${finalWidth}px`,
