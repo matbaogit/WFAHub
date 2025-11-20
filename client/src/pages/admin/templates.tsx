@@ -436,7 +436,7 @@ function AdminTemplatesContent() {
                     size="icon"
                     variant="outline"
                     onClick={() => reorderTemplateMutation.mutate({ id: template.id, direction: 'up' })}
-                    disabled={templates?.indexOf(template) === 0}
+                    disabled={templates?.indexOf(template) === 0 || reorderTemplateMutation.isPending}
                     className="h-6 w-6 rounded-md"
                     data-testid={`button-reorder-up-${template.id}`}
                   >
@@ -446,7 +446,7 @@ function AdminTemplatesContent() {
                     size="icon"
                     variant="outline"
                     onClick={() => reorderTemplateMutation.mutate({ id: template.id, direction: 'down' })}
-                    disabled={templates?.indexOf(template) === templates.length - 1}
+                    disabled={templates?.indexOf(template) === templates.length - 1 || reorderTemplateMutation.isPending}
                     className="h-6 w-6 rounded-md"
                     data-testid={`button-reorder-down-${template.id}`}
                   >
