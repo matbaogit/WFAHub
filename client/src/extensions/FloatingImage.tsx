@@ -6,8 +6,6 @@ import { NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 const ResizableImageComponent = ({ node, updateAttributes, selected }: any) => {
   const { src, alt, width, height, align } = node.attrs;
   
-  console.log('ResizableImageComponent render - align:', align, 'selected:', selected);
-  
   const handleResize = (e: React.MouseEvent, corner: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -227,10 +225,7 @@ export const FloatingImage = Image.extend({
   addCommands() {
     return {
       setImageAlign: (align: string) => ({ commands }: any) => {
-        console.log('setImageAlign called with:', align);
-        const result = commands.updateAttributes('floatingImage', { align });
-        console.log('updateAttributes result:', result);
-        return result;
+        return commands.updateAttributes('floatingImage', { align });
       },
     };
   },
