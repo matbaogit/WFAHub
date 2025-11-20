@@ -43,7 +43,7 @@ const quotationMenuItems = [
     icon: SendHorizontal,
   },
   {
-    title: "Mẫu Báo Giá",
+    title: "Mẫu tệp đính kèm",
     url: "/quotation-templates",
     icon: Layout,
   },
