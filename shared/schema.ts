@@ -54,6 +54,7 @@ export const templates = pgTable("templates", {
   creditCost: integer("credit_cost").default(10).notNull(),
   inputSchema: jsonb("input_schema").notNull(),
   isActive: integer("is_active").default(1).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
