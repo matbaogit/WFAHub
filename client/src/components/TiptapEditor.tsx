@@ -338,6 +338,41 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
           <ImageIcon className="w-4 h-4" />
         </Button>
 
+        {editor.isActive('floatingImage') && (
+          <>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => (editor.chain().focus() as any).setImageAlign('left').run()}
+              className={editor.getAttributes('floatingImage').align === 'left' ? 'is-active' : ''}
+              title="Căn trái"
+            >
+              <AlignLeft className="w-4 h-4" />
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => (editor.chain().focus() as any).setImageAlign('center').run()}
+              className={editor.getAttributes('floatingImage').align === 'center' ? 'is-active' : ''}
+              title="Căn giữa"
+            >
+              <AlignCenter className="w-4 h-4" />
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => (editor.chain().focus() as any).setImageAlign('right').run()}
+              className={editor.getAttributes('floatingImage').align === 'right' ? 'is-active' : ''}
+              title="Căn phải"
+            >
+              <AlignRight className="w-4 h-4" />
+            </Button>
+          </>
+        )}
+
         <div className="separator" />
 
         <Button
@@ -661,6 +696,41 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
                 >
                   <ImageIcon className="w-4 h-4" />
                 </Button>
+
+                {editor.isActive('floatingImage') && (
+                  <>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => (editor.chain().focus() as any).setImageAlign('left').run()}
+                      className={editor.getAttributes('floatingImage').align === 'left' ? 'is-active' : ''}
+                      title="Căn trái"
+                    >
+                      <AlignLeft className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => (editor.chain().focus() as any).setImageAlign('center').run()}
+                      className={editor.getAttributes('floatingImage').align === 'center' ? 'is-active' : ''}
+                      title="Căn giữa"
+                    >
+                      <AlignCenter className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => (editor.chain().focus() as any).setImageAlign('right').run()}
+                      className={editor.getAttributes('floatingImage').align === 'right' ? 'is-active' : ''}
+                      title="Căn phải"
+                    >
+                      <AlignRight className="w-4 h-4" />
+                    </Button>
+                  </>
+                )}
 
                 <div className="separator" />
 

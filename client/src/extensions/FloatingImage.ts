@@ -108,7 +108,7 @@ export const FloatingImage = Image.extend({
 
   addCommands() {
     return {
-      setImageAlign: (align: string) => ({ commands }) => {
+      setImageAlign: (align: string) => ({ commands }: any) => {
         return commands.updateAttributes('floatingImage', { align });
       },
     };
