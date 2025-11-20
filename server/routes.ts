@@ -654,6 +654,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk update template order (admin only)
+  app.put("/api/admin/templates/bulk-reorder", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { templateOrders } = req.body; // Array of { id, sortOrder }
+      
+      if (!Array.isArray(templateOrders)) {
+        return res.status(400).json({ message: "templateOrders must be an array" });
+      }
+      
+      await storage.bulkUpdateTemplateSortOrder(templateOrders);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error bulk reordering templates:", error);
+      res.status(500).json({ message: "Failed to bulk reorder templates" });
+    }
+  });
+
   // Get admin stats
   app.get("/api/admin/stats", isAuthenticated, isAdmin, async (req, res) => {
     try {

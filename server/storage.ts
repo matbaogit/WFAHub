@@ -81,6 +81,8 @@ export interface IStorage {
   createTemplate(template: Omit<Template, "id" | "createdAt">): Promise<Template>;
   updateTemplate(templateId: string, data: Partial<Template>): Promise<Template>;
   deleteTemplate(templateId: string): Promise<void>;
+  reorderTemplate(templateId: string, direction: 'up' | 'down'): Promise<void>;
+  bulkUpdateTemplateSortOrder(templateOrders: Array<{ id: string; sortOrder: number }>): Promise<void>;
   getStats(): Promise<{
     totalUsers: number;
     totalExecutions: number;
@@ -446,6 +448,16 @@ export class DatabaseStorage implements IStorage {
       .update(templates)
       .set({ sortOrder: currentTemplate.sortOrder })
       .where(eq(templates.id, targetTemplate.id));
+  }
+
+  async bulkUpdateTemplateSortOrder(templateOrders: Array<{ id: string; sortOrder: number }>): Promise<void> {
+    // Update each template's sortOrder
+    for (const { id, sortOrder } of templateOrders) {
+      await db
+        .update(templates)
+        .set({ sortOrder })
+        .where(eq(templates.id, id));
+    }
   }
 
   async getStats(): Promise<{
