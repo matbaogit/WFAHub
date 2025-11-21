@@ -655,11 +655,22 @@ export default function BulkCampaignWizard() {
   });
 
   const saveTemplateMutation = useMutation({
-    mutationFn: async (data: { name: string; content: string }) => {
+    mutationFn: async (data: { name: string; htmlContent: string }) => {
       return apiRequest("POST", "/api/quotation-templates", data);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/quotation-templates"] });
+      toast({
+        title: "Đã lưu mẫu!",
+        description: "Mẫu tệp đính kèm đã được lưu thành công.",
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Lưu mẫu thất bại",
+        description: "Vui lòng thử lại.",
+      });
     },
   });
 
@@ -790,22 +801,23 @@ export default function BulkCampaignWizard() {
 
     // Step 2: Save template if checkbox is checked
     if (currentStep === 2 && saveAsTemplate && step2Mode !== null) {
+      // Validate that there is content to save
+      if (!quotationHtmlContent || quotationHtmlContent.trim() === '') {
+        toast({
+          variant: "destructive",
+          title: "Không có nội dung",
+          description: "Vui lòng chọn mẫu hoặc soạn nội dung trước khi lưu.",
+        });
+        return;
+      }
+      
       try {
         await saveTemplateMutation.mutateAsync({
           name: `${campaignName} - Mẫu tệp đính kèm`,
-          content: quotationHtmlContent,
-        });
-        
-        toast({
-          title: "Đã lưu mẫu!",
-          description: "Mẫu tệp đính kèm đã được lưu thành công.",
+          htmlContent: quotationHtmlContent,
         });
       } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Lưu mẫu thất bại",
-          description: "Vui lòng thử lại.",
-        });
+        // Error toast already handled by mutation's onError
         return;
       }
     }
