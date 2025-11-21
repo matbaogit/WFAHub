@@ -27,8 +27,9 @@ export default function SmtpConfiguration() {
   const [testEmail, setTestEmail] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const { data: config, isLoading } = useQuery<SmtpConfig | null>({
+  const { data: config, isLoading, isError } = useQuery<SmtpConfig | null>({
     queryKey: ["/api/smtp-config"],
+    retry: false,
   });
 
   const testMutation = useMutation({
@@ -114,7 +115,7 @@ export default function SmtpConfiguration() {
         </p>
       </div>
 
-      {!config ? (
+      {!config || isError ? (
         <Card className="p-12 text-center">
           <Server className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold mb-2">Chưa có cấu hình SMTP</h3>
