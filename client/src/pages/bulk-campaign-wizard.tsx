@@ -774,7 +774,7 @@ export default function BulkCampaignWizard() {
             <span className="text-xs mt-2 text-muted-foreground">
               {step === 1 && "Nhập dữ liệu"}
               {step === 2 && "Mẫu tệp đính kèm"}
-              {step === 3 && "Nội dung mail"}
+              {step === 3 && "Nội dung email"}
               {step === 4 && "Xem lại và gửi"}
             </span>
           </div>
