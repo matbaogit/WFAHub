@@ -70,6 +70,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -644,6 +645,15 @@ export default function BulkCampaignWizard() {
         title: "Áp dụng mapping thất bại",
         description: error.message,
       });
+    },
+  });
+
+  const saveTemplateMutation = useMutation({
+    mutationFn: async (data: { name: string; content: string }) => {
+      return apiRequest("POST", "/api/quotation-templates", data);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/quotation-templates"] });
     },
   });
 
