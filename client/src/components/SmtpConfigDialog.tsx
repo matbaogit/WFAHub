@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Server, TestTube, ExternalLink, AlertCircle, Trash2, Loader2, CheckCircle } from "lucide-react";
+import { Server, TestTube, ExternalLink, AlertCircle, Trash2, Loader2, CheckCircle, HelpCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertSmtpConfigSchema } from "@shared/schema";
@@ -51,7 +52,6 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
       port: config?.port || 587,
       username: config?.username || "",
       password: "",
-      fromEmail: config?.fromEmail || "",
       fromName: config?.fromName || undefined,
     },
   });
@@ -126,7 +126,6 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
         port: 587,
         username: "",
         password: "",
-        fromEmail: "",
         fromName: undefined,
       });
       setIsDeleteDialogOpen(false);
@@ -200,13 +199,31 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
   };
 
   const onSubmit = (data: InsertSmtpConfig) => {
-    if (config && !data.password) {
-      const { password, ...dataWithoutPassword } = data;
+    const submitData = { ...data, fromEmail: data.username };
+    
+    if (config && !submitData.password) {
+      const { password, ...dataWithoutPassword } = submitData;
       saveMutation.mutate(dataWithoutPassword as InsertSmtpConfig);
     } else {
-      saveMutation.mutate(data);
+      saveMutation.mutate(submitData);
     }
   };
+
+  const FieldLabel = ({ children, tooltip }: { children: string; tooltip: string }) => (
+    <div className="flex items-center gap-1.5">
+      <span>{children}</span>
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent side="right" className="max-w-xs">
+            <p className="text-sm">{tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  );
 
   return (
     <>
@@ -229,7 +246,11 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
                 name="provider"
                 render={({ field }) => (
                   <FormItem className="space-y-3">
-                    <FormLabel>Loại mail</FormLabel>
+                    <FormLabel>
+                      <FieldLabel tooltip="Chọn loại dịch vụ email bạn đang sử dụng. Mắt Bão mail sẽ tự động cấu hình, còn các dịch vụ khác cần nhập đầy đủ thông số SMTP.">
+                        Loại mail
+                      </FieldLabel>
+                    </FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
@@ -267,7 +288,11 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
                     name="host"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>SMTP Host</FormLabel>
+                        <FormLabel>
+                          <FieldLabel tooltip="Địa chỉ máy chủ SMTP của dịch vụ email. Ví dụ: smtp.gmail.com cho Gmail, smtp-mail.outlook.com cho Outlook.">
+                            SMTP Host
+                          </FieldLabel>
+                        </FormLabel>
                         <FormControl>
                           <Input {...field} placeholder="smtp.gmail.com" data-testid="input-smtp-host" />
                         </FormControl>
@@ -281,7 +306,11 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
                     name="port"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Port</FormLabel>
+                        <FormLabel>
+                          <FieldLabel tooltip="Cổng kết nối SMTP. Port 587 dùng cho STARTTLS (khuyến nghị), port 465 dùng cho SSL.">
+                            Port
+                          </FieldLabel>
+                        </FormLabel>
                         <FormControl>
                           <Input 
                             {...field} 
@@ -306,7 +335,11 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>
+                      <FieldLabel tooltip="Địa chỉ email đăng nhập vào máy chủ SMTP. Email này cũng sẽ được dùng làm địa chỉ gửi đi trong các chiến dịch email.">
+                        Email
+                      </FieldLabel>
+                    </FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input 
@@ -342,7 +375,11 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>
+                      <FieldLabel tooltip="Mật khẩu đăng nhập SMTP. Với Gmail, bạn cần tạo App Password thay vì dùng mật khẩu thường để bảo mật hơn.">
+                        Password
+                      </FieldLabel>
+                    </FormLabel>
                     <FormControl>
                       <Input 
                         {...field} 
@@ -363,35 +400,14 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
 
               <FormField
                 control={form.control}
-                name="fromEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email gửi đi</FormLabel>
-                    <FormControl>
-                      <Input 
-                        {...field} 
-                        placeholder="noreply@yourcompany.com" 
-                        data-testid="input-smtp-fromemail"
-                        onBlur={(e) => handleEmailBlur(e.target.value)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                    {isCheckingEmail && (
-                      <FormDescription className="flex items-center gap-2">
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        Đang phát hiện server email...
-                      </FormDescription>
-                    )}
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="fromName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tên người gửi</FormLabel>
+                    <FormLabel>
+                      <FieldLabel tooltip="Tên hiển thị của người gửi trong email. Ví dụ: 'Công ty ABC' hoặc 'Bộ phận Kinh doanh'.">
+                        Tên người gửi
+                      </FieldLabel>
+                    </FormLabel>
                     <FormControl>
                       <Input {...field} value={field.value || ""} placeholder="Công ty ABC" data-testid="input-smtp-fromname" />
                     </FormControl>
