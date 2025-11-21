@@ -157,7 +157,13 @@ export default function BulkCampaignsPage() {
                   <TableRow 
                     key={campaign.id}
                     className="cursor-pointer hover:bg-slate-50"
-                    onClick={() => setLocation(`/bulk-campaigns/${campaign.id}`)}
+                    onClick={() => {
+                      if (campaign.status === 'draft') {
+                        setLocation(`/bulk-campaigns/new?draftId=${campaign.id}`);
+                      } else {
+                        setLocation(`/bulk-campaigns/${campaign.id}`);
+                      }
+                    }}
                     data-testid={`row-campaign-${campaign.id}`}
                   >
                     <TableCell className="font-medium" data-testid={`text-campaign-name-${campaign.id}`}>
