@@ -45,7 +45,7 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
   });
 
   const form = useForm<InsertSmtpConfig>({
-    resolver: zodResolver(insertSmtpConfigSchema.omit({ userId: true })),
+    resolver: zodResolver(insertSmtpConfigSchema.omit({ userId: true, fromEmail: true })),
     defaultValues: {
       provider: config?.provider || "matbao",
       host: config?.host || "",
