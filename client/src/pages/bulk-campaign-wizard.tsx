@@ -562,19 +562,31 @@ export default function BulkCampaignWizard() {
         availableVariables: data.availableVariables || []
       });
       
-      // Convert autoMapping to fieldMappings array
-      // Start with email (required), then auto-detect email column if available
+      // Auto-create mappings for ALL columns in the file
+      // Email is always first (required), other columns follow
       const emailColumn = data.autoMapping?.email || '';
       const newMappings: FieldMapping[] = [
         { fieldName: 'email', columnName: emailColumn }
       ];
+      
+      // Add all other columns (auto-map fieldName = columnName)
+      data.headers.forEach((header: string) => {
+        // Skip if it's already mapped to email
+        if (header.toLowerCase() !== 'email' && header !== emailColumn) {
+          newMappings.push({
+            fieldName: header,  // fieldName = columnName
+            columnName: header
+          });
+        }
+      });
+      
       setFieldMappings(newMappings);
       
       setAvailableVariables(data.availableVariables || []);
       setShowMappingView(true);
       toast({
         title: "Tải file thành công",
-        description: `Tìm thấy ${data.totalRows} dòng dữ liệu`,
+        description: `Tìm thấy ${data.totalRows} dòng dữ liệu với ${data.headers.length} cột`,
       });
     },
     onError: (error: Error) => {
