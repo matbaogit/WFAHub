@@ -237,21 +237,6 @@ export default function QuotationTemplates() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Nội dung HTML</FormLabel>
-                          <FormDescription className="space-y-2">
-                            <div className="text-sm">
-                              <p className="font-medium mb-1">Biến có sẵn:</p>
-                              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 font-mono text-xs">
-                                <code className="bg-muted px-2 py-1 rounded">{'{{quotationNumber}}'}</code>
-                                <code className="bg-muted px-2 py-1 rounded">{'{{companyName}}'}</code>
-                                <code className="bg-muted px-2 py-1 rounded">{'{{customerName}}'}</code>
-                                <code className="bg-muted px-2 py-1 rounded">{'{{customerCompany}}'}</code>
-                                <code className="bg-muted px-2 py-1 rounded">{'{{total}}'}</code>
-                                <code className="bg-muted px-2 py-1 rounded">{'{{items}}'}</code>
-                                <code className="bg-muted px-2 py-1 rounded">{'{{validUntil}}'}</code>
-                                <code className="bg-muted px-2 py-1 rounded">{'{{notes}}'}</code>
-                              </div>
-                            </div>
-                          </FormDescription>
                           <FormControl>
                             <Textarea 
                               {...field} 
