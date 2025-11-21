@@ -755,6 +755,25 @@ export default function BulkCampaignWizard() {
           if (draft.step2Mode) {
             setStep2Mode(draft.step2Mode);
           }
+
+          // Restore recipients data from draft
+          if (draft.recipientsData) {
+            const recipientsData = draft.recipientsData as any;
+            if (recipientsData.recipients && Array.isArray(recipientsData.recipients)) {
+              setParsedRecipients(recipientsData.recipients);
+            }
+            if (recipientsData.fieldMappings && Array.isArray(recipientsData.fieldMappings)) {
+              setFieldMappings(recipientsData.fieldMappings);
+            }
+            if (recipientsData.availableVariables && Array.isArray(recipientsData.availableVariables)) {
+              setAvailableVariables(recipientsData.availableVariables);
+            }
+          }
+
+          toast({
+            title: "Đã tải bản nháp",
+            description: "Chiến dịch đã được khôi phục.",
+          });
         } catch (error) {
           console.error("Failed to load draft:", error);
           toast({
@@ -824,12 +843,20 @@ export default function BulkCampaignWizard() {
 
     // Auto-save draft before moving to next step
     try {
+      // Prepare recipients data if available
+      const recipientsData = parsedRecipients.length > 0 ? {
+        recipients: parsedRecipients,
+        fieldMappings: fieldMappings,
+        availableVariables: availableVariables,
+      } : null;
+
       await saveDraftMutation.mutateAsync({
         name: campaignName,
         emailSubject,
         emailBody,
         attachmentContent: quotationHtmlContent,
         step2Mode,
+        recipientsData,
       });
     } catch (error) {
       console.error("Auto-save draft failed:", error);
@@ -858,12 +885,20 @@ export default function BulkCampaignWizard() {
     }
 
     try {
+      // Prepare recipients data if available
+      const recipientsData = parsedRecipients.length > 0 ? {
+        recipients: parsedRecipients,
+        fieldMappings: fieldMappings,
+        availableVariables: availableVariables,
+      } : null;
+
       await saveDraftMutation.mutateAsync({
         name: campaignName,
         emailSubject,
         emailBody,
         attachmentContent: quotationHtmlContent,
         step2Mode,
+        recipientsData,
       });
       
       toast({
