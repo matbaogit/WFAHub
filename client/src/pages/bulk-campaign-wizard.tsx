@@ -142,6 +142,7 @@ export default function BulkCampaignWizard() {
   const activeFieldRef = useRef<'subject' | 'body' | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(true);
   const [isSmtpDialogOpen, setIsSmtpDialogOpen] = useState(false);
+  const [step2Mode, setStep2Mode] = useState<null | 'template' | 'custom'>(null);
 
   const { data: quotationTemplates = [] } = useQuery<QuotationTemplate[]>({
     queryKey: ["/api/quotation-templates"],
@@ -1016,9 +1017,10 @@ export default function BulkCampaignWizard() {
       }
     }
 
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+    // Initial mode selection screen
+    if (step2Mode === null) {
+      return (
+        <div className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Chọn mẫu tệp đính kèm</h2>
             <p className="text-sm text-muted-foreground">
@@ -1033,6 +1035,75 @@ export default function BulkCampaignWizard() {
               </button>
               {" "}để qua bước soạn nội dung thư.
             </p>
+          </div>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col gap-4">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setStep2Mode('template')}
+                  className="h-auto py-6 justify-start"
+                  data-testid="button-choose-template-mode"
+                >
+                  <div className="flex flex-col items-start gap-2 w-full">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      <span className="font-semibold">Chọn mẫu đính kèm</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-left">
+                      Chọn từ thư viện mẫu có sẵn và tùy chỉnh nội dung
+                    </p>
+                  </div>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setStep2Mode('custom')}
+                  className="h-auto py-6 justify-start"
+                  data-testid="button-choose-custom-mode"
+                >
+                  <div className="flex flex-col items-start gap-2 w-full">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      <span className="font-semibold">Soạn nội dung</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-left">
+                      Tự soạn nội dung từ đầu với editor
+                    </p>
+                  </div>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Template mode or Custom mode
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setStep2Mode(null)}
+              data-testid="button-back-to-mode-selection"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Quay lại
+            </Button>
+            <div>
+              <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">
+                {step2Mode === 'template' ? 'Chọn mẫu đính kèm' : 'Soạn nội dung tùy chỉnh'}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Kéo thả biến từ thanh bên trái vào khung soạn thảo hoặc dán từ Word
+              </p>
+            </div>
           </div>
           <Button
             variant="outline"
@@ -1062,31 +1133,34 @@ export default function BulkCampaignWizard() {
           <div className="flex-1 min-w-0 space-y-4">
             <Card>
               <CardContent className="pt-6 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="template-select">Mẫu tệp đính kèm (tùy chọn)</Label>
-                  <Select
-                    value={selectedTemplateId || ""}
-                    onValueChange={handleTemplateSelect}
-                  >
-                    <SelectTrigger id="template-select" data-testid="select-quotation-template">
-                      <SelectValue placeholder="-- Chọn mẫu để tự động điền --" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {quotationTemplates.map((template) => (
-                        <SelectItem 
-                          key={template.id} 
-                          value={template.id}
-                          data-testid={`option-template-${template.id}`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4" />
-                            {template.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Show template selector only in template mode */}
+                {step2Mode === 'template' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="template-select">Mẫu tệp đính kèm (tùy chọn)</Label>
+                    <Select
+                      value={selectedTemplateId || ""}
+                      onValueChange={handleTemplateSelect}
+                    >
+                      <SelectTrigger id="template-select" data-testid="select-quotation-template">
+                        <SelectValue placeholder="-- Chọn mẫu để tự động điền --" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {quotationTemplates.map((template) => (
+                          <SelectItem 
+                            key={template.id} 
+                            value={template.id}
+                            data-testid={`option-template-${template.id}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4" />
+                              {template.name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="quotation-html">Nội dung HTML</Label>
