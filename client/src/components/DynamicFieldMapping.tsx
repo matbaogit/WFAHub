@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X } from "lucide-react";
+import { Plus, X, ChevronDown, ChevronUp } from "lucide-react";
 
 export interface FieldMapping {
   fieldName: string;
@@ -23,6 +24,8 @@ export default function DynamicFieldMapping({
   mappings, 
   onMappingsChange 
 }: DynamicFieldMappingProps) {
+  const [showAll, setShowAll] = useState(false);
+  const [hiddenColumns, setHiddenColumns] = useState<Set<number>>(new Set());
   
   const handleAddField = () => {
     onMappingsChange([
@@ -31,9 +34,14 @@ export default function DynamicFieldMapping({
     ]);
   };
 
-  const handleRemoveField = (index: number) => {
-    const newMappings = mappings.filter((_, i) => i !== index);
-    onMappingsChange(newMappings);
+  const handleHideField = (index: number) => {
+    setHiddenColumns(new Set([...Array.from(hiddenColumns), index]));
+  };
+
+  const handleRestoreField = (index: number) => {
+    const newHidden = new Set(hiddenColumns);
+    newHidden.delete(index);
+    setHiddenColumns(newHidden);
   };
 
   const handleFieldNameChange = (index: number, fieldName: string) => {
@@ -53,6 +61,22 @@ export default function DynamicFieldMapping({
     return preview.slice(0, 1).map((row) => row[columnName] || '-');
   };
 
+  // Filter visible mappings (not hidden)
+  const visibleMappings = mappings.map((m, i) => ({ mapping: m, index: i }))
+    .filter(({ index }) => !hiddenColumns.has(index));
+  
+  // Show only first 3 if not expanded
+  const displayedMappings = showAll 
+    ? visibleMappings 
+    : visibleMappings.slice(0, 3);
+  
+  const hiddenCount = visibleMappings.length - displayedMappings.length;
+  
+  // Get list of hidden columns for restore dropdown
+  const hiddenMappingsList = mappings
+    .map((m, i) => ({ mapping: m, index: i }))
+    .filter(({ index }) => hiddenColumns.has(index));
+
   return (
     <div className="space-y-4">
       <div className="border rounded-md">
@@ -66,7 +90,7 @@ export default function DynamicFieldMapping({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mappings.map((mapping, index) => {
+            {displayedMappings.map(({ mapping, index }) => {
               const isEmail = mapping.fieldName.toLowerCase() === 'email';
               const previewData = getPreviewData(mapping.columnName);
 
@@ -131,8 +155,8 @@ export default function DynamicFieldMapping({
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleRemoveField(index)}
-                        data-testid={`button-remove-field-${index}`}
+                        onClick={() => handleHideField(index)}
+                        data-testid={`button-hide-field-${index}`}
                         className="h-8 w-8"
                       >
                         <X className="h-4 w-4" />
@@ -145,6 +169,48 @@ export default function DynamicFieldMapping({
           </TableBody>
         </Table>
       </div>
+
+      {/* Show more/less button */}
+      {hiddenCount > 0 && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowAll(!showAll)}
+          data-testid="button-toggle-show-all"
+          className="w-full"
+        >
+          {showAll ? (
+            <>
+              <ChevronUp className="h-4 w-4 mr-2" />
+              Thu gọn
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-4 w-4 mr-2" />
+              Xem thêm {hiddenCount} cột
+            </>
+          )}
+        </Button>
+      )}
+
+      {/* Restore hidden columns dropdown */}
+      {hiddenMappingsList.length > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Cột đã ẩn:</span>
+          <Select onValueChange={(value) => handleRestoreField(parseInt(value))}>
+            <SelectTrigger className="w-64" data-testid="select-restore-column">
+              <SelectValue placeholder="-- Chọn cột để hiển thị lại --" />
+            </SelectTrigger>
+            <SelectContent>
+              {hiddenMappingsList.map(({ mapping, index }) => (
+                <SelectItem key={index} value={index.toString()}>
+                  {mapping.fieldName || `Cột ${index + 1}`} ({mapping.columnName || 'Chưa chọn'})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <Button
         variant="outline"
