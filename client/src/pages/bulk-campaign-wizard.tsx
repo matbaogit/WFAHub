@@ -775,7 +775,7 @@ export default function BulkCampaignWizard() {
               {step === 1 && "Nhập dữ liệu"}
               {step === 2 && "Mẫu tệp đính kèm"}
               {step === 3 && "Nội dung mail"}
-              {step === 4 && "Xem lại"}
+              {step === 4 && "Xem lại và gửi"}
             </span>
           </div>
           {step < 4 && (
