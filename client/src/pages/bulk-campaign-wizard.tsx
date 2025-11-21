@@ -699,7 +699,7 @@ export default function BulkCampaignWizard() {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep === 1 && parsedRecipients.length === 0) {
       toast({
         variant: "destructive",
@@ -707,6 +707,37 @@ export default function BulkCampaignWizard() {
         description: "Vui lòng tải lên file danh sách người nhận.",
       });
       return;
+    }
+
+    // Step 2: Save template if checkbox is checked
+    if (currentStep === 2 && saveAsTemplate && step2Mode !== null) {
+      if (!campaignName.trim()) {
+        toast({
+          variant: "destructive",
+          title: "Thiếu tên chiến dịch",
+          description: "Vui lòng nhập tên chiến dịch để lưu mẫu.",
+        });
+        return;
+      }
+
+      try {
+        await saveTemplateMutation.mutateAsync({
+          name: `${campaignName} - Mẫu tệp đính kèm`,
+          content: quotationHtmlContent,
+        });
+        
+        toast({
+          title: "Đã lưu mẫu!",
+          description: "Mẫu tệp đính kèm đã được lưu thành công.",
+        });
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Lưu mẫu thất bại",
+          description: "Vui lòng thử lại.",
+        });
+        return;
+      }
     }
 
     if (currentStep < 4) {
