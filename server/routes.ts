@@ -1745,6 +1745,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create or update draft campaign
+  app.post("/api/bulk-campaigns/draft", isAuthenticated, async (req: any, res) => {
+    try {
+      const data = {
+        ...req.body,
+        userId: req.user.id,
+        status: 'draft'
+      };
+      
+      const campaign = await storage.createBulkCampaign(data);
+      res.json(campaign);
+    } catch (error: any) {
+      console.error("Error creating draft:", error);
+      res.status(400).json({ message: error.message || "Failed to create draft" });
+    }
+  });
+
+  // Update existing draft
+  app.patch("/api/bulk-campaigns/:id/draft", isAuthenticated, async (req: any, res) => {
+    try {
+      // Check ownership
+      const existing = await storage.getBulkCampaign(req.params.id);
+      if (!existing) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      if (existing.userId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      // Only update if it's still a draft
+      if (existing.status !== 'draft') {
+        return res.status(400).json({ message: "Cannot update a non-draft campaign" });
+      }
+      
+      const campaign = await storage.updateBulkCampaign(req.params.id, {
+        ...req.body,
+        status: 'draft' // Ensure it remains a draft
+      });
+      res.json(campaign);
+    } catch (error: any) {
+      console.error("Error updating draft:", error);
+      res.status(400).json({ message: error.message || "Failed to update draft" });
+    }
+  });
+
   // Create new campaign
   app.post("/api/bulk-campaigns", isAuthenticated, async (req: any, res) => {
     try {
