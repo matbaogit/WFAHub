@@ -1022,7 +1022,16 @@ export default function BulkCampaignWizard() {
           <div>
             <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Chọn mẫu tệp đính kèm</h2>
             <p className="text-sm text-muted-foreground">
-              Chọn mẫu hoặc soạn nội dung tùy chỉnh. Kéo thả biến từ sidebar vào khung soạn thảo hoặc paste từ Word.
+              Chọn mẫu đính kèm hoặc soạn nội dung tuỳ chỉnh. Kéo thả biến từ thanh bên trái vào khung soạn thảo hoặc dán từ Word. 
+              Nếu không cần đính kèm tệp thì bấm{" "}
+              <button 
+                onClick={handleNext}
+                className="text-primary hover:underline font-medium"
+                data-testid="link-skip-attachment"
+              >
+                vào đây
+              </button>
+              {" "}để qua bước soạn nội dung thư.
             </p>
           </div>
           <Button
