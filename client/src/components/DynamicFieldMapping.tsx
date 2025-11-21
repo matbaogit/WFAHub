@@ -50,7 +50,7 @@ export default function DynamicFieldMapping({
 
   const getPreviewData = (columnName: string) => {
     if (!columnName || columnName === "NONE") return null;
-    return preview.slice(0, 3).map((row) => row[columnName] || '-');
+    return preview.slice(0, 1).map((row) => row[columnName] || '-');
   };
 
   return (
@@ -118,7 +118,7 @@ export default function DynamicFieldMapping({
                             {value}
                           </Badge>
                         ))}
-                        {preview.length > 3 && (
+                        {preview.length > 1 && (
                           <span className="text-xs text-muted-foreground">...</span>
                         )}
                       </div>
