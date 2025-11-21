@@ -143,6 +143,7 @@ export default function BulkCampaignWizard() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(true);
   const [isSmtpDialogOpen, setIsSmtpDialogOpen] = useState(false);
   const [step2Mode, setStep2Mode] = useState<null | 'template' | 'custom'>(null);
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
 
   const { data: quotationTemplates = [] } = useQuery<QuotationTemplate[]>({
     queryKey: ["/api/quotation-templates"],
