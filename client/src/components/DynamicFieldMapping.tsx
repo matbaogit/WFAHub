@@ -61,7 +61,7 @@ export default function DynamicFieldMapping({
             <TableRow>
               <TableHead className="w-48">Trường dữ liệu</TableHead>
               <TableHead className="w-64">Cột trong file</TableHead>
-              <TableHead>Xem trước dữ liệu</TableHead>
+              <TableHead>Dữ liệu trong tệp</TableHead>
               <TableHead className="w-16"></TableHead>
             </TableRow>
           </TableHeader>
