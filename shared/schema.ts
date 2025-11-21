@@ -334,6 +334,11 @@ export const bulkCampaigns = pgTable("bulk_campaigns", {
   quotationHtml: text("quotation_html"),
   availableVariables: jsonb("available_variables"),
   
+  // Draft-specific fields
+  attachmentContent: text("attachment_content"),
+  step2Mode: varchar("step2_mode", { length: 20 }),
+  recipientsData: jsonb("recipients_data"),
+  
   status: varchar("status", { length: 20 }).notNull().default("draft"),
   
   totalRecipients: integer("total_recipients").default(0).notNull(),
