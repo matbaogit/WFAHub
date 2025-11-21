@@ -150,6 +150,7 @@ export default function BulkCampaignWizard() {
   const [isSmtpDialogOpen, setIsSmtpDialogOpen] = useState(false);
   const [step2Mode, setStep2Mode] = useState<null | 'template' | 'custom'>(null);
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  const [saveAsEmailTemplate, setSaveAsEmailTemplate] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(urlDraftId);
 
   const { data: quotationTemplates = [] } = useQuery<QuotationTemplate[]>({
@@ -674,6 +675,26 @@ export default function BulkCampaignWizard() {
     },
   });
 
+  const saveEmailTemplateMutation = useMutation({
+    mutationFn: async (data: { name: string; subject: string; htmlContent: string }) => {
+      return apiRequest("POST", "/api/email-templates", data);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/email-templates"] });
+      toast({
+        title: "Đã lưu mẫu email!",
+        description: "Mẫu email đã được lưu thành công.",
+      });
+    },
+    onError: () => {
+      toast({
+        variant: "destructive",
+        title: "Lưu mẫu email thất bại",
+        description: "Vui lòng thử lại.",
+      });
+    },
+  });
+
   const saveDraftMutation = useMutation({
     mutationFn: async (data: any) => {
       if (draftId) {
@@ -834,6 +855,30 @@ export default function BulkCampaignWizard() {
         await saveTemplateMutation.mutateAsync({
           name: `${campaignName} - Mẫu tệp đính kèm`,
           htmlContent: quotationHtmlContent,
+        });
+      } catch (error) {
+        // Error toast already handled by mutation's onError
+        return;
+      }
+    }
+
+    // Step 3: Save email template if checkbox is checked
+    if (currentStep === 3 && saveAsEmailTemplate) {
+      // Validate that there is content to save
+      if (!emailSubject.trim() || !emailBody.trim()) {
+        toast({
+          variant: "destructive",
+          title: "Không có nội dung email",
+          description: "Vui lòng nhập tiêu đề và nội dung email trước khi lưu mẫu.",
+        });
+        return;
+      }
+      
+      try {
+        await saveEmailTemplateMutation.mutateAsync({
+          name: `${campaignName} - Mẫu email`,
+          subject: emailSubject,
+          htmlContent: emailBody,
         });
       } catch (error) {
         // Error toast already handled by mutation's onError
@@ -2104,6 +2149,23 @@ export default function BulkCampaignWizard() {
                     className="text-sm font-normal cursor-pointer"
                   >
                     Lưu mẫu
+                  </Label>
+                </div>
+              )}
+
+              {currentStep === 3 && (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="save-as-email-template"
+                    checked={saveAsEmailTemplate}
+                    onCheckedChange={(checked) => setSaveAsEmailTemplate(checked === true)}
+                    data-testid="checkbox-save-as-email-template"
+                  />
+                  <Label 
+                    htmlFor="save-as-email-template" 
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    Lưu mẫu email
                   </Label>
                 </div>
               )}
