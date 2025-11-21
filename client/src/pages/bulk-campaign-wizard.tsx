@@ -1826,7 +1826,7 @@ export default function BulkCampaignWizard() {
 
           <Separator className="my-6" />
 
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <Button
               variant="outline"
               onClick={handleBack}
@@ -1837,21 +1837,40 @@ export default function BulkCampaignWizard() {
               Quay lại
             </Button>
 
-            {currentStep < 4 ? (
-              <Button onClick={handleNext} data-testid="button-next-step">
-                Tiếp tục
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleSubmit}
-                disabled={createCampaignMutation.isPending}
-                data-testid="button-send-campaign"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                {createCampaignMutation.isPending ? "Đang gửi..." : "Gửi chiến dịch"}
-              </Button>
-            )}
+            <div className="flex items-center gap-4">
+              {currentStep === 2 && step2Mode !== null && (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="save-as-template"
+                    checked={saveAsTemplate}
+                    onCheckedChange={(checked) => setSaveAsTemplate(checked === true)}
+                    data-testid="checkbox-save-as-template"
+                  />
+                  <Label 
+                    htmlFor="save-as-template" 
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    Lưu mẫu
+                  </Label>
+                </div>
+              )}
+
+              {currentStep < 4 ? (
+                <Button onClick={handleNext} data-testid="button-next-step">
+                  Tiếp tục
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={createCampaignMutation.isPending}
+                  data-testid="button-send-campaign"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  {createCampaignMutation.isPending ? "Đang gửi..." : "Gửi chiến dịch"}
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
