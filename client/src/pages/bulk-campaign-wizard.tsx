@@ -51,6 +51,7 @@ import {
   Eye,
   Server,
   Settings,
+  Save,
 } from "lucide-react";
 import {
   Table,
@@ -658,6 +659,27 @@ export default function BulkCampaignWizard() {
     },
   });
 
+  const saveDraftMutation = useMutation({
+    mutationFn: async (data: any) => {
+      if (draftId) {
+        // Update existing draft
+        const res = await apiRequest("PATCH", `/api/bulk-campaigns/${draftId}/draft`, data);
+        return res.json();
+      } else {
+        // Create new draft
+        const res = await apiRequest("POST", "/api/bulk-campaigns/draft", data);
+        return res.json();
+      }
+    },
+    onSuccess: async (campaign: any) => {
+      // Update draftId if this was a new draft
+      if (!draftId) {
+        setDraftId(campaign.id);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["/api/bulk-campaigns"] });
+    },
+  });
+
   const createCampaignMutation = useMutation({
     mutationFn: async (data: any) => {
       const campaignRes = await apiRequest("POST", "/api/bulk-campaigns", data);
@@ -754,6 +776,20 @@ export default function BulkCampaignWizard() {
       }
     }
 
+    // Auto-save draft before moving to next step
+    try {
+      await saveDraftMutation.mutateAsync({
+        name: campaignName,
+        emailSubject,
+        emailBody,
+        attachmentContent: quotationHtmlContent,
+        step2Mode,
+      });
+    } catch (error) {
+      console.error("Auto-save draft failed:", error);
+      // Don't block navigation if auto-save fails
+    }
+
     if (currentStep < 4) {
       setCurrentStep((currentStep + 1) as WizardStep);
     }
@@ -762,6 +798,38 @@ export default function BulkCampaignWizard() {
   const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep((currentStep - 1) as WizardStep);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (!campaignName.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Thiếu tên chiến dịch",
+        description: "Vui lòng đặt tên cho chiến dịch trước khi lưu nháp.",
+      });
+      return;
+    }
+
+    try {
+      await saveDraftMutation.mutateAsync({
+        name: campaignName,
+        emailSubject,
+        emailBody,
+        attachmentContent: quotationHtmlContent,
+        step2Mode,
+      });
+      
+      toast({
+        title: "Đã lưu bản nháp",
+        description: "Chiến dịch của bạn đã được lưu thành công.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Lưu nháp thất bại",
+        description: "Vui lòng thử lại.",
+      });
     }
   };
 
@@ -1911,6 +1979,25 @@ export default function BulkCampaignWizard() {
                   </Label>
                 </div>
               )}
+
+              <Button
+                variant="outline"
+                onClick={handleSaveDraft}
+                disabled={saveDraftMutation.isPending || !campaignName.trim()}
+                data-testid="button-save-draft"
+              >
+                {saveDraftMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Đang lưu...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Lưu nháp
+                  </>
+                )}
+              </Button>
 
               {currentStep < 4 ? (
                 <Button onClick={handleNext} data-testid="button-next-step">
