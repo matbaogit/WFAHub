@@ -710,26 +710,29 @@ export default function BulkCampaignWizard() {
   };
 
   const handleNext = async () => {
-    if (currentStep === 1 && parsedRecipients.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Chưa có người nhận",
-        description: "Vui lòng tải lên file danh sách người nhận.",
-      });
-      return;
-    }
-
-    // Step 2: Save template if checkbox is checked
-    if (currentStep === 2 && saveAsTemplate && step2Mode !== null) {
+    // Step 1 validation: require campaign name and recipients
+    if (currentStep === 1) {
       if (!campaignName.trim()) {
         toast({
           variant: "destructive",
           title: "Thiếu tên chiến dịch",
-          description: "Vui lòng nhập tên chiến dịch để lưu mẫu.",
+          description: "Vui lòng đặt tên cho chiến dịch.",
         });
         return;
       }
+      
+      if (parsedRecipients.length === 0) {
+        toast({
+          variant: "destructive",
+          title: "Chưa có người nhận",
+          description: "Vui lòng tải lên file danh sách người nhận.",
+        });
+        return;
+      }
+    }
 
+    // Step 2: Save template if checkbox is checked
+    if (currentStep === 2 && saveAsTemplate && step2Mode !== null) {
       try {
         await saveTemplateMutation.mutateAsync({
           name: `${campaignName} - Mẫu tệp đính kèm`,
@@ -869,11 +872,31 @@ export default function BulkCampaignWizard() {
           </h2>
           <p className="text-sm text-muted-foreground">
             {!showMappingView 
-              ? "Tải lên file Excel hoặc CSV chứa thông tin người nhận"
+              ? "Đặt tên cho chiến dịch và tải lên file Excel hoặc CSV chứa thông tin người nhận"
               : `File: ${uploadedFile?.name} (${filePreview?.totalRows} dòng)`
             }
           </p>
         </div>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <Label htmlFor="campaign-name-step1">
+                Tên chiến dịch <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="campaign-name-step1"
+                value={campaignName}
+                onChange={(e) => setCampaignName(e.target.value)}
+                placeholder="Ví dụ: Khuyến mãi tháng 10/2025"
+                data-testid="input-campaign-name"
+              />
+              <p className="text-xs text-muted-foreground">
+                Tên này sẽ giúp bạn nhận diện chiến dịch trong danh sách
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         {!showMappingView ? (
           <Card className="border-dashed hover-elevate">
@@ -1558,19 +1581,11 @@ export default function BulkCampaignWizard() {
         <Card>
           <CardHeader>
             <CardTitle>Cài đặt chiến dịch</CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              Chiến dịch: <span className="font-semibold text-foreground">{campaignName || "Chưa đặt tên"}</span>
+            </p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="campaign-name">Tên chiến dịch</Label>
-              <Input
-                id="campaign-name"
-                value={campaignName}
-                onChange={(e) => setCampaignName(e.target.value)}
-                placeholder="Khuyến mãi tháng 10/2025"
-                data-testid="input-campaign-name"
-              />
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="send-rate">Tốc độ gửi (email/phút)</Label>
               <div className="flex items-center gap-4">
