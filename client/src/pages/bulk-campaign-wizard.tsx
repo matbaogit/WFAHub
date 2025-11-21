@@ -772,7 +772,7 @@ export default function BulkCampaignWizard() {
               {step < currentStep ? <CheckCircle2 className="w-5 h-5" /> : step}
             </div>
             <span className="text-xs mt-2 text-muted-foreground">
-              {step === 1 && "Nhập"}
+              {step === 1 && "Nhập dữ liệu"}
               {step === 2 && "Mẫu"}
               {step === 3 && "Thư"}
               {step === 4 && "Xem lại"}
