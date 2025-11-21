@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -112,12 +112,16 @@ interface FilePreviewData {
 }
 
 export default function BulkCampaignWizard() {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emailSubjectRef = useRef<HTMLInputElement>(null);
   const emailBodyRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Parse URL params to get draftId
+  const params = new URLSearchParams(window.location.search);
+  const urlDraftId = params.get('draftId');
 
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
   const [campaignName, setCampaignName] = useState("");
@@ -146,7 +150,7 @@ export default function BulkCampaignWizard() {
   const [isSmtpDialogOpen, setIsSmtpDialogOpen] = useState(false);
   const [step2Mode, setStep2Mode] = useState<null | 'template' | 'custom'>(null);
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
-  const [draftId, setDraftId] = useState<string | null>(null);
+  const [draftId, setDraftId] = useState<string | null>(urlDraftId);
 
   const { data: quotationTemplates = [] } = useQuery<QuotationTemplate[]>({
     queryKey: ["/api/quotation-templates"],
@@ -724,6 +728,36 @@ export default function BulkCampaignWizard() {
     },
   });
 
+  // Load draft data when draftId is present in URL
+  useEffect(() => {
+    if (urlDraftId) {
+      const loadDraft = async () => {
+        try {
+          const res = await apiRequest("GET", `/api/bulk-campaigns/${urlDraftId}`);
+          const draft = await res.json();
+          
+          // Populate form fields with draft data
+          setCampaignName(draft.name || "");
+          setEmailSubject(draft.emailSubject || "");
+          setEmailBody(draft.emailBody || "");
+          setQuotationHtmlContent(draft.attachmentContent || "");
+          if (draft.step2Mode) {
+            setStep2Mode(draft.step2Mode);
+          }
+        } catch (error) {
+          console.error("Failed to load draft:", error);
+          toast({
+            variant: "destructive",
+            title: "Không thể tải bản nháp",
+            description: "Vui lòng thử lại.",
+          });
+        }
+      };
+      
+      loadDraft();
+    }
+  }, [urlDraftId]);
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -855,7 +889,7 @@ export default function BulkCampaignWizard() {
     setShowCreditDialog(true);
   };
 
-  const handleCreateCampaign = () => {
+  const handleCreateCampaign = async () => {
     let scheduledAt = null;
     if (schedulingMode === "scheduled" && scheduledDate && scheduledTime) {
       const [hours, minutes] = scheduledTime.split(':').map(Number);
@@ -864,7 +898,7 @@ export default function BulkCampaignWizard() {
       scheduledAt = scheduled.toISOString();
     }
 
-    createCampaignMutation.mutate({
+    const campaignData = {
       name: campaignName,
       emailSubject,
       emailBody,
@@ -876,7 +910,54 @@ export default function BulkCampaignWizard() {
       csvDateField: schedulingMode === "csv" ? csvDateField : null,
       userId: user?.id,
       availableVariables,
-    });
+      status: schedulingMode === "now" ? "sending" : "scheduled",
+    };
+
+    // If this is a draft being submitted, update the existing draft
+    if (draftId) {
+      try {
+        // First update the draft campaign
+        await apiRequest("PATCH", `/api/bulk-campaigns/${draftId}`, campaignData);
+        
+        // Then add recipients
+        await apiRequest(
+          "POST",
+          `/api/bulk-campaigns/${draftId}/recipients`,
+          { recipients: parsedRecipients }
+        );
+
+        // If sending now, trigger send
+        if (schedulingMode === "now") {
+          await apiRequest("POST", `/api/bulk-campaigns/${draftId}/send`, {});
+        }
+
+        setShowCreditDialog(false);
+        await queryClient.invalidateQueries({ queryKey: ["/api/bulk-campaigns"] });
+        await queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+        await queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+
+        const message = schedulingMode === "now" 
+          ? "Chiến dịch email hàng loạt đã bắt đầu gửi."
+          : "Chiến dịch đã được lên lịch thành công.";
+
+        toast({
+          title: "Chiến dịch đã tạo!",
+          description: message,
+        });
+
+        navigate("/bulk-campaigns");
+      } catch (error) {
+        setShowCreditDialog(false);
+        toast({
+          variant: "destructive",
+          title: "Tạo chiến dịch thất bại",
+          description: "Vui lòng thử lại.",
+        });
+      }
+    } else {
+      // Create new campaign (not from draft)
+      createCampaignMutation.mutate(campaignData);
+    }
   };
 
   const selectedTemplate = quotationTemplates.find(t => t.id === selectedTemplateId);
