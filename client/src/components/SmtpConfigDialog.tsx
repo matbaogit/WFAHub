@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,6 +40,7 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [detectedServer, setDetectedServer] = useState<string | null>(null);
+  const [smtpPreset, setSmtpPreset] = useState<string>("custom");
 
   const { data: config } = useQuery<SmtpConfig | null>({
     queryKey: ["/api/smtp-config"],
@@ -64,6 +66,18 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
       form.setValue("port", 587);
     }
   }, [provider, form, detectedServer]);
+
+  useEffect(() => {
+    if (provider === "other") {
+      if (smtpPreset === "gmail") {
+        form.setValue("host", "smtp.gmail.com");
+        form.setValue("port", 587);
+      } else if (smtpPreset === "outlook") {
+        form.setValue("host", "smtp-mail.outlook.com");
+        form.setValue("port", 587);
+      }
+    }
+  }, [smtpPreset, provider, form]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: InsertSmtpConfig) => {
@@ -266,7 +280,7 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
                         <div className="flex items-center space-x-3 space-y-0">
                           <RadioGroupItem value="other" id="other" data-testid="radio-other" />
                           <Label htmlFor="other" className="font-normal cursor-pointer">
-                            Mail nơi khác (cấu hình đầy đủ)
+                            Mail nơi khác
                           </Label>
                         </div>
                       </RadioGroup>
@@ -295,50 +309,84 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
 
               {provider === "other" && (
                 <>
-                  <FormField
-                    control={form.control}
-                    name="host"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          <FieldLabel tooltip="Địa chỉ máy chủ SMTP của dịch vụ email. Ví dụ: smtp.gmail.com cho Gmail, smtp-mail.outlook.com cho Outlook.">
-                            SMTP Host
-                          </FieldLabel>
-                        </FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="smtp.gmail.com" data-testid="input-smtp-host" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label>
+                        <FieldLabel tooltip="Chọn dịch vụ email phổ biến để tự động cấu hình, hoặc chọn 'Tùy chỉnh' để nhập thông số SMTP thủ công.">
+                          Cấu hình sẵn
+                        </FieldLabel>
+                      </Label>
+                      <Select value={smtpPreset} onValueChange={setSmtpPreset}>
+                        <SelectTrigger data-testid="select-smtp-preset">
+                          <SelectValue placeholder="Chọn dịch vụ email" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="gmail">Gmail</SelectItem>
+                          <SelectItem value="outlook">Outlook</SelectItem>
+                          <SelectItem value="custom">Tùy chỉnh</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {smtpPreset === "gmail" && (
+                      <FormDescription>
+                        Tự động cấu hình smtp.gmail.com:587
+                      </FormDescription>
                     )}
-                  />
+                    {smtpPreset === "outlook" && (
+                      <FormDescription>
+                        Tự động cấu hình smtp-mail.outlook.com:587
+                      </FormDescription>
+                    )}
+                  </div>
 
-                  <FormField
-                    control={form.control}
-                    name="port"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          <FieldLabel tooltip="Cổng kết nối SMTP. Port 587 dùng cho STARTTLS (khuyến nghị), port 465 dùng cho SSL.">
-                            Port
-                          </FieldLabel>
-                        </FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            type="number" 
-                            placeholder="587" 
-                            onChange={(e) => field.onChange(parseInt(e.target.value))}
-                            data-testid="input-smtp-port" 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                        <FormDescription>
-                          Port 587 (STARTTLS) hoặc 465 (SSL)
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
+                  {smtpPreset === "custom" && (
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="host"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              <FieldLabel tooltip="Địa chỉ máy chủ SMTP của dịch vụ email. Ví dụ: smtp.gmail.com cho Gmail, smtp-mail.outlook.com cho Outlook.">
+                                SMTP Host
+                              </FieldLabel>
+                            </FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="smtp.gmail.com" data-testid="input-smtp-host" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="port"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              <FieldLabel tooltip="Cổng kết nối SMTP. Port 587 dùng cho STARTTLS (khuyến nghị), port 465 dùng cho SSL.">
+                                Port
+                              </FieldLabel>
+                            </FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                type="number" 
+                                placeholder="587" 
+                                onChange={(e) => field.onChange(parseInt(e.target.value))}
+                                data-testid="input-smtp-port" 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                            <FormDescription>
+                              Port 587 (STARTTLS) hoặc 465 (SSL)
+                            </FormDescription>
+                          </FormItem>
+                        )}
+                      />
+                    </>
+                  )}
                 </>
               )}
 
