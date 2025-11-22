@@ -258,15 +258,15 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
                         className="flex flex-col space-y-1"
                       >
                         <div className="flex items-center space-x-3 space-y-0">
-                          <RadioGroupItem value="other" id="other" data-testid="radio-other" />
-                          <Label htmlFor="other" className="font-normal cursor-pointer">
-                            Mail nơi khác (cấu hình đầy đủ)
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-3 space-y-0">
                           <RadioGroupItem value="matbao" id="matbao" data-testid="radio-matbao" />
                           <Label htmlFor="matbao" className="font-normal cursor-pointer">
                             Mắt Bão mail (đơn giản)
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-3 space-y-0">
+                          <RadioGroupItem value="other" id="other" data-testid="radio-other" />
+                          <Label htmlFor="other" className="font-normal cursor-pointer">
+                            Mail nơi khác (cấu hình đầy đủ)
                           </Label>
                         </div>
                       </RadioGroup>
