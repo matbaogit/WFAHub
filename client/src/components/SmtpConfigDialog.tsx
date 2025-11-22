@@ -404,7 +404,7 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
                       <div className="relative">
                         <Input 
                           {...field} 
-                          placeholder="your-email@gmail.com" 
+                          placeholder="Email của bạn" 
                           data-testid="input-smtp-username"
                           onBlur={(e) => handleEmailBlur(e.target.value)}
                         />
