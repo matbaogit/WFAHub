@@ -235,7 +235,7 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
               {config ? "Chỉnh sửa cấu hình SMTP" : "Thiết lập SMTP"}
             </DialogTitle>
             <DialogDescription>
-              Nhập thông tin máy chủ email để gửi chiến dịch báo giá
+              Nhập thông tin máy chủ email để gửi mail
             </DialogDescription>
           </DialogHeader>
 

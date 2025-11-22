@@ -111,7 +111,7 @@ export default function SmtpConfiguration() {
           Cấu hình SMTP
         </h1>
         <p className="text-lg text-muted-foreground">
-          Thiết lập máy chủ email để gửi báo giá và thông báo
+          Thiết lập máy chủ email để gửi mail
         </p>
       </div>
 
@@ -120,7 +120,7 @@ export default function SmtpConfiguration() {
           <Server className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold mb-2">Chưa có cấu hình SMTP</h3>
           <p className="text-muted-foreground mb-6">
-            Thêm cấu hình SMTP để bắt đầu gửi email báo giá
+            Thêm cấu hình SMTP để bắt đầu gửi mail
           </p>
           <Button onClick={() => setIsEditOpen(true)} data-testid="button-setup-smtp">
             <Server className="w-4 h-4 mr-2" />

@@ -1803,7 +1803,7 @@ export default function BulkCampaignWizard() {
                   <h4 className="font-semibold text-amber-900 dark:text-amber-100">Chưa cấu hình SMTP</h4>
                 </div>
                 <AlertDescription className="text-amber-800 dark:text-amber-200">
-                  Bạn cần cấu hình máy chủ email (SMTP) để có thể gửi chiến dịch báo giá. 
+                  Bạn cần cấu hình máy chủ email (SMTP) để có thể gửi chiến dịch email. 
                   Hệ thống hỗ trợ Gmail, Outlook và các SMTP server khác.
                 </AlertDescription>
                 <Button 
