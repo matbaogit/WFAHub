@@ -1792,7 +1792,9 @@ export default function BulkCampaignWizard() {
 
       // Normalize the column name to match how it's stored in customData
       const normalizeVariableName = (columnName: string): string => {
-        return columnName
+        // Remove curly braces if present (e.g., "{expiry_date}" -> "expiry_date")
+        const cleaned = columnName.replace(/[{}]/g, '');
+        return cleaned
           .toLowerCase()
           .trim()
           .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, 'a')
@@ -1807,11 +1809,17 @@ export default function BulkCampaignWizard() {
 
       const normalizedFieldName = normalizeVariableName(csvDateField);
 
+      console.log('[DEBUG] csvDateField:', csvDateField);
+      console.log('[DEBUG] normalizedFieldName:', normalizedFieldName);
+      console.log('[DEBUG] First recipient customData:', parsedRecipients[0]?.customData);
+
       // Get sample values from the selected column
       const samples = parsedRecipients
         .slice(0, 5) // Take first 5 rows as samples
         .map(recipient => recipient.customData?.[normalizedFieldName])
         .filter(value => value !== null && value !== undefined && value !== '');
+
+      console.log('[DEBUG] samples:', samples);
 
       // Check if any sample contains time information (HH:MM or HH:MM:SS)
       const hasTime = samples.some(value => {
@@ -1820,10 +1828,16 @@ export default function BulkCampaignWizard() {
         return /\d{1,2}:\d{2}(:\d{2})?/.test(strValue) || /T\d{2}:\d{2}/.test(strValue);
       });
 
+      console.log('[DEBUG] hasTime:', hasTime);
+
       return { samples, hasTime };
     };
 
     const { samples: dateSamples, hasTime: dateHasTime } = analyzeDateColumn();
+
+    console.log('[DEBUG] After analyzeDateColumn - dateSamples:', dateSamples, 'length:', dateSamples.length);
+    console.log('[DEBUG] After analyzeDateColumn - dateHasTime:', dateHasTime);
+    console.log('[DEBUG] After analyzeDateColumn - csvDateField:', csvDateField);
 
     return (
       <div className="space-y-6">
