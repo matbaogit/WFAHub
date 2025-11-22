@@ -1956,8 +1956,28 @@ export default function BulkCampaignWizard() {
 
             {schedulingMode === "csv" && (
               <div className="pl-6 border-l-2 border-primary/20 space-y-4">
-                {/* CSV Preview Table */}
-                {parsedRecipients.length > 0 && (() => {
+                <div className="space-y-2">
+                  <Label htmlFor="csv-date-field">Chọn cột chứa ngày gửi</Label>
+                  <Select value={csvDateField} onValueChange={setCsvDateField}>
+                    <SelectTrigger id="csv-date-field" className="bg-muted/30" data-testid="select-csv-date-field">
+                      <SelectValue placeholder="-- Chọn cột ngày --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableVariables.map((variable, index) => (
+                        <SelectItem key={index} value={variable.value}>
+                          {variable.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Hệ thống sẽ lấy ngày từ cột này để gửi email tự động cho từng người nhận.
+                    Định dạng hỗ trợ: DD/MM/YYYY, YYYY-MM-DD, hoặc ISO 8601.
+                  </p>
+                </div>
+
+                {/* CSV Preview Table - Only show after selecting date column */}
+                {csvDateField && parsedRecipients.length > 0 && (() => {
                   const normalizeVariableName = (columnName: string): string => {
                     return columnName
                       .toLowerCase()
@@ -1978,14 +1998,14 @@ export default function BulkCampaignWizard() {
                     normalizedValue: normalizeVariableName(v.value)
                   }));
 
-                  const normalizedCsvDateField = csvDateField ? normalizeVariableName(csvDateField) : null;
+                  const normalizedCsvDateField = normalizeVariableName(csvDateField);
 
                   return (
                     <Card className="bg-muted/20">
                       <CardHeader>
                         <CardTitle className="text-sm font-medium flex items-center gap-2">
                           <FileSpreadsheet className="w-4 h-4" />
-                          Dữ liệu từ file CSV ({parsedRecipients.length} dòng)
+                          Dữ liệu mẫu từ file CSV ({parsedRecipients.length} dòng)
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
@@ -2043,39 +2063,6 @@ export default function BulkCampaignWizard() {
                     </Card>
                   );
                 })()}
-
-                <div className="space-y-2">
-                  <Label htmlFor="csv-date-field">Chọn cột chứa ngày gửi</Label>
-                  <Select value={csvDateField} onValueChange={setCsvDateField}>
-                    <SelectTrigger id="csv-date-field" className="bg-muted/30" data-testid="select-csv-date-field">
-                      <SelectValue placeholder="-- Chọn cột ngày --" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableVariables.map((variable, index) => (
-                        <SelectItem key={index} value={variable.value}>
-                          {variable.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Hệ thống sẽ lấy ngày từ cột này để gửi email tự động cho từng người nhận.
-                    Định dạng hỗ trợ: DD/MM/YYYY, YYYY-MM-DD, hoặc ISO 8601.
-                  </p>
-                </div>
-
-                {csvDateField && dateSamples.length > 0 && (
-                  <div className="space-y-2 p-3 bg-muted/30 rounded-md">
-                    <Label className="text-xs font-semibold">Dữ liệu mẫu từ cột này:</Label>
-                    <div className="space-y-1">
-                      {dateSamples.map((sample, index) => (
-                        <div key={index} className="text-xs text-muted-foreground font-mono">
-                          {String(sample)}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {csvDateField && !dateHasTime && (
                   <div className="space-y-2 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md">
