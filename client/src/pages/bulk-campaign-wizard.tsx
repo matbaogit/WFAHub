@@ -1976,93 +1976,18 @@ export default function BulkCampaignWizard() {
                   </p>
                 </div>
 
-                {/* CSV Preview Table - Only show after selecting date column */}
-                {csvDateField && parsedRecipients.length > 0 && (() => {
-                  const normalizeVariableName = (columnName: string): string => {
-                    return columnName
-                      .toLowerCase()
-                      .trim()
-                      .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, 'a')
-                      .replace(/[èéẹẻẽêềếệểễ]/g, 'e')
-                      .replace(/[ìíịỉĩ]/g, 'i')
-                      .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, 'o')
-                      .replace(/[ùúụủũưừứựửữ]/g, 'u')
-                      .replace(/[ỳýỵỷỹ]/g, 'y')
-                      .replace(/đ/g, 'd')
-                      .replace(/[^a-z0-9]/g, '_');
-                  };
-
-                  const displayFields = availableVariables.map(v => ({
-                    label: v.label,
-                    value: v.value,
-                    normalizedValue: normalizeVariableName(v.value)
-                  }));
-
-                  const normalizedCsvDateField = normalizeVariableName(csvDateField);
-
-                  return (
-                    <Card className="bg-muted/20">
-                      <CardHeader>
-                        <CardTitle className="text-sm font-medium flex items-center gap-2">
-                          <FileSpreadsheet className="w-4 h-4" />
-                          Dữ liệu mẫu từ file CSV ({parsedRecipients.length} dòng)
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="max-h-64 overflow-auto border rounded-md">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead className="sticky top-0 bg-muted/50 backdrop-blur">Email</TableHead>
-                                {displayFields.map(field => (
-                                  <TableHead 
-                                    key={field.value} 
-                                    className={`sticky top-0 backdrop-blur ${
-                                      normalizedCsvDateField === field.normalizedValue
-                                        ? 'bg-amber-100 dark:bg-amber-950 font-semibold'
-                                        : 'bg-muted/50'
-                                    }`}
-                                  >
-                                    {field.label}
-                                    {normalizedCsvDateField === field.normalizedValue && (
-                                      <Badge variant="secondary" className="ml-2 text-xs">
-                                        Cột ngày
-                                      </Badge>
-                                    )}
-                                  </TableHead>
-                                ))}
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {parsedRecipients.slice(0, 10).map((recipient, idx) => (
-                                <TableRow key={idx}>
-                                  <TableCell className="font-mono text-xs">{recipient.email}</TableCell>
-                                  {displayFields.map(field => (
-                                    <TableCell 
-                                      key={field.value}
-                                      className={`font-mono text-xs ${
-                                        normalizedCsvDateField === field.normalizedValue
-                                          ? 'bg-amber-50/50 dark:bg-amber-950/30 font-medium'
-                                          : ''
-                                      }`}
-                                    >
-                                      {recipient.customData?.[field.normalizedValue] || "-"}
-                                    </TableCell>
-                                  ))}
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                {csvDateField && dateSamples.length > 0 && (
+                  <div className="space-y-2 p-3 bg-muted/30 rounded-md">
+                    <Label className="text-xs font-semibold">Dữ liệu mẫu từ cột này:</Label>
+                    <div className="space-y-1">
+                      {dateSamples.map((sample, index) => (
+                        <div key={index} className="text-xs text-muted-foreground font-mono">
+                          • {String(sample)}
                         </div>
-                        {parsedRecipients.length > 10 && (
-                          <p className="text-xs text-muted-foreground mt-2 text-center">
-                            Hiển thị 10 trong số {parsedRecipients.length} dòng dữ liệu
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })()}
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {csvDateField && !dateHasTime && (
                   <div className="space-y-2 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md">
