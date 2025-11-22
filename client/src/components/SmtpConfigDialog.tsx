@@ -436,8 +436,8 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      <FieldLabel tooltip="Mật khẩu đăng nhập SMTP. Với Gmail, bạn cần tạo App Password thay vì dùng mật khẩu thường để bảo mật hơn.">
-                        Password
+                      <FieldLabel tooltip="Mật khẩu ứng dụng để đăng nhập SMTP. Với Gmail, bạn cần tạo App Password (không phải mật khẩu thường) để bảo mật hơn.">
+                        Mật khẩu ứng dụng
                       </FieldLabel>
                     </FormLabel>
                     <FormControl>
@@ -449,9 +449,17 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
                       />
                     </FormControl>
                     <FormMessage />
-                    {!config && provider === "other" && (
+                    {!config && provider === "other" && smtpPreset === "gmail" && (
                       <FormDescription>
-                        Gmail: Dùng App Password (không phải mật khẩu thường)
+                        Với Gmail, bạn cần tạo App Password (không phải mật khẩu thường).{" "}
+                        <a 
+                          href="https://wiki.matbao.net/kb/thong-tin-smtp-gmail-cach-cau-hinh-smtp-gmail-free-vao-wordpress/" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline font-medium"
+                        >
+                          Xem hướng dẫn tại đây
+                        </a>
                       </FormDescription>
                     )}
                   </FormItem>
