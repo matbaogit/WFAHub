@@ -1786,14 +1786,31 @@ export default function BulkCampaignWizard() {
 
     // Analyze date column data to check if it includes time
     const analyzeDateColumn = () => {
-      if (!csvDateField || !filePreview?.preview) {
+      if (!csvDateField || parsedRecipients.length === 0) {
         return { samples: [], hasTime: false };
       }
 
+      // Normalize the column name to match how it's stored in customData
+      const normalizeVariableName = (columnName: string): string => {
+        return columnName
+          .toLowerCase()
+          .trim()
+          .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, 'a')
+          .replace(/[èéẹẻẽêềếệểễ]/g, 'e')
+          .replace(/[ìíịỉĩ]/g, 'i')
+          .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, 'o')
+          .replace(/[ùúụủũưừứựửữ]/g, 'u')
+          .replace(/[ỳýỵỷỹ]/g, 'y')
+          .replace(/đ/g, 'd')
+          .replace(/[^a-z0-9]/g, '_');
+      };
+
+      const normalizedFieldName = normalizeVariableName(csvDateField);
+
       // Get sample values from the selected column
-      const samples = filePreview.preview
+      const samples = parsedRecipients
         .slice(0, 5) // Take first 5 rows as samples
-        .map(row => row[csvDateField])
+        .map(recipient => recipient.customData?.[normalizedFieldName])
         .filter(value => value !== null && value !== undefined && value !== '');
 
       // Check if any sample contains time information (HH:MM or HH:MM:SS)
