@@ -2097,6 +2097,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (dateValue) {
             const parsedDate = parseDate(dateValue);
             if (parsedDate && !isNaN(parsedDate.getTime())) {
+              // Check if the date has time information (if hours/minutes are not at midnight or if it contains colon)
+              const dateStr = String(dateValue);
+              const hasTimeInfo = /\d{1,2}:\d{2}/.test(dateStr) || parsedDate.getHours() !== 0 || parsedDate.getMinutes() !== 0;
+              
+              // If no time info and csvDefaultTime is provided, apply default time
+              if (!hasTimeInfo && campaign.csvDefaultTime) {
+                const [hours, minutes] = campaign.csvDefaultTime.split(':').map(Number);
+                if (!isNaN(hours) && !isNaN(minutes)) {
+                  parsedDate.setHours(hours, minutes, 0, 0);
+                }
+              }
+              
               recipient.scheduledAt = parsedDate;
             }
           }
