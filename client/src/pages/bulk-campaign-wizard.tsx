@@ -1783,6 +1783,30 @@ export default function BulkCampaignWizard() {
       return new Date(startTime.getTime() + minutes * 60000);
     };
 
+    // Analyze date column data to check if it includes time
+    const analyzeDateColumn = () => {
+      if (!csvDateField || !filePreview?.preview) {
+        return { samples: [], hasTime: false };
+      }
+
+      // Get sample values from the selected column
+      const samples = filePreview.preview
+        .slice(0, 5) // Take first 5 rows as samples
+        .map(row => row[csvDateField])
+        .filter(value => value !== null && value !== undefined && value !== '');
+
+      // Check if any sample contains time information (HH:MM or HH:MM:SS)
+      const hasTime = samples.some(value => {
+        const strValue = String(value);
+        // Check for time patterns: HH:MM, HH:MM:SS, or ISO 8601 with time
+        return /\d{1,2}:\d{2}(:\d{2})?/.test(strValue) || /T\d{2}:\d{2}/.test(strValue);
+      });
+
+      return { samples, hasTime };
+    };
+
+    const { samples: dateSamples, hasTime: dateHasTime } = analyzeDateColumn();
+
     return (
       <div className="space-y-6">
         <div>
