@@ -1835,13 +1835,27 @@ export default function BulkCampaignWizard() {
                   id="send-rate"
                   type="number"
                   value={sendRate}
-                  onChange={(e) => setSendRate(parseInt(e.target.value) || 50)}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 50;
+                    setSendRate(Math.min(value, 100));
+                  }}
                   min={1}
                   max={100}
                   data-testid="input-send-rate"
                 />
                 <span className="text-sm text-muted-foreground">email/phút</span>
               </div>
+              {sendRate > 100 && (
+                <Alert variant="destructive" className="mt-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Tốc độ gửi tối đa là 100 email/phút để đảm bảo chất lượng gửi và tránh bị chặn bởi các nhà cung cấp email.
+                  </AlertDescription>
+                </Alert>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Giới hạn tối đa: 100 email/phút. Tốc độ gửi cao hơn có thể làm email bị đánh dấu spam.
+              </p>
             </div>
           </CardContent>
         </Card>
