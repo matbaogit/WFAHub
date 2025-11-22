@@ -1993,10 +1993,26 @@ export default function BulkCampaignWizard() {
                   <div className="space-y-2 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md">
                     <div className="flex items-start gap-2">
                       <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5" />
-                      <div className="space-y-2 flex-1">
+                      <div className="space-y-3 flex-1">
                         <p className="text-xs text-amber-800 dark:text-amber-200">
                           Dữ liệu chỉ chứa ngày, không có giờ phút. Vui lòng chọn giờ mặc định để gửi.
                         </p>
+                        
+                        {dateSamples.length > 0 && (
+                          <div className="space-y-1.5 p-2 bg-white/50 dark:bg-black/20 rounded border border-amber-200/50 dark:border-amber-800/50">
+                            <p className="text-xs font-medium text-amber-900 dark:text-amber-100">
+                              Ví dụ dữ liệu trong cột này:
+                            </p>
+                            <div className="space-y-1">
+                              {dateSamples.slice(0, 3).map((sample, index) => (
+                                <div key={index} className="text-xs text-amber-700 dark:text-amber-300 font-mono">
+                                  • {String(sample)}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
                         <div className="flex items-center gap-2">
                           <Label htmlFor="csv-default-time" className="text-xs whitespace-nowrap">
                             Giờ gửi mặc định:
