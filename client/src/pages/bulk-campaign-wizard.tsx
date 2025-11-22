@@ -1001,6 +1001,7 @@ export default function BulkCampaignWizard() {
       scheduledAt,
       schedulingMode,
       csvDateField: schedulingMode === "csv" ? csvDateField : null,
+      csvDefaultTime: schedulingMode === "csv" ? csvDefaultTime : null,
       userId: user?.id,
       availableVariables,
       status: schedulingMode === "now" ? "sending" : "scheduled",
