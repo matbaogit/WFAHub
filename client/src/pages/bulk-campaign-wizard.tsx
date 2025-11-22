@@ -1954,24 +1954,65 @@ export default function BulkCampaignWizard() {
             )}
 
             {schedulingMode === "csv" && (
-              <div className="pl-6 border-l-2 border-primary/20 space-y-2">
-                <Label htmlFor="csv-date-field">Chọn cột chứa ngày gửi</Label>
-                <Select value={csvDateField} onValueChange={setCsvDateField}>
-                  <SelectTrigger id="csv-date-field" className="bg-muted/30" data-testid="select-csv-date-field">
-                    <SelectValue placeholder="-- Chọn cột ngày --" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableVariables.map((variable, index) => (
-                      <SelectItem key={index} value={variable.value}>
-                        {variable.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Hệ thống sẽ lấy ngày từ cột này để gửi email tự động cho từng người nhận.
-                  Định dạng hỗ trợ: DD/MM/YYYY, YYYY-MM-DD, hoặc ISO 8601.
-                </p>
+              <div className="pl-6 border-l-2 border-primary/20 space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="csv-date-field">Chọn cột chứa ngày gửi</Label>
+                  <Select value={csvDateField} onValueChange={setCsvDateField}>
+                    <SelectTrigger id="csv-date-field" className="bg-muted/30" data-testid="select-csv-date-field">
+                      <SelectValue placeholder="-- Chọn cột ngày --" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableVariables.map((variable, index) => (
+                        <SelectItem key={index} value={variable.value}>
+                          {variable.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Hệ thống sẽ lấy ngày từ cột này để gửi email tự động cho từng người nhận.
+                    Định dạng hỗ trợ: DD/MM/YYYY, YYYY-MM-DD, hoặc ISO 8601.
+                  </p>
+                </div>
+
+                {csvDateField && dateSamples.length > 0 && (
+                  <div className="space-y-2 p-3 bg-muted/30 rounded-md">
+                    <Label className="text-xs font-semibold">Dữ liệu mẫu từ cột này:</Label>
+                    <div className="space-y-1">
+                      {dateSamples.map((sample, index) => (
+                        <div key={index} className="text-xs text-muted-foreground font-mono">
+                          {String(sample)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {csvDateField && !dateHasTime && (
+                  <div className="space-y-2 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5" />
+                      <div className="space-y-2 flex-1">
+                        <p className="text-xs text-amber-800 dark:text-amber-200">
+                          Dữ liệu chỉ chứa ngày, không có giờ phút. Vui lòng chọn giờ mặc định để gửi.
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="csv-default-time" className="text-xs whitespace-nowrap">
+                            Giờ gửi mặc định:
+                          </Label>
+                          <Input
+                            id="csv-default-time"
+                            type="time"
+                            value={csvDefaultTime}
+                            onChange={(e) => setCsvDefaultTime(e.target.value)}
+                            className="w-32 bg-white dark:bg-background"
+                            data-testid="input-csv-default-time"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
