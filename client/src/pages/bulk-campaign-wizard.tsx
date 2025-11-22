@@ -143,6 +143,7 @@ export default function BulkCampaignWizard() {
   const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
   const [scheduledTime, setScheduledTime] = useState("09:00");
   const [csvDateField, setCsvDateField] = useState("");
+  const [csvDefaultTime, setCsvDefaultTime] = useState("09:00");
   const [showCreditDialog, setShowCreditDialog] = useState(false);
   const [activeField, setActiveField] = useState<'subject' | 'body' | null>(null);
   const activeFieldRef = useRef<'subject' | 'body' | null>(null);
