@@ -1809,17 +1809,11 @@ export default function BulkCampaignWizard() {
 
       const normalizedFieldName = normalizeVariableName(csvDateField);
 
-      console.log('[DEBUG] csvDateField:', csvDateField);
-      console.log('[DEBUG] normalizedFieldName:', normalizedFieldName);
-      console.log('[DEBUG] First recipient customData:', parsedRecipients[0]?.customData);
-
       // Get sample values from the selected column
       const samples = parsedRecipients
         .slice(0, 5) // Take first 5 rows as samples
         .map(recipient => recipient.customData?.[normalizedFieldName])
         .filter(value => value !== null && value !== undefined && value !== '');
-
-      console.log('[DEBUG] samples:', samples);
 
       // Check if any sample contains time information (HH:MM or HH:MM:SS)
       const hasTime = samples.some(value => {
@@ -1828,16 +1822,10 @@ export default function BulkCampaignWizard() {
         return /\d{1,2}:\d{2}(:\d{2})?/.test(strValue) || /T\d{2}:\d{2}/.test(strValue);
       });
 
-      console.log('[DEBUG] hasTime:', hasTime);
-
       return { samples, hasTime };
     };
 
     const { samples: dateSamples, hasTime: dateHasTime } = analyzeDateColumn();
-
-    console.log('[DEBUG] After analyzeDateColumn - dateSamples:', dateSamples, 'length:', dateSamples.length);
-    console.log('[DEBUG] After analyzeDateColumn - dateHasTime:', dateHasTime);
-    console.log('[DEBUG] After analyzeDateColumn - csvDateField:', csvDateField);
 
     return (
       <div className="space-y-6">
@@ -2006,19 +1994,6 @@ export default function BulkCampaignWizard() {
                     Định dạng hỗ trợ: DD/MM/YYYY, YYYY-MM-DD, hoặc ISO 8601.
                   </p>
                 </div>
-
-                {csvDateField && dateSamples.length > 0 && (
-                  <div className="space-y-2 p-3 bg-muted/30 rounded-md">
-                    <Label className="text-xs font-semibold">Dữ liệu mẫu từ cột này:</Label>
-                    <div className="space-y-1">
-                      {dateSamples.map((sample, index) => (
-                        <div key={index} className="text-xs text-muted-foreground font-mono">
-                          • {String(sample)}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {csvDateField && !dateHasTime && (
                   <div className="space-y-2 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md">
