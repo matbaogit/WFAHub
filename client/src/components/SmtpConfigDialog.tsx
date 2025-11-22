@@ -274,8 +274,7 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
                     <FormDescription>
                       {provider === "matbao" ? (
                         <>
-                          Tự động cấu hình smtp.matbao.net - Chỉ cần nhập Email và Password.{" "}
-                          Nếu chưa có, vui lòng đăng ký{" "}
+                          Email của bạn tại Mắt Bão. Nếu chưa có, vui lòng đăng ký{" "}
                           <a 
                             href="https://www.matbao.net/email.html" 
                             target="_blank" 
