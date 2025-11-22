@@ -260,7 +260,7 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
                         <div className="flex items-center space-x-3 space-y-0">
                           <RadioGroupItem value="matbao" id="matbao" data-testid="radio-matbao" />
                           <Label htmlFor="matbao" className="font-normal cursor-pointer">
-                            Mắt Bão mail (đơn giản)
+                            Email của bạn tại Mắt Bão
                           </Label>
                         </div>
                         <div className="flex items-center space-x-3 space-y-0">
@@ -272,9 +272,22 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
                       </RadioGroup>
                     </FormControl>
                     <FormDescription>
-                      {provider === "matbao" 
-                        ? "Tự động cấu hình smtp.matbao.net - Chỉ cần nhập Email và Password" 
-                        : "Cấu hình đầy đủ cho Gmail, Outlook hoặc SMTP khác"}
+                      {provider === "matbao" ? (
+                        <>
+                          Tự động cấu hình smtp.matbao.net - Chỉ cần nhập Email và Password.{" "}
+                          Nếu chưa có, vui lòng đăng ký{" "}
+                          <a 
+                            href="https://www.matbao.net/email.html" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline font-medium"
+                          >
+                            tại đây
+                          </a>
+                        </>
+                      ) : (
+                        "Cấu hình đầy đủ cho Gmail, Outlook hoặc SMTP khác"
+                      )}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
