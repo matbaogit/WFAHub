@@ -140,7 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           port: smtpConfig.port,
           secure: smtpConfig.secure === 1,
           username: smtpConfig.username,
-          password: smtpConfig.password,
+          password: decryptPassword(smtpConfig.password),
           fromEmail: smtpConfig.fromEmail,
           fromName: smtpConfig.fromName || undefined,
         });
