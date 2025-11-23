@@ -14,7 +14,7 @@ import * as path from "path";
 import { getEmailService } from "./email";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import { encryptPassword } from "./utils/encryption";
+import { encryptPassword, decryptPassword } from "./utils/encryption";
 
 // Sanitize user object by removing sensitive fields
 const sanitizeUser = (user: User | null): Omit<User, 'passwordHash'> | null => {
