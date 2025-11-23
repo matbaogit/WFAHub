@@ -124,45 +124,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await storage.setVerificationToken(user.id, verificationToken, expiry);
       
-      // Send verification email
+      // Try to send verification email
+      let emailSent = false;
       try {
         const smtpConfig = await storage.getSystemDefaultSmtpConfig();
-        if (!smtpConfig) {
-          console.error("No system default SMTP config found");
-          return res.status(500).json({ 
-            message: "Đăng ký thành công nhưng không thể gửi email xác thực. Vui lòng liên hệ admin." 
+        if (smtpConfig) {
+          const emailService = getEmailService();
+          emailService.configure({
+            host: smtpConfig.host,
+            port: smtpConfig.port,
+            secure: smtpConfig.secure === 1,
+            username: smtpConfig.username,
+            password: decryptPassword(smtpConfig.password),
+            fromEmail: smtpConfig.fromEmail,
+            fromName: smtpConfig.fromName || undefined,
           });
+
+          const baseUrl = `${req.protocol}://${req.get('host')}`;
+          await emailService.sendVerificationEmail(
+            user.email!,
+            user.username,
+            verificationToken,
+            baseUrl
+          );
+          emailSent = true;
+        } else {
+          console.warn("No system default SMTP config found - email not sent");
         }
-
-        const emailService = getEmailService();
-        emailService.configure({
-          host: smtpConfig.host,
-          port: smtpConfig.port,
-          secure: smtpConfig.secure === 1,
-          username: smtpConfig.username,
-          password: decryptPassword(smtpConfig.password),
-          fromEmail: smtpConfig.fromEmail,
-          fromName: smtpConfig.fromName || undefined,
-        });
-
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
-        await emailService.sendVerificationEmail(
-          user.email!,
-          user.username,
-          verificationToken,
-          baseUrl
-        );
-
-        res.json({ 
-          message: "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.",
-          email: user.email
-        });
       } catch (emailError) {
         console.error("Error sending verification email:", emailError);
-        res.status(500).json({ 
-          message: "Đăng ký thành công nhưng không thể gửi email xác thực. Vui lòng liên hệ admin." 
-        });
       }
+
+      // Always return success - user is created
+      res.json({ 
+        message: emailSent 
+          ? "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản."
+          : "Đăng ký thành công! Tài khoản đã được tạo nhưng email xác thực chưa được gửi. Vui lòng liên hệ admin.",
+        email: user.email,
+        emailSent
+      });
     } catch (error: any) {
       console.error("Registration error:", error);
       res.status(400).json({ 
