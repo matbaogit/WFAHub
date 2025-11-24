@@ -129,13 +129,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const smtpConfig = await storage.getSystemDefaultSmtpConfig();
         if (smtpConfig) {
+          // Decrypt password safely
+          let decryptedPassword: string;
+          try {
+            // Validate password format before decrypting
+            if (!smtpConfig.password || !smtpConfig.password.includes(':')) {
+              throw new Error('Invalid encrypted password format');
+            }
+            decryptedPassword = decryptPassword(smtpConfig.password);
+          } catch (decryptError) {
+            console.error("Error decrypting SMTP password:", decryptError);
+            throw decryptError; // Propagate to outer catch block
+          }
+
           const emailService = getEmailService();
           emailService.configure({
             host: smtpConfig.host,
             port: smtpConfig.port,
             secure: smtpConfig.secure === 1,
             username: smtpConfig.username,
-            password: decryptPassword(smtpConfig.password),
+            password: decryptedPassword,
             fromEmail: smtpConfig.fromEmail,
             fromName: smtpConfig.fromName || undefined,
           });
@@ -232,13 +245,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
+        // Decrypt password safely
+        let decryptedPassword: string;
+        try {
+          // Validate password format before decrypting
+          if (!smtpConfig.password || !smtpConfig.password.includes(':')) {
+            throw new Error('Invalid encrypted password format');
+          }
+          decryptedPassword = decryptPassword(smtpConfig.password);
+        } catch (decryptError) {
+          console.error("Error decrypting SMTP password:", decryptError);
+          return res.json({ 
+            message: "Nếu email tồn tại, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu." 
+          });
+        }
+
         const emailService = getEmailService();
         emailService.configure({
           host: smtpConfig.host,
           port: smtpConfig.port,
           secure: smtpConfig.secure === 1,
           username: smtpConfig.username,
-          password: decryptPassword(smtpConfig.password),
+          password: decryptedPassword,
           fromEmail: smtpConfig.fromEmail,
           fromName: smtpConfig.fromName || undefined,
         });
