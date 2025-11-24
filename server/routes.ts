@@ -1438,6 +1438,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Test system SMTP configuration (before saving)
+  app.post("/api/admin/system-smtp/test", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { recipientEmail, smtpConfig } = req.body;
+      
+      if (!recipientEmail) {
+        return res.status(400).json({ message: "Thiếu email người nhận" });
+      }
+      
+      if (!smtpConfig) {
+        return res.status(400).json({ message: "Thiếu thông tin SMTP" });
+      }
+
+      // Import nodemailer dynamically
+      const nodemailer = await import("nodemailer");
+      
+      // If password is already encrypted (from existing config), decrypt it
+      // Otherwise, use the plain password for testing
+      let password = smtpConfig.password;
+      
+      // Check if password is encrypted (has colon separators)
+      if (password && password.includes(':')) {
+        try {
+          password = decryptPassword(password);
+        } catch (error) {
+          // If decrypt fails, assume it's a plain password for testing
+          console.log("Using plain password for testing");
+        }
+      }
+      
+      // Create transporter with test config
+      const transporter = nodemailer.default.createTransport({
+        host: smtpConfig.host,
+        port: smtpConfig.port,
+        secure: smtpConfig.port === 465,
+        auth: {
+          user: smtpConfig.username,
+          pass: password,
+        },
+      });
+
+      // Verify connection
+      await transporter.verify();
+
+      // Send test email
+      const info = await transporter.sendMail({
+        from: `"${smtpConfig.fromName || 'WFA Hub'}" <${smtpConfig.fromEmail}>`,
+        to: recipientEmail,
+        subject: "✅ Test Email từ WFA Hub",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #059669;">🎉 Email Test Thành Công!</h2>
+            <p>Cấu hình SMTP của bạn đã được thiết lập đúng và sẵn sàng sử dụng.</p>
+            
+            <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="margin-top: 0; color: #374151;">Thông tin cấu hình:</h3>
+              <ul style="color: #6b7280;">
+                <li><strong>SMTP Host:</strong> ${smtpConfig.host}</li>
+                <li><strong>Port:</strong> ${smtpConfig.port}</li>
+                <li><strong>From Email:</strong> ${smtpConfig.fromEmail}</li>
+                <li><strong>From Name:</strong> ${smtpConfig.fromName}</li>
+              </ul>
+            </div>
+            
+            <p style="color: #059669; font-weight: 600;">
+              ✓ Bạn đã sẵn sàng gửi email xác thực, reset mật khẩu và các chiến dịch email!
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+            <p style="color: #9ca3af; font-size: 12px;">
+              Email này được gửi từ hệ thống WFA Hub để kiểm tra cấu hình SMTP.
+            </p>
+          </div>
+        `,
+      });
+
+      console.log("Test email sent successfully:", info.messageId);
+      res.json({ 
+        success: true, 
+        messageId: info.messageId,
+        message: `Email test đã được gửi thành công đến ${recipientEmail}`
+      });
+    } catch (error: any) {
+      console.error("Error sending test email:", error);
+      
+      // Provide detailed error messages
+      let errorMessage = "Không thể gửi email test. ";
+      
+      if (error.code === 'EAUTH') {
+        errorMessage += "Lỗi xác thực - Kiểm tra lại username và password.";
+      } else if (error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
+        errorMessage += "Không thể kết nối đến SMTP server - Kiểm tra host và port.";
+      } else if (error.code === 'ESOCKET') {
+        errorMessage += "Lỗi kết nối mạng - Kiểm tra firewall hoặc SSL/TLS settings.";
+      } else {
+        errorMessage += error.message;
+      }
+      
+      res.status(500).json({ 
+        success: false,
+        message: errorMessage,
+        details: error.message
+      });
+    }
+  });
+
   // Analytics endpoint
   app.get("/api/analytics", isAuthenticated, async (req: any, res) => {
     try {
