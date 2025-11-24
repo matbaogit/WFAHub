@@ -1454,17 +1454,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import nodemailer dynamically
       const nodemailer = await import("nodemailer");
       
-      // If password is already encrypted (from existing config), decrypt it
-      // Otherwise, use the plain password for testing
       let password = smtpConfig.password;
       
-      // Check if password is encrypted (has colon separators)
+      // If password is empty/undefined (user testing existing config without changing password)
+      // Get password from database
+      if (!password || password.trim() === '') {
+        const userId = req.user.id;
+        const existingConfig = await storage.getSmtpConfig(userId);
+        
+        if (!existingConfig || !existingConfig.password) {
+          return res.status(400).json({ 
+            message: "Vui lòng nhập password để test email. Nếu đã lưu config, hãy refresh trang và thử lại." 
+          });
+        }
+        
+        // Use password from database (already encrypted)
+        password = existingConfig.password;
+      }
+      
+      // If password is encrypted (has colon separators), decrypt it
       if (password && password.includes(':')) {
         try {
           password = decryptPassword(password);
         } catch (error) {
-          // If decrypt fails, assume it's a plain password for testing
-          console.log("Using plain password for testing");
+          console.error("Error decrypting password for test:", error);
+          return res.status(400).json({ 
+            message: "Lỗi giải mã password. Vui lòng nhập lại password." 
+          });
         }
       }
       
