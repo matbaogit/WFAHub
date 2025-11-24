@@ -4,6 +4,17 @@
 
 WFA Hub is a Vietnamese-language web application providing ready-made automation templates for business users. It empowers non-coders to execute workflows such as email sending, quotation generation, and approval management. Built with React, Express, and PostgreSQL, the platform emphasizes a clean, productivity-focused design inspired by Linear.app and Framer Dashboard. The project's vision is to deliver a comprehensive workflow automation solution, including robust quotation management and an administrative panel for system oversight, catering to the Vietnamese market with localized features.
 
+## Recent Changes
+
+**November 24, 2025:**
+- **Campaign Duplication Feature**: Implemented "Sử dụng lại" (Duplicate Campaign) functionality
+  - Backend: Added `duplicateBulkCampaign()` storage method and `POST /api/bulk-campaigns/:id/duplicate` endpoint
+  - Duplication logic: Copies all campaign data (email subject, body, configuration), recipients (reset to pending status), and attachments
+  - Name versioning: Automatically increments version number (e.g., "Campaign v1" → "Campaign v2") or appends " - Copy"
+  - New campaign created as draft with reset statistics (sentCount=0, failedCount=0, openedCount=0)
+  - Frontend: Added "Sử dụng lại" button with Copy icon on campaign detail page
+  - User experience: After duplication, automatically redirects to wizard step 1 with the new campaign for editing
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

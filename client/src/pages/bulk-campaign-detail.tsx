@@ -86,10 +86,9 @@ export default function BulkCampaignDetail() {
   const duplicateMutation = useMutation({
     mutationFn: async () => {
       if (!campaignId) throw new Error("Campaign ID is missing");
-      const response = await apiRequest(`/api/bulk-campaigns/${campaignId}/duplicate`, {
-        method: "POST",
-      });
-      return response as { id: string };
+      const response = await apiRequest("POST", `/api/bulk-campaigns/${campaignId}/duplicate`);
+      const data = await response.json();
+      return data as { id: string };
     },
     onSuccess: (data) => {
       toast({
