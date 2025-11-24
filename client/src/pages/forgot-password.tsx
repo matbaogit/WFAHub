@@ -45,11 +45,11 @@ export default function ForgotPasswordPage() {
     },
     onSuccess: () => {
       toast({
-        title: "Yêu cầu đã được gửi!",
+        title: "✅ Email đã được gửi!",
         description: (
           <div className="flex items-start gap-2">
             <Mail className="w-4 h-4 mt-0.5 text-cyan-600" />
-            <span>Nếu email tồn tại, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu.</span>
+            <span>Vui lòng kiểm tra email để nhận hướng dẫn đặt lại mật khẩu.</span>
           </div>
         ),
       });
@@ -57,7 +57,7 @@ export default function ForgotPasswordPage() {
     },
     onError: (error: any) => {
       toast({
-        title: "Gửi yêu cầu thất bại",
+        title: "Không thể gửi email",
         description: error.message || "Vui lòng thử lại",
         variant: "destructive",
       });

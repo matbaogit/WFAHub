@@ -210,9 +210,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUserByEmail(email);
       
       if (!user) {
-        // Don't reveal if email exists or not for security
-        return res.json({ 
-          message: "Nếu email tồn tại, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu." 
+        return res.status(404).json({ 
+          message: "Email chưa tồn tại trong hệ thống. Vui lòng đăng ký tài khoản mới." 
         });
       }
 
