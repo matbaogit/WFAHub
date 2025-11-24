@@ -1388,9 +1388,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       
-      // Encrypt password before validation
+      // Encrypt password before validation (only if non-empty)
       const dataToSave = { ...req.body };
-      if (dataToSave.password) {
+      const hasNewPassword = dataToSave.password && dataToSave.password.trim() !== '';
+      
+      if (hasNewPassword) {
         dataToSave.password = encryptPassword(dataToSave.password);
       }
       
@@ -1404,12 +1406,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (existingConfig) {
         // Update existing config - only include password if provided
-        const updateData = dataToSave.password 
+        const updateData = hasNewPassword 
           ? validatedData 
           : { ...validatedData, password: existingConfig.password };
         await storage.updateSmtpConfig(userId, updateData);
       } else {
-        // Create new config
+        // Create new config - password is required for new config
+        if (!hasNewPassword) {
+          return res.status(400).json({ 
+            message: "Password là bắt buộc khi tạo SMTP config mới" 
+          });
+        }
         await storage.createSmtpConfig(validatedData);
       }
 
