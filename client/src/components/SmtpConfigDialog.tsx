@@ -436,7 +436,7 @@ export function SmtpConfigDialog({ open, onOpenChange, onSuccess }: SmtpConfigDi
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      <FieldLabel tooltip="Mật khẩu ứng dụng để đăng nhập SMTP. Với Gmail, bạn cần tạo App Password (không phải mật khẩu thường) để bảo mật hơn.">
+                      <FieldLabel tooltip="Mật khẩu khẩu email của bạn.">
                         Mật khẩu ứng dụng
                       </FieldLabel>
                     </FormLabel>
