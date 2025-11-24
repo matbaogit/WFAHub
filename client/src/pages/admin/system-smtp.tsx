@@ -6,8 +6,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Server, CheckCircle2, AlertCircle, Mail } from "lucide-react";
+import { Loader2, Server, CheckCircle2, AlertCircle, Mail, Send } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface SystemSmtpConfig {
   id?: string;
@@ -30,6 +38,8 @@ export default function AdminSystemSmtp() {
     username: "",
     password: "",
   });
+  const [testDialogOpen, setTestDialogOpen] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
 
   const { data: systemSmtp, isLoading } = useQuery<SystemSmtpConfig>({
     queryKey: ["/api/admin/system-smtp"],
@@ -57,9 +67,60 @@ export default function AdminSystemSmtp() {
     },
   });
 
+  const testEmailMutation = useMutation({
+    mutationFn: async ({ recipientEmail, smtpConfig }: { recipientEmail: string; smtpConfig: typeof formData }) => {
+      const res = await apiRequest("POST", "/api/admin/system-smtp/test", {
+        recipientEmail,
+        smtpConfig,
+      });
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "✅ Email đã gửi thành công!",
+        description: data.message || "Kiểm tra hộp thư của bạn",
+      });
+      setTestDialogOpen(false);
+      setTestEmail("");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "❌ Không thể gửi email",
+        description: error.message || "Vui lòng kiểm tra lại cấu hình SMTP",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     saveMutation.mutate(formData);
+  };
+
+  const handleTestEmail = () => {
+    if (!testEmail) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng nhập email nhận test",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate form fields before testing
+    if (!formData.fromEmail || !formData.host || !formData.username) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng điền đầy đủ thông tin SMTP trước khi test",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    testEmailMutation.mutate({
+      recipientEmail: testEmail,
+      smtpConfig: formData,
+    });
   };
 
   if (isLoading) {
@@ -208,25 +269,48 @@ export default function AdminSystemSmtp() {
               </p>
             </div>
 
-            <div className="pt-4 border-t">
-              <Button
-                type="submit"
-                disabled={saveMutation.isPending}
-                className="w-full"
-                data-testid="button-save-smtp"
-              >
-                {saveMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Đang lưu...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    {hasSystemSmtp ? "Cập nhật cấu hình" : "Lưu và đặt làm SMTP hệ thống"}
-                  </>
-                )}
-              </Button>
+            <div className="pt-4 border-t space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setTestDialogOpen(true)}
+                  disabled={testEmailMutation.isPending}
+                  data-testid="button-test-email"
+                >
+                  {testEmailMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Đang gửi...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      Test Email
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={saveMutation.isPending}
+                  data-testid="button-save-smtp"
+                >
+                  {saveMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Đang lưu...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      {hasSystemSmtp ? "Cập nhật" : "Lưu cấu hình"}
+                    </>
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-slate-500 text-center">
+                💡 Nhấn "Test Email" để kiểm tra cấu hình trước khi lưu
+              </p>
             </div>
           </form>
         </CardContent>
@@ -243,6 +327,66 @@ export default function AdminSystemSmtp() {
           <p>• Port phổ biến: 587 (TLS) hoặc 465 (SSL)</p>
         </CardContent>
       </Card>
+
+      {/* Test Email Dialog */}
+      <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gửi Email Test</DialogTitle>
+            <DialogDescription>
+              Nhập email của bạn để kiểm tra cấu hình SMTP. Email test sẽ được gửi ngay lập tức.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="test-email">Email nhận test</Label>
+              <Input
+                id="test-email"
+                type="email"
+                placeholder="your-email@example.com"
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleTestEmail();
+                  }
+                }}
+                data-testid="input-test-email"
+              />
+              <p className="text-xs text-slate-500">
+                Kiểm tra hộp thư spam nếu không thấy email sau vài phút
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setTestDialogOpen(false)}
+              disabled={testEmailMutation.isPending}
+              data-testid="button-cancel-test"
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleTestEmail}
+              disabled={testEmailMutation.isPending}
+              data-testid="button-send-test"
+            >
+              {testEmailMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Đang gửi...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Gửi Email Test
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
