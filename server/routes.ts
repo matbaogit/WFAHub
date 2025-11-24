@@ -1296,7 +1296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         secure: config.port === 465,
         auth: {
           user: config.username,
-          pass: config.password,
+          pass: decryptPassword(config.password),
         },
       });
 
