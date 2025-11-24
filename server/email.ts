@@ -32,16 +32,15 @@ export class EmailService {
   configure(config: EmailConfig) {
     this.config = config;
     
-    // Decrypt password if it's encrypted
-    const password = decryptPassword(config.password);
-    
+    // Password is already decrypted in routes.ts before calling configure()
+    // No need to decrypt again here
     this.transporter = nodemailer.createTransport({
       host: config.host,
       port: config.port,
       secure: config.secure,
       auth: {
         user: config.username,
-        pass: password,
+        pass: config.password,
       },
     });
   }
