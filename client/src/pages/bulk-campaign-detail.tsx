@@ -95,8 +95,8 @@ export default function BulkCampaignDetail() {
         title: "Đã tạo bản sao",
         description: "Chiến dịch đã được sao chép thành công.",
       });
-      // Navigate to wizard step 1 with the new campaign
-      navigate(`/bulk-campaign-wizard?campaignId=${data.id}&step=1`);
+      // Navigate to wizard with the duplicated campaign loaded as draft
+      navigate(`/bulk-campaigns/new?draftId=${data.id}`);
     },
     onError: (error: Error) => {
       toast({
