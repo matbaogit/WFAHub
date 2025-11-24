@@ -146,7 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           emailService.configure({
             host: smtpConfig.host,
             port: smtpConfig.port,
-            secure: smtpConfig.secure === 1,
+            secure: smtpConfig.port === 465, // Port 465 requires SSL
             username: smtpConfig.username,
             password: decryptedPassword,
             fromEmail: smtpConfig.fromEmail,
@@ -264,7 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         emailService.configure({
           host: smtpConfig.host,
           port: smtpConfig.port,
-          secure: smtpConfig.secure === 1,
+          secure: smtpConfig.port === 465, // Port 465 requires SSL
           username: smtpConfig.username,
           password: decryptedPassword,
           fromEmail: smtpConfig.fromEmail,
