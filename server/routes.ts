@@ -2001,6 +2001,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Duplicate campaign
+  app.post("/api/bulk-campaigns/:id/duplicate", isAuthenticated, async (req: any, res) => {
+    try {
+      // Check ownership
+      const existing = await storage.getBulkCampaign(req.params.id);
+      if (!existing) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      if (existing.userId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      const newCampaign = await storage.duplicateBulkCampaign(req.params.id);
+      res.json(newCampaign);
+    } catch (error: any) {
+      console.error("Error duplicating campaign:", error);
+      res.status(500).json({ message: error.message || "Failed to duplicate campaign" });
+    }
+  });
+
   // Helper function to normalize column names to variable names
   const normalizeVariableName = (columnName: string): string => {
     return columnName

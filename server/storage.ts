@@ -163,6 +163,7 @@ export interface IStorage {
   updateBulkCampaign(campaignId: string, data: Partial<BulkCampaign>): Promise<BulkCampaign>;
   deleteBulkCampaign(campaignId: string): Promise<void>;
   getBulkCampaignWithDetails(campaignId: string): Promise<any | undefined>;
+  duplicateBulkCampaign(campaignId: string): Promise<BulkCampaign>;
   
   // Campaign Recipient operations
   createCampaignRecipients(recipients: InsertCampaignRecipient[]): Promise<CampaignRecipient[]>;
@@ -951,6 +952,87 @@ export class DatabaseStorage implements IStorage {
       recipients,
       attachments,
     };
+  }
+
+  async duplicateBulkCampaign(campaignId: string): Promise<BulkCampaign> {
+    // Get original campaign
+    const original = await this.getBulkCampaign(campaignId);
+    if (!original) {
+      throw new Error('Campaign not found');
+    }
+
+    // Get recipients and attachments
+    const originalRecipients = await this.getCampaignRecipients(campaignId);
+    const originalAttachments = await this.getCampaignAttachments(campaignId);
+
+    // Generate new campaign name
+    let newName = original.name;
+    const versionMatch = newName.match(/v(\d+)$/);
+    if (versionMatch) {
+      const version = parseInt(versionMatch[1], 10);
+      newName = newName.replace(/v\d+$/, `v${version + 1}`);
+    } else {
+      newName = `${newName} - Copy`;
+    }
+
+    // Create new campaign with reset statistics
+    const [newCampaign] = await db
+      .insert(bulkCampaigns)
+      .values({
+        userId: original.userId,
+        quotationTemplateId: original.quotationTemplateId,
+        emailTemplateId: original.emailTemplateId,
+        smtpConfigId: original.smtpConfigId,
+        name: newName,
+        emailSubject: original.emailSubject,
+        emailBody: original.emailBody,
+        quotationHtml: original.quotationHtml,
+        availableVariables: original.availableVariables,
+        attachmentContent: original.attachmentContent,
+        step2Mode: original.step2Mode,
+        recipientsData: original.recipientsData,
+        status: 'draft',
+        totalRecipients: original.totalRecipients,
+        scheduledAt: original.scheduledAt,
+        schedulingMode: original.schedulingMode,
+        csvDateField: original.csvDateField,
+        csvDefaultTime: original.csvDefaultTime,
+        sendRate: original.sendRate,
+        // Reset statistics
+        sentCount: 0,
+        failedCount: 0,
+        openedCount: 0,
+      })
+      .returning();
+
+    // Copy recipients with reset status
+    if (originalRecipients.length > 0) {
+      const newRecipients = originalRecipients.map(r => ({
+        campaignId: newCampaign.id,
+        recipientEmail: r.recipientEmail,
+        recipientName: r.recipientName,
+        customData: r.customData,
+        attachmentFilename: r.attachmentFilename,
+        status: 'pending' as const,
+      }));
+      await this.createCampaignRecipients(newRecipients);
+    }
+
+    // Copy attachments
+    if (originalAttachments.length > 0) {
+      for (const attachment of originalAttachments) {
+        await this.createCampaignAttachment({
+          campaignId: newCampaign.id,
+          filename: attachment.filename,
+          originalName: attachment.originalName,
+          storagePath: attachment.storagePath,
+          fileSize: attachment.fileSize,
+          mimeType: attachment.mimeType,
+        });
+      }
+    }
+
+    return newCampaign;
   }
 
   // Campaign Recipient operations
