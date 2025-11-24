@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useRoute, Link } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useRoute, Link, useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,9 +34,12 @@ import {
   Search,
   Send,
   AlertCircle,
+  Copy,
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface CampaignRecipient {
   id: string;
@@ -69,6 +72,8 @@ interface CampaignDetails {
 export default function BulkCampaignDetail() {
   const [, params] = useRoute("/bulk-campaigns/:id");
   const campaignId = params?.id;
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -76,6 +81,31 @@ export default function BulkCampaignDetail() {
   const { data: campaign, isLoading } = useQuery<CampaignDetails>({
     queryKey: ["/api/bulk-campaigns", campaignId],
     enabled: !!campaignId,
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: async () => {
+      if (!campaignId) throw new Error("Campaign ID is missing");
+      const response = await apiRequest(`/api/bulk-campaigns/${campaignId}/duplicate`, {
+        method: "POST",
+      });
+      return response as { id: string };
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Đã tạo bản sao",
+        description: "Chiến dịch đã được sao chép thành công.",
+      });
+      // Navigate to wizard step 1 with the new campaign
+      navigate(`/bulk-campaign-wizard?campaignId=${data.id}&step=1`);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể sao chép chiến dịch",
+        variant: "destructive",
+      });
+    },
   });
 
   if (isLoading) {
@@ -200,7 +230,18 @@ export default function BulkCampaignDetail() {
             </p>
           </div>
         </div>
-        {getCampaignStatusBadge(campaign.status)}
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => duplicateMutation.mutate()}
+            disabled={duplicateMutation.isPending}
+            variant="outline"
+            data-testid="button-duplicate-campaign"
+          >
+            <Copy className="w-4 h-4 mr-2" />
+            {duplicateMutation.isPending ? "Đang sao chép..." : "Sử dụng lại"}
+          </Button>
+          {getCampaignStatusBadge(campaign.status)}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
