@@ -7,6 +7,14 @@ WFA Hub is a Vietnamese-language web application providing ready-made automation
 ## Recent Changes
 
 **November 25, 2025:**
+- **TipTap Rich Text Editor Integration**: Extended TipTap editor to Quotation Templates and Email Templates pages
+  - Both `/quotation-templates` and `/email-templates` now use full-featured rich text editor
+  - Shared TipTap extensions: StarterKit (includes Bold, Italic, Underline, Headings, Lists, etc.), Table support with resizable columns, Text alignment, Image paste, Color and TextStyle
+  - Fixed duplicate extensions issue: Removed explicit Underline and Dropcursor imports (already included in StarterKit)
+  - Created default system settings entry to ensure all user menu items visible by default
+  - Tab-based UI on both pages: Editor tab for rich text editing, Preview tab for HTML preview
+  - Toolbar buttons: Bold, Italic, Underline, Headings (H1-H6), Text alignment (left/center/right/justify), Lists (bullet/numbered), Tables, Images, Colors
+  - Test user created: tiptaptest@example.com / Test123456 (admin, verified)
 - **System-Wide User Menu Visibility Control**: Implemented database-backed menu visibility management for admins
   - New `systemSettings` table with `userMenuVisibility` JSONB field for storing system-wide menu preferences
   - Admin API endpoints: `GET/PUT /api/admin/system-settings` for managing user menu visibility
