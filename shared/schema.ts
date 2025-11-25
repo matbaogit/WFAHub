@@ -544,6 +544,37 @@ export const insertCampaignAttachmentSchema = createInsertSchema(campaignAttachm
   uploadedAt: true,
 });
 
+// ============ SYSTEM SETTINGS MODULE ============
+
+// System-wide settings (singleton table - only 1 row)
+export const systemSettings = pgTable("system_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Menu visibility for regular users (JSONB object with menu item IDs as keys)
+  userMenuVisibility: jsonb("user_menu_visibility").notNull().default(sql`'{
+    "home": true,
+    "templates": true,
+    "bulk-campaigns": true,
+    "quotation-templates": true,
+    "email-templates": true,
+    "smtp-config": true,
+    "service-catalog": true,
+    "customers": true,
+    "analytics": true,
+    "logs": true,
+    "account": true
+  }'::jsonb`),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type RegisterUser = z.infer<typeof registerUserSchema>;
 export type LoginUser = z.infer<typeof loginUserSchema>;
@@ -582,3 +613,7 @@ export type CampaignRecipient = typeof campaignRecipients.$inferSelect;
 export type InsertCampaignRecipient = z.infer<typeof insertCampaignRecipientSchema>;
 export type CampaignAttachment = typeof campaignAttachments.$inferSelect;
 export type InsertCampaignAttachment = z.infer<typeof insertCampaignAttachmentSchema>;
+
+// System settings types
+export type SystemSettings = typeof systemSettings.$inferSelect;
+export type InsertSystemSettings = z.infer<typeof insertSystemSettingsSchema>;
