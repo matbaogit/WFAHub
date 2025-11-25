@@ -1396,24 +1396,13 @@ export default function BulkCampaignWizard() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setStep2Mode(null)}
-              data-testid="button-back-to-mode-selection"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Quay lại
-            </Button>
-            <div>
-              <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">
-                {step2Mode === 'template' ? 'Chọn mẫu đính kèm' : 'Soạn nội dung tùy chỉnh'}
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Kéo thả biến từ thanh bên trái vào khung soạn thảo hoặc dán từ Word
-              </p>
-            </div>
+          <div>
+            <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">
+              {step2Mode === 'template' ? 'Chọn mẫu đính kèm' : 'Soạn nội dung tùy chỉnh'}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Kéo thả biến từ thanh bên trái vào khung soạn thảo hoặc dán từ Word
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <Button
