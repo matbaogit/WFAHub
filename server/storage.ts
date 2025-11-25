@@ -417,12 +417,16 @@ export class DatabaseStorage implements IStorage {
       await db.delete(quotations).where(eq(quotations.userId, userId));
     }
     
-    // 3. Delete other user-related data
+    // 3. Delete templates created by user
+    await db.delete(emailTemplates).where(eq(emailTemplates.createdBy, userId));
+    await db.delete(quotationTemplates).where(eq(quotationTemplates.createdBy, userId));
+    
+    // 4. Delete other user-related data
     await db.delete(customers).where(eq(customers.userId, userId));
     await db.delete(executionLogs).where(eq(executionLogs.userId, userId));
     await db.delete(smtpConfigs).where(eq(smtpConfigs.userId, userId));
     
-    // 4. Finally delete the user
+    // 5. Finally delete the user
     await db.delete(users).where(eq(users.id, userId));
   }
 
