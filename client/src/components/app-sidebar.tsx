@@ -143,14 +143,15 @@ export function AppSidebar() {
   const { isMenuVisible } = useAdminMenuPreferences();
   const [isUserMenuSettingsOpen, setIsUserMenuSettingsOpen] = useState(false);
   
-  // Fetch system settings for user menu visibility (only for non-admin view)
+  // Fetch system settings for user menu visibility
   const { data: systemSettings } = useQuery({
     queryKey: ['/api/admin/system-settings'],
-    enabled: viewMode === 'user',
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
   
-  const userMenuVisibility = systemSettings?.userMenuVisibility || {};
+  const userMenuVisibility: Record<string, boolean> = systemSettings?.userMenuVisibility || {};
   
   // Check if any quotation submenu item is active
   const isQuotationGroupActive = quotationMenuItems.some(item => location === item.url || location.startsWith(item.url + '/'));
