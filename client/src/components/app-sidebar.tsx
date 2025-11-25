@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Home, Zap, History, User, LogOut, Wallet, Sparkles, Shield, Users, BarChart3, FileText, UserCheck, Mail, Server, Layout, Package, SendHorizontal, ChevronDown, ChevronRight } from "lucide-react";
+import { Home, Zap, History, User, LogOut, Wallet, Sparkles, Shield, Users, BarChart3, FileText, UserCheck, Mail, Server, Layout, Package, SendHorizontal, ChevronDown, ChevronRight, Settings } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -20,6 +20,8 @@ import { useViewMode } from "@/contexts/ViewModeContext";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAdminMenuPreferences } from "@/hooks/useAdminMenuPreferences";
+import { AdminMenuSettings } from "@/components/AdminMenuSettings";
 
 // Menu items before quotation group
 const topMenuItems = [
@@ -90,26 +92,31 @@ const bottomMenuItems = [
 
 const adminMenuItems = [
   {
+    id: "admin-dashboard",
     title: "Admin Dashboard",
     url: "/admin",
     icon: Shield,
   },
   {
+    id: "admin-users",
     title: "Quản lý Users",
     url: "/admin/users",
     icon: Users,
   },
   {
+    id: "admin-templates",
     title: "Quản lý Templates",
     url: "/admin/templates",
     icon: Zap,
   },
   {
+    id: "admin-smtp",
     title: "SMTP Hệ thống",
     url: "/admin/system-smtp",
     icon: Server,
   },
   {
+    id: "admin-stats",
     title: "Thống kê",
     url: "/admin/stats",
     icon: BarChart3,
@@ -121,6 +128,8 @@ export function AppSidebar() {
   const { user } = useAuth();
   const { viewMode } = useViewMode();
   const { toast } = useToast();
+  const { isMenuVisible } = useAdminMenuPreferences();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   // Check if any quotation submenu item is active
   const isQuotationGroupActive = quotationMenuItems.some(item => location === item.url || location.startsWith(item.url + '/'));
@@ -290,13 +299,24 @@ export function AppSidebar() {
 
         {user?.role === "admin" && viewMode === "admin" && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs uppercase tracking-wider text-orange-600 px-4 font-bold flex items-center gap-2">
-              <Shield className="w-3.5 h-3.5" />
-              Admin Panel
+            <SidebarGroupLabel className="text-xs uppercase tracking-wider text-orange-600 px-4 font-bold flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Shield className="w-3.5 h-3.5" />
+                Admin Panel
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsSettingsOpen(true)}
+                className="h-5 w-5 hover:bg-orange-100 rounded-md"
+                data-testid="button-admin-menu-settings"
+              >
+                <Settings className="w-3.5 h-3.5" />
+              </Button>
             </SidebarGroupLabel>
             <SidebarGroupContent className="px-3">
               <SidebarMenu>
-                {adminMenuItems.map((item) => (
+                {adminMenuItems.filter(item => isMenuVisible(item.id)).map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton 
                       asChild
@@ -394,6 +414,11 @@ export function AppSidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+
+      <AdminMenuSettings
+        open={isSettingsOpen}
+        onOpenChange={setIsSettingsOpen}
+      />
     </Sidebar>
   );
 }
