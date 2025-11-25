@@ -14,6 +14,7 @@ import {
   bulkCampaigns,
   campaignRecipients,
   campaignAttachments,
+  systemSettings,
   type User,
   type RegisterUser,
   type Template,
@@ -41,6 +42,7 @@ import {
   type InsertCampaignRecipient,
   type CampaignAttachment,
   type InsertCampaignAttachment,
+  type SystemSettings,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -173,6 +175,10 @@ export interface IStorage {
   // Campaign Attachment operations
   createCampaignAttachment(attachment: InsertCampaignAttachment): Promise<CampaignAttachment>;
   getCampaignAttachments(campaignId: string): Promise<CampaignAttachment[]>;
+  
+  // System Settings operations
+  getSystemSettings(): Promise<SystemSettings | undefined>;
+  updateSystemSettings(data: Partial<SystemSettings>): Promise<SystemSettings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1071,6 +1077,39 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(campaignAttachments)
       .where(eq(campaignAttachments.campaignId, campaignId));
+  }
+
+  // System Settings operations
+  async getSystemSettings(): Promise<SystemSettings | undefined> {
+    const [settings] = await db.select().from(systemSettings).limit(1);
+    
+    // If no settings exist, create default settings
+    if (!settings) {
+      const [newSettings] = await db
+        .insert(systemSettings)
+        .values({})
+        .returning();
+      return newSettings;
+    }
+    
+    return settings;
+  }
+
+  async updateSystemSettings(data: Partial<SystemSettings>): Promise<SystemSettings> {
+    // Get existing settings or create if none exist
+    const existingSettings = await this.getSystemSettings();
+    
+    if (!existingSettings) {
+      throw new Error("Failed to get or create system settings");
+    }
+
+    const [updated] = await db
+      .update(systemSettings)
+      .set(data)
+      .where(eq(systemSettings.id, existingSettings.id))
+      .returning();
+    
+    return updated;
   }
 }
 
