@@ -737,6 +737,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user menu visibility (public for authenticated users)
+  app.get("/api/user-menu-visibility", isAuthenticated, async (req, res) => {
+    try {
+      const settings = await storage.getSystemSettings();
+      res.json({
+        userMenuVisibility: settings?.userMenuVisibility || {}
+      });
+    } catch (error) {
+      console.error("Error fetching user menu visibility:", error);
+      res.status(500).json({ message: "Failed to fetch user menu visibility" });
+    }
+  });
+
   // ============ QUOTATION MODULE ROUTES ============
   
   // Customer routes
