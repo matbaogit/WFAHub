@@ -20,6 +20,13 @@ interface UserMenuSettingsProps {
   onOpenChange: (open: boolean) => void;
 }
 
+interface SystemSettings {
+  id: string;
+  userMenuVisibility: Record<string, boolean>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const USER_MENU_ITEMS = [
   { id: 'home', label: 'Trang chủ', icon: Home },
   { id: 'templates', label: 'Tính năng', icon: Zap },
@@ -43,7 +50,7 @@ export function UserMenuSettings({ open, onOpenChange }: UserMenuSettingsProps) 
   const { toast } = useToast();
   const [localVisibility, setLocalVisibility] = useState<Record<string, boolean>>(DEFAULT_VISIBILITY);
 
-  const { data: systemSettings, isLoading } = useQuery({
+  const { data: systemSettings, isLoading } = useQuery<SystemSettings>({
     queryKey: ['/api/admin/system-settings'],
     enabled: open,
   });
@@ -56,10 +63,10 @@ export function UserMenuSettings({ open, onOpenChange }: UserMenuSettingsProps) 
 
   const updateMutation = useMutation({
     mutationFn: async (visibility: Record<string, boolean>) => {
-      return await apiRequest('/api/admin/system-settings', {
-        method: 'PATCH',
-        body: JSON.stringify({ userMenuVisibility: visibility }),
+      const res = await apiRequest('PUT', '/api/admin/system-settings', {
+        userMenuVisibility: visibility,
       });
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/system-settings'] });
