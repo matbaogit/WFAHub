@@ -2237,7 +2237,7 @@ export default function BulkCampaignWizard() {
   };
 
   return (
-    <div className="container max-w-4xl mx-auto py-8 px-4">
+    <div className="container max-w-7xl mx-auto py-8 px-4">
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl">Tạo chiến dịch gửi email hàng loạt</CardTitle>
