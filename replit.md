@@ -7,13 +7,17 @@ WFA Hub is a Vietnamese-language web application providing ready-made automation
 ## Recent Changes
 
 **November 25, 2025:**
-- **Admin Menu Customization**: Implemented admin menu visibility preferences
-  - New hook `useAdminMenuPreferences()` manages localStorage persistence for menu visibility settings
-  - AdminMenuSettings dialog component allows toggling individual admin menu items via checkboxes
-  - Settings button (gear icon) in Admin Panel sidebar header opens preferences dialog
-  - All preferences persist in localStorage with key 'wfa-admin-menu-preferences'
-  - Reset to defaults functionality restores all menu items to visible state
-  - Menu filtering applied in real-time - hidden items immediately removed from sidebar
+- **System-Wide User Menu Visibility Control**: Implemented database-backed menu visibility management for admins
+  - New `systemSettings` table with `userMenuVisibility` JSONB field for storing system-wide menu preferences
+  - Admin API endpoints: `GET/PUT /api/admin/system-settings` for managing user menu visibility
+  - `UserMenuSettings` component allows admins to control which menu items ALL regular users can see
+  - Settings button (gear icon) in Admin Panel header opens dialog to toggle 8 user menu items
+  - Menu filtering in sidebar: fetches system settings and hides disabled items in user view
+  - Default: All menus visible; admin view always shows all menus regardless of settings
+  - Replaces localStorage-based approach with centralized database configuration
+- **Admin Menu Customization**: Implemented localStorage-based admin menu visibility preferences
+  - `useAdminMenuPreferences()` hook manages admin's own menu preferences locally
+  - `AdminMenuSettings` component (not exposed in UI) allows admin to customize their own admin panel menu
 - **SMTP Config UX**: Simplified password tooltip from App Password explanation to "Mật khẩu email của bạn."
 - **Bug Fix**: Corrected duplicate campaign navigation route from `/bulk-campaign-wizard?campaignId=` to `/bulk-campaigns/new?draftId=`
 
