@@ -331,9 +331,11 @@ export default function BulkCampaignDetail() {
           <Separator />
           <div>
             <p className="text-sm font-medium text-muted-foreground mb-1">Nội dung:</p>
-            <div className="p-3 bg-muted/30 rounded-md text-sm whitespace-pre-wrap max-h-64 overflow-y-auto" data-testid="text-email-body">
-              {campaign.emailBody}
-            </div>
+            <div 
+              className="p-3 bg-muted/30 rounded-md text-sm max-h-64 overflow-y-auto prose prose-sm dark:prose-invert max-w-none" 
+              data-testid="text-email-body"
+              dangerouslySetInnerHTML={{ __html: campaign.emailBody }}
+            />
           </div>
         </CardContent>
       </Card>

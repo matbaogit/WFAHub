@@ -7,6 +7,11 @@ WFA Hub is a Vietnamese-language web application providing ready-made automation
 ## Recent Changes
 
 **November 25, 2025:**
+- **Campaign Detail HTML Rendering Fix**: Fixed email body display in campaign detail page
+  - Changed from plain text display to proper HTML rendering using `dangerouslySetInnerHTML`
+  - Email content now displays with formatting (bold, italic, lists, etc.) instead of raw HTML tags
+  - Added Tailwind Typography (`prose`) classes for better HTML content styling
+  - Location: `bulk-campaign-detail.tsx` "Chi tiết thư" section
 - **TipTap Rich Text Editor Integration**: Extended TipTap editor to Quotation Templates and Email Templates pages
   - Both `/quotation-templates` and `/email-templates` now use full-featured rich text editor
   - Shared TipTap extensions: StarterKit (includes Bold, Italic, Underline, Headings, Lists, etc.), Table support with resizable columns, Text alignment, Image paste, Color and TextStyle
