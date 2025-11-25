@@ -44,7 +44,7 @@ const topMenuItems = [
 const quotationMenuItems = [
   {
     id: "bulk-campaigns",
-    title: "Chiến dịch gửi mail",
+    title: "Chiến dịch Gửi Email",
     url: "/bulk-campaigns",
     icon: SendHorizontal,
   },
