@@ -148,6 +148,7 @@ export default function BulkCampaignWizard() {
   const [activeField, setActiveField] = useState<'subject' | 'body' | null>(null);
   const activeFieldRef = useRef<'subject' | 'body' | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(true);
+  const [isVariablesSidebarOpen, setIsVariablesSidebarOpen] = useState(true);
   const [isSmtpDialogOpen, setIsSmtpDialogOpen] = useState(false);
   const [step2Mode, setStep2Mode] = useState<null | 'template' | 'custom'>(null);
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
@@ -1627,32 +1628,46 @@ export default function BulkCampaignWizard() {
               Soạn email hoặc chọn mẫu. Kéo thả biến từ sidebar vào tiêu đề hoặc nội dung.
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsPreviewOpen(!isPreviewOpen)}
-            className="flex items-center gap-2"
-            data-testid="button-toggle-preview"
-          >
-            <Eye className="w-4 h-4" />
-            {isPreviewOpen ? "Ẩn xem trước" : "Hiện xem trước"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsVariablesSidebarOpen(!isVariablesSidebarOpen)}
+              className="flex items-center gap-2"
+              data-testid="button-toggle-variables"
+            >
+              <Eye className="w-4 h-4" />
+              {isVariablesSidebarOpen ? "Ẩn biến" : "Hiện biến"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsPreviewOpen(!isPreviewOpen)}
+              className="flex items-center gap-2"
+              data-testid="button-toggle-preview"
+            >
+              <Eye className="w-4 h-4" />
+              {isPreviewOpen ? "Ẩn xem trước" : "Hiện xem trước"}
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Left Sidebar - Variables */}
-          <div className="w-full lg:w-56 flex-shrink-0">
-            <VariablePicker 
-              variables={availableVariables} 
-              title="Biến từ CSV"
-              description="Kéo và thả hoặc nhấp đôi để chèn"
-              sampleData={sampleData}
-              editor={emailEditor}
-            />
-          </div>
+          {isVariablesSidebarOpen && (
+            <div className="w-full lg:w-60 flex-shrink-0">
+              <VariablePicker 
+                variables={availableVariables} 
+                title="Biến từ CSV"
+                description="Kéo và thả hoặc nhấp đôi để chèn"
+                sampleData={sampleData}
+                editor={emailEditor}
+              />
+            </div>
+          )}
 
-          {/* Main Editor - Full Width */}
-          <div className="flex-1 min-w-0 space-y-4">
+          {/* Main Editor - Flexible Width */}
+          <div className={`flex-1 min-w-0 space-y-4 ${isPreviewOpen ? 'lg:max-w-[60%]' : ''}`}>
             <Card>
               <CardContent className="pt-6 space-y-4">
                 <div className="space-y-2">
@@ -1745,19 +1760,19 @@ export default function BulkCampaignWizard() {
               </CardContent>
             </Card>
           </div>
-        </div>
 
-        {/* Floating Preview Panel */}
-        {isPreviewOpen && (
-          <div className="fixed right-8 top-32 w-96 max-h-[calc(100vh-12rem)] z-50 hidden lg:block">
-            <PreviewPane 
-              htmlContent={emailBody}
-              sampleData={sampleData}
-              title="Xem trước email"
-              subject={emailSubject}
-            />
-          </div>
-        )}
+          {/* Right Sidebar - Preview Panel */}
+          {isPreviewOpen && (
+            <div className="w-full lg:w-[38%] flex-shrink-0">
+              <PreviewPane 
+                htmlContent={emailBody}
+                sampleData={sampleData}
+                title="Xem trước email"
+                subject={emailSubject}
+              />
+            </div>
+          )}
+        </div>
       </div>
     );
   };
