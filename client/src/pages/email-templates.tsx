@@ -5,24 +5,38 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { EmailTemplate, InsertEmailTemplate } from "@shared/schema";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertEmailTemplateSchema } from "@shared/schema";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { TiptapEditor } from "@/components/TiptapEditor";
+import { useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { Table as TiptapTable } from '@tiptap/extension-table';
+import { TableRow as TiptapTableRow } from '@tiptap/extension-table-row';
+import { TableCell as TiptapTableCell } from '@tiptap/extension-table-cell';
+import { TableHeader as TiptapTableHeader } from '@tiptap/extension-table-header';
+import { TextAlign } from '@tiptap/extension-text-align';
+import { Image } from '@tiptap/extension-image';
+import { Color } from '@tiptap/extension-color';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Underline } from '@tiptap/extension-underline';
+import { Dropcursor } from '@tiptap/extension-dropcursor';
+import './tiptap-editor.css';
 
 interface EmailTemplateFormProps {
   form: any;
   onSubmit: (data: InsertEmailTemplate) => void;
   isPending: boolean;
   onCancel: () => void;
+  editor: any;
 }
 
-function EmailTemplateForm({ form, onSubmit, isPending, onCancel }: EmailTemplateFormProps) {
+function EmailTemplateForm({ form, onSubmit, isPending, onCancel, editor }: EmailTemplateFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -64,13 +78,21 @@ function EmailTemplateForm({ form, onSubmit, isPending, onCancel }: EmailTemplat
             <FormItem>
               <FormLabel>Nội dung HTML</FormLabel>
               <FormControl>
-                <Textarea 
-                  {...field} 
-                  placeholder="<p>Kính gửi {{customerName}},</p><p>Cảm ơn bạn đã quan tâm...</p>"
-                  className="font-mono text-sm"
-                  rows={12}
-                  data-testid="input-emailtemplate-htmlcontent"
-                />
+                <div data-testid="editor-emailtemplate-htmlcontent">
+                  <TiptapEditor
+                    editor={editor}
+                    onImageUpload={async (file) => {
+                      const formData = new FormData();
+                      formData.append('file', file);
+                      const response = await fetch('/api/upload-image', {
+                        method: 'POST',
+                        body: formData,
+                      });
+                      const data = await response.json();
+                      return data.url;
+                    }}
+                  />
+                </div>
               </FormControl>
               <FormMessage />
               <p className="text-xs text-muted-foreground">
@@ -159,6 +181,39 @@ export default function EmailTemplates() {
       isDefault: 0,
     },
   });
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      TiptapTable.configure({
+        resizable: true,
+      }),
+      TiptapTableRow,
+      TiptapTableHeader,
+      TiptapTableCell,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      Image,
+      Color,
+      TextStyle,
+      Underline,
+      Dropcursor,
+    ],
+    content: form.getValues('htmlContent') || '',
+    onUpdate: ({ editor }) => {
+      form.setValue('htmlContent', editor.getHTML(), { shouldValidate: true });
+    },
+  });
+
+  useEffect(() => {
+    if (editor && !editor.isDestroyed) {
+      const currentContent = form.getValues('htmlContent');
+      if (editor.getHTML() !== currentContent) {
+        editor.commands.setContent(currentContent || '');
+      }
+    }
+  }, [form.watch('htmlContent'), editor]);
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertEmailTemplate) => {
@@ -397,6 +452,7 @@ export default function EmailTemplates() {
             onSubmit={onSubmit}
             isPending={createMutation.isPending}
             onCancel={() => setIsCreateOpen(false)}
+            editor={editor}
           />
         </DialogContent>
       </Dialog>
@@ -415,6 +471,7 @@ export default function EmailTemplates() {
             onSubmit={onSubmit}
             isPending={updateMutation.isPending}
             onCancel={() => setEditingTemplate(null)}
+            editor={editor}
           />
         </DialogContent>
       </Dialog>

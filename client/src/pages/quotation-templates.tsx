@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
@@ -16,6 +15,20 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Plus, Edit, Trash2, Eye, FileText, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TiptapEditor } from "@/components/TiptapEditor";
+import { useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { Table as TiptapTable } from '@tiptap/extension-table';
+import { TableRow as TiptapTableRow } from '@tiptap/extension-table-row';
+import { TableCell as TiptapTableCell } from '@tiptap/extension-table-cell';
+import { TableHeader as TiptapTableHeader } from '@tiptap/extension-table-header';
+import { TextAlign } from '@tiptap/extension-text-align';
+import { Image } from '@tiptap/extension-image';
+import { Color } from '@tiptap/extension-color';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Underline } from '@tiptap/extension-underline';
+import { Dropcursor } from '@tiptap/extension-dropcursor';
+import './tiptap-editor.css';
 
 const formSchema = insertQuotationTemplateSchema.extend({
   name: z.string().min(1, "Tên mẫu không được để trống"),
@@ -77,6 +90,39 @@ export default function QuotationTemplates() {
       isDefault: 0,
     },
   });
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      TiptapTable.configure({
+        resizable: true,
+      }),
+      TiptapTableRow,
+      TiptapTableHeader,
+      TiptapTableCell,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      Image,
+      Color,
+      TextStyle,
+      Underline,
+      Dropcursor,
+    ],
+    content: form.getValues('htmlContent') || '',
+    onUpdate: ({ editor }) => {
+      form.setValue('htmlContent', editor.getHTML(), { shouldValidate: true });
+    },
+  });
+
+  useEffect(() => {
+    if (editor && !editor.isDestroyed) {
+      const currentContent = form.getValues('htmlContent');
+      if (editor.getHTML() !== currentContent) {
+        editor.commands.setContent(currentContent || '');
+      }
+    }
+  }, [form.watch('htmlContent'), editor]);
 
   const createMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -238,12 +284,21 @@ export default function QuotationTemplates() {
                         <FormItem>
                           <FormLabel>Nội dung HTML</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              {...field} 
-                              placeholder="Nhập HTML cho mẫu..."
-                              className="font-mono text-sm min-h-[400px]"
-                              data-testid="textarea-html-content"
-                            />
+                            <div data-testid="editor-html-content">
+                              <TiptapEditor
+                                editor={editor}
+                                onImageUpload={async (file) => {
+                                  const formData = new FormData();
+                                  formData.append('file', file);
+                                  const response = await fetch('/api/upload-image', {
+                                    method: 'POST',
+                                    body: formData,
+                                  });
+                                  const data = await response.json();
+                                  return data.url;
+                                }}
+                              />
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
