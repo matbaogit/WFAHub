@@ -24,8 +24,6 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Image } from '@tiptap/extension-image';
 import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
-import { Underline } from '@tiptap/extension-underline';
-import { Dropcursor } from '@tiptap/extension-dropcursor';
 import './tiptap-editor.css';
 
 interface EmailTemplateFormProps {
@@ -197,8 +195,6 @@ export default function EmailTemplates() {
       Image,
       Color,
       TextStyle,
-      Underline,
-      Dropcursor,
     ],
     content: form.getValues('htmlContent') || '',
     onUpdate: ({ editor }) => {
