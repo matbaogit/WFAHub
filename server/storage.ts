@@ -45,7 +45,7 @@ import {
   type SystemSettings,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
@@ -383,6 +383,46 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(userId: string): Promise<void> {
+    // Cascade delete all user-related data
+    // 1. Delete campaign attachments first (child of campaigns)
+    const userCampaigns = await db
+      .select({ id: bulkCampaigns.id })
+      .from(bulkCampaigns)
+      .where(eq(bulkCampaigns.userId, userId));
+    
+    const campaignIds = userCampaigns.map(c => c.id);
+    
+    if (campaignIds.length > 0) {
+      await db.delete(campaignAttachments).where(
+        inArray(campaignAttachments.campaignId, campaignIds)
+      );
+      await db.delete(campaignRecipients).where(
+        inArray(campaignRecipients.campaignId, campaignIds)
+      );
+      await db.delete(bulkCampaigns).where(eq(bulkCampaigns.userId, userId));
+    }
+    
+    // 2. Delete quotation items first (child of quotations)
+    const userQuotations = await db
+      .select({ id: quotations.id })
+      .from(quotations)
+      .where(eq(quotations.userId, userId));
+    
+    const quotationIds = userQuotations.map(q => q.id);
+    
+    if (quotationIds.length > 0) {
+      await db.delete(quotationItems).where(
+        inArray(quotationItems.quotationId, quotationIds)
+      );
+      await db.delete(quotations).where(eq(quotations.userId, userId));
+    }
+    
+    // 3. Delete other user-related data
+    await db.delete(customers).where(eq(customers.userId, userId));
+    await db.delete(executionLogs).where(eq(executionLogs.userId, userId));
+    await db.delete(smtpConfigs).where(eq(smtpConfigs.userId, userId));
+    
+    // 4. Finally delete the user
     await db.delete(users).where(eq(users.id, userId));
   }
 
