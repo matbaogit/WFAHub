@@ -6,6 +6,17 @@ WFA Hub is a Vietnamese-language web application providing ready-made automation
 
 ## Recent Changes
 
+**November 25, 2025:**
+- **Admin Menu Customization**: Implemented admin menu visibility preferences
+  - New hook `useAdminMenuPreferences()` manages localStorage persistence for menu visibility settings
+  - AdminMenuSettings dialog component allows toggling individual admin menu items via checkboxes
+  - Settings button (gear icon) in Admin Panel sidebar header opens preferences dialog
+  - All preferences persist in localStorage with key 'wfa-admin-menu-preferences'
+  - Reset to defaults functionality restores all menu items to visible state
+  - Menu filtering applied in real-time - hidden items immediately removed from sidebar
+- **SMTP Config UX**: Simplified password tooltip from App Password explanation to "Mật khẩu email của bạn."
+- **Bug Fix**: Corrected duplicate campaign navigation route from `/bulk-campaign-wizard?campaignId=` to `/bulk-campaigns/new?draftId=`
+
 **November 24, 2025:**
 - **Campaign Duplication Feature**: Implemented "Sử dụng lại" (Duplicate Campaign) functionality
   - Backend: Added `duplicateBulkCampaign()` storage method and `POST /api/bulk-campaigns/:id/duplicate` endpoint
