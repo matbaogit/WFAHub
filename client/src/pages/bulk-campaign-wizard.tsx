@@ -1415,32 +1415,46 @@ export default function BulkCampaignWizard() {
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsPreviewOpen(!isPreviewOpen)}
-            className="flex items-center gap-2"
-            data-testid="button-toggle-preview"
-          >
-            <Eye className="w-4 h-4" />
-            {isPreviewOpen ? "Ẩn xem trước" : "Hiện xem trước"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsVariablesSidebarOpen(!isVariablesSidebarOpen)}
+              className="flex items-center gap-2"
+              data-testid="button-toggle-variables"
+            >
+              <Eye className="w-4 h-4" />
+              {isVariablesSidebarOpen ? "Ẩn biến" : "Hiện biến"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsPreviewOpen(!isPreviewOpen)}
+              className="flex items-center gap-2"
+              data-testid="button-toggle-preview"
+            >
+              <Eye className="w-4 h-4" />
+              {isPreviewOpen ? "Ẩn xem trước" : "Hiện xem trước"}
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Left Sidebar - Variables */}
-          <div className="w-full lg:w-56 flex-shrink-0">
-            <VariablePicker 
-              variables={availableVariables} 
-              title="Biến từ CSV"
-              description="Kéo và thả hoặc nhấp đôi để chèn"
-              sampleData={sampleData}
-              editor={editor}
-            />
-          </div>
+          {isVariablesSidebarOpen && (
+            <div className="w-full lg:w-60 flex-shrink-0">
+              <VariablePicker 
+                variables={availableVariables} 
+                title="Biến từ CSV"
+                description="Kéo và thả hoặc nhấp đôi để chèn"
+                sampleData={sampleData}
+                editor={editor}
+              />
+            </div>
+          )}
 
-          {/* Main Editor - Full Width */}
-          <div className="flex-1 min-w-0 space-y-4">
+          {/* Main Editor - Flexible Width */}
+          <div className={`flex-1 min-w-0 space-y-4 ${isPreviewOpen ? 'lg:max-w-[60%]' : ''}`}>
             <Card>
               <CardContent className="pt-6 space-y-4">
                 {/* Show template selector only in template mode */}
@@ -1496,18 +1510,18 @@ export default function BulkCampaignWizard() {
               </CardContent>
             </Card>
           </div>
-        </div>
 
-        {/* Floating Preview Panel */}
-        {isPreviewOpen && (
-          <div className="fixed right-8 top-32 w-96 max-h-[calc(100vh-12rem)] z-50 hidden lg:block">
-            <PreviewPane 
-              htmlContent={quotationHtmlContent}
-              sampleData={sampleData}
-              title="Xem trước tệp đính kèm"
-            />
-          </div>
-        )}
+          {/* Right Sidebar - Preview Panel */}
+          {isPreviewOpen && (
+            <div className="w-full lg:w-[38%] flex-shrink-0">
+              <PreviewPane 
+                htmlContent={quotationHtmlContent}
+                sampleData={sampleData}
+                title="Xem trước tệp đính kèm"
+              />
+            </div>
+          )}
+        </div>
       </div>
     );
   };
