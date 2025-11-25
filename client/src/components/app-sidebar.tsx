@@ -17,20 +17,23 @@ import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useViewMode } from "@/contexts/ViewModeContext";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminMenuPreferences } from "@/hooks/useAdminMenuPreferences";
 import { AdminMenuSettings } from "@/components/AdminMenuSettings";
+import { UserMenuSettings } from "@/components/UserMenuSettings";
 
 // Menu items before quotation group
 const topMenuItems = [
   {
+    id: "home",
     title: "Trang chủ",
     url: "/",
     icon: Home,
   },
   {
+    id: "templates",
     title: "Tính năng",
     url: "/templates",
     icon: Zap,
@@ -40,21 +43,25 @@ const topMenuItems = [
 // Quotation group submenu items
 const quotationMenuItems = [
   {
+    id: "bulk-campaigns",
     title: "Chiến dịch Báo Giá",
     url: "/bulk-campaigns",
     icon: SendHorizontal,
   },
   {
+    id: "quotation-templates",
     title: "Mẫu tệp đính kèm",
     url: "/quotation-templates",
     icon: Layout,
   },
   {
+    id: "email-templates",
     title: "Mẫu nội dung email",
     url: "/email-templates",
     icon: Mail,
   },
   {
+    id: "smtp-config",
     title: "Cấu hình SMTP",
     url: "/smtp-config",
     icon: Server,
@@ -64,26 +71,31 @@ const quotationMenuItems = [
 // Menu items after quotation group
 const bottomMenuItems = [
   {
+    id: "service-catalog",
     title: "Danh Mục Dịch Vụ",
     url: "/service-catalog",
     icon: Package,
   },
   {
+    id: "customers",
     title: "Khách hàng",
     url: "/customers",
     icon: UserCheck,
   },
   {
+    id: "analytics",
     title: "Phân tích",
     url: "/analytics",
     icon: BarChart3,
   },
   {
+    id: "logs",
     title: "Lịch sử",
     url: "/logs",
     icon: History,
   },
   {
+    id: "account",
     title: "Tài khoản",
     url: "/account",
     icon: User,
@@ -129,7 +141,16 @@ export function AppSidebar() {
   const { viewMode } = useViewMode();
   const { toast } = useToast();
   const { isMenuVisible } = useAdminMenuPreferences();
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isUserMenuSettingsOpen, setIsUserMenuSettingsOpen] = useState(false);
+  
+  // Fetch system settings for user menu visibility (only for non-admin view)
+  const { data: systemSettings } = useQuery({
+    queryKey: ['/api/admin/system-settings'],
+    enabled: viewMode === 'user',
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+  
+  const userMenuVisibility = systemSettings?.userMenuVisibility || {};
   
   // Check if any quotation submenu item is active
   const isQuotationGroupActive = quotationMenuItems.some(item => location === item.url || location.startsWith(item.url + '/'));
@@ -161,6 +182,19 @@ export function AppSidebar() {
     }
     return "U";
   };
+  
+  // Helper function to check if menu item should be visible in user view
+  const isMenuItemVisible = (menuId: string) => {
+    // In admin view, show all menus
+    if (viewMode === 'admin') return true;
+    // In user view, check system settings
+    return userMenuVisibility[menuId] !== false;
+  };
+  
+  // Filter menu items based on visibility settings
+  const visibleTopMenuItems = topMenuItems.filter(item => isMenuItemVisible(item.id));
+  const visibleQuotationMenuItems = quotationMenuItems.filter(item => isMenuItemVisible(item.id));
+  const visibleBottomMenuItems = bottomMenuItems.filter(item => isMenuItemVisible(item.id));
 
   return (
     <Sidebar className="border-r border-slate-200/60 bg-white/80 backdrop-blur-xl">
@@ -177,7 +211,7 @@ export function AppSidebar() {
           <SidebarGroupContent className="px-3">
             <SidebarMenu>
               {/* Top menu items */}
-              {topMenuItems.map((item) => (
+              {visibleTopMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
@@ -241,7 +275,7 @@ export function AppSidebar() {
                   </div>
                   <CollapsibleContent className="mt-1">
                     <SidebarMenu className="ml-4 border-l-2 border-slate-200/60 pl-2">
-                      {quotationMenuItems.map((item) => (
+                      {visibleQuotationMenuItems.map((item) => (
                         <SidebarMenuItem key={item.title}>
                           <SidebarMenuButton 
                             asChild
@@ -270,7 +304,7 @@ export function AppSidebar() {
               </Collapsible>
 
               {/* Bottom menu items */}
-              {bottomMenuItems.map((item) => (
+              {visibleBottomMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton 
                     asChild
@@ -307,9 +341,10 @@ export function AppSidebar() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setIsSettingsOpen(true)}
+                onClick={() => setIsUserMenuSettingsOpen(true)}
                 className="h-5 w-5 hover:bg-orange-100 rounded-md"
-                data-testid="button-admin-menu-settings"
+                title="Cài đặt menu người dùng"
+                data-testid="button-user-menu-settings"
               >
                 <Settings className="w-3.5 h-3.5" />
               </Button>
@@ -415,9 +450,9 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarFooter>
 
-      <AdminMenuSettings
-        open={isSettingsOpen}
-        onOpenChange={setIsSettingsOpen}
+      <UserMenuSettings
+        open={isUserMenuSettingsOpen}
+        onOpenChange={setIsUserMenuSettingsOpen}
       />
     </Sidebar>
   );

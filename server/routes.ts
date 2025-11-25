@@ -709,6 +709,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get system settings (admin only)
+  app.get("/api/admin/system-settings", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getSystemSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching system settings:", error);
+      res.status(500).json({ message: "Failed to fetch system settings" });
+    }
+  });
+
+  // Update system settings (admin only)
+  app.patch("/api/admin/system-settings", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { userMenuVisibility } = req.body;
+      
+      if (!userMenuVisibility || typeof userMenuVisibility !== 'object') {
+        return res.status(400).json({ message: "userMenuVisibility is required and must be an object" });
+      }
+      
+      const updated = await storage.updateSystemSettings({ userMenuVisibility });
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating system settings:", error);
+      res.status(500).json({ message: "Failed to update system settings" });
+    }
+  });
+
   // ============ QUOTATION MODULE ROUTES ============
   
   // Customer routes
