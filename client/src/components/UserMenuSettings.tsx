@@ -63,7 +63,7 @@ export function UserMenuSettings({ open, onOpenChange }: UserMenuSettingsProps) 
 
   const updateMutation = useMutation({
     mutationFn: async (visibility: Record<string, boolean>) => {
-      const res = await apiRequest('PUT', '/api/admin/system-settings', {
+      const res = await apiRequest('PATCH', '/api/admin/system-settings', {
         userMenuVisibility: visibility,
       });
       return res.json();
