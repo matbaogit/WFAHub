@@ -118,6 +118,8 @@ export default function BulkCampaignWizard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emailSubjectRef = useRef<HTMLInputElement>(null);
   const emailBodyRef = useRef<HTMLTextAreaElement>(null);
+  const draftLoadedRef = useRef<boolean>(false);
+  const draftDataRef = useRef<{emailBody: string; attachmentContent: string} | null>(null);
   
   // Parse URL params to get draftId
   const params = new URLSearchParams(window.location.search);
@@ -764,17 +766,27 @@ export default function BulkCampaignWizard() {
 
   // Load draft data when draftId is present in URL
   useEffect(() => {
-    if (urlDraftId) {
+    if (urlDraftId && !draftLoadedRef.current) {
       const loadDraft = async () => {
         try {
           const res = await apiRequest("GET", `/api/bulk-campaigns/${urlDraftId}`);
           const draft = await res.json();
           
+          draftLoadedRef.current = true;
+          
           // Populate form fields with draft data
           setCampaignName(draft.name || "");
           setEmailSubject(draft.emailSubject || "");
-          setEmailBody(draft.emailBody || "");
-          setQuotationHtmlContent(draft.attachmentContent || "");
+          
+          const draftEmailBody = draft.emailBody || "";
+          const draftAttachmentContent = draft.attachmentContent || "";
+          
+          setEmailBody(draftEmailBody);
+          setQuotationHtmlContent(draftAttachmentContent);
+          
+          // Store draft data for later editor sync
+          draftDataRef.current = { emailBody: draftEmailBody, attachmentContent: draftAttachmentContent };
+          
           if (draft.step2Mode) {
             setStep2Mode(draft.step2Mode);
           }
@@ -810,6 +822,25 @@ export default function BulkCampaignWizard() {
       loadDraft();
     }
   }, [urlDraftId]);
+  
+  // Sync editors with draft content when they become ready
+  useEffect(() => {
+    if (draftDataRef.current && editor && !editor.isDestroyed) {
+      const content = draftDataRef.current.attachmentContent;
+      if (content && editor.getHTML() !== content) {
+        editor.commands.setContent(content);
+      }
+    }
+  }, [editor]);
+  
+  useEffect(() => {
+    if (draftDataRef.current && emailEditor && !emailEditor.isDestroyed) {
+      const content = draftDataRef.current.emailBody;
+      if (content && emailEditor.getHTML() !== content) {
+        emailEditor.commands.setContent(content);
+      }
+    }
+  }, [emailEditor]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
