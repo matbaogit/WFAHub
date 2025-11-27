@@ -2196,31 +2196,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
       const data = XLSX.utils.sheet_to_json(firstSheet) as Array<Record<string, any>>;
 
-      // Get all column headers
+      // Get all column headers directly from CSV data
       const headers = data.length > 0 ? Object.keys(data[0]) : [];
       
-      // Create available variables ONLY for mapped fields
-      // Extract all mapped field names from the mapping object
-      const mappedFields = Object.entries(mapping)
-        .filter(([fieldName, columnName]) => {
-          // Only include if columnName is valid (not empty/null)
-          return columnName && typeof columnName === 'string' && columnName.trim() !== '';
-        })
-        .map(([fieldName, columnName]) => ({
-          fieldName,
-          columnName: columnName as string
-        }));
+      console.log("[DEBUG] CSV headers from file:", headers);
+      console.log("[DEBUG] Mapping received:", mapping);
       
-      console.log("[DEBUG] Mapped fields:", mappedFields);
-      
-      // Create available variables from mapped fields only
-      // Use NORMALIZED column names so they match customData keys
-      const availableVariables: Array<{label: string, value: string}> = mappedFields.map(field => ({
-        label: field.columnName,  // Original column name from CSV (for display)
-        value: `{${normalizeVariableName(field.columnName)}}`  // Use normalized column name (matches customData keys)
+      // Create available variables from ACTUAL CSV headers (not from mapping)
+      // This ensures variable names match exactly with customData keys
+      const availableVariables: Array<{label: string, value: string}> = headers.map(header => ({
+        label: header,  // Original column name from CSV (for display)
+        value: `{${normalizeVariableName(header)}}`  // Use normalized column name (matches customData keys)
       }));
       
       console.log("[DEBUG] Available variables:", availableVariables);
+      console.log("[DEBUG] First row customData keys will be:", headers.map(h => normalizeVariableName(h)));
 
       // Apply mapping to convert raw data to recipients
       const recipients = data.map(row => {
