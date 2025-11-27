@@ -34,6 +34,7 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminTemplates from "@/pages/admin/templates";
 import AdminSystemSmtp from "@/pages/admin/system-smtp";
+import Policy from "@/pages/policy";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -46,6 +47,7 @@ function Router() {
       <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/policy/:slug" component={Policy} />
       
       {/* Landing page - always accessible */}
       <Route path="/" component={Landing} />
@@ -93,7 +95,7 @@ function AppContent() {
   
   // Routes that should not show sidebar/topbar (public pages)
   const publicRoutes = ["/", "/login", "/register", "/verify-email", "/forgot-password", "/reset-password"];
-  const isPublicRoute = publicRoutes.includes(location);
+  const isPublicRoute = publicRoutes.includes(location) || location.startsWith("/policy/");
   const shouldShowLayout = !isLoading && isAuthenticated && !isPublicRoute;
 
   if (!shouldShowLayout) {
