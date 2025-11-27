@@ -1094,7 +1094,7 @@ export default function BulkCampaignWizard() {
 
   const selectedTemplate = quotationTemplates.find(t => t.id === selectedTemplateId);
 
-  const handleStepClick = (step: number) => {
+  const handleStepClick = (step: WizardStep) => {
     if (step < currentStep) {
       setCurrentStep(step);
     }
@@ -1102,7 +1102,7 @@ export default function BulkCampaignWizard() {
 
   const renderStepIndicator = () => (
     <div className="flex items-center justify-between mb-8">
-      {[1, 2, 3, 4].map((step) => {
+      {([1, 2, 3, 4] as WizardStep[]).map((step) => {
         const isCompleted = step < currentStep;
         const isCurrent = step === currentStep;
         const isClickable = isCompleted;
