@@ -22,7 +22,7 @@ export default function LoginPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      setLocation("/");
+      setLocation("/dashboard");
     }
   }, [isAuthenticated, isLoading, setLocation]);
 
@@ -45,7 +45,7 @@ export default function LoginPage() {
         title: "Đăng nhập thành công!",
         description: "Chào mừng bạn quay lại",
       });
-      setLocation("/");
+      setLocation("/dashboard");
     },
     onError: (error: any) => {
       toast({
