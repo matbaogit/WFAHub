@@ -757,6 +757,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ POLICY PAGES ROUTES ============
+  
+  // Get all published policy pages (public - no auth required)
+  app.get("/api/policies", async (req, res) => {
+    try {
+      const pages = await storage.getPublishedPolicyPages();
+      res.json(pages);
+    } catch (error) {
+      console.error("Error fetching policy pages:", error);
+      res.status(500).json({ message: "Failed to fetch policy pages" });
+    }
+  });
+
+  // Get policy page by slug (public - no auth required)
+  app.get("/api/policies/:slug", async (req, res) => {
+    try {
+      const page = await storage.getPolicyPageBySlug(req.params.slug);
+      if (!page || page.isPublished !== 1) {
+        return res.status(404).json({ message: "Policy page not found" });
+      }
+      res.json(page);
+    } catch (error) {
+      console.error("Error fetching policy page:", error);
+      res.status(500).json({ message: "Failed to fetch policy page" });
+    }
+  });
+
+  // Admin: Get all policy pages
+  app.get("/api/admin/policies", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const pages = await storage.getAllPolicyPages();
+      res.json(pages);
+    } catch (error) {
+      console.error("Error fetching policy pages:", error);
+      res.status(500).json({ message: "Failed to fetch policy pages" });
+    }
+  });
+
+  // Admin: Create policy page
+  app.post("/api/admin/policies", isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { title, slug, content, isPublished, sortOrder } = req.body;
+      
+      if (!title || !slug || !content) {
+        return res.status(400).json({ message: "Title, slug, and content are required" });
+      }
+
+      // Check if slug is unique
+      const existing = await storage.getPolicyPageBySlug(slug);
+      if (existing) {
+        return res.status(400).json({ message: "Slug already exists" });
+      }
+
+      const page = await storage.createPolicyPage({
+        title,
+        slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+        content,
+        isPublished: isPublished ?? 1,
+        sortOrder: sortOrder ?? 0,
+        createdBy: req.user.id,
+      });
+      
+      res.json(page);
+    } catch (error) {
+      console.error("Error creating policy page:", error);
+      res.status(500).json({ message: "Failed to create policy page" });
+    }
+  });
+
+  // Admin: Update policy page
+  app.patch("/api/admin/policies/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { title, slug, content, isPublished, sortOrder } = req.body;
+      
+      const existingPage = await storage.getPolicyPage(req.params.id);
+      if (!existingPage) {
+        return res.status(404).json({ message: "Policy page not found" });
+      }
+
+      // If slug is being changed, check uniqueness
+      if (slug && slug !== existingPage.slug) {
+        const slugExists = await storage.getPolicyPageBySlug(slug);
+        if (slugExists) {
+          return res.status(400).json({ message: "Slug already exists" });
+        }
+      }
+
+      const updates: any = {};
+      if (title !== undefined) updates.title = title;
+      if (slug !== undefined) updates.slug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      if (content !== undefined) updates.content = content;
+      if (isPublished !== undefined) updates.isPublished = isPublished;
+      if (sortOrder !== undefined) updates.sortOrder = sortOrder;
+
+      const page = await storage.updatePolicyPage(req.params.id, updates);
+      res.json(page);
+    } catch (error) {
+      console.error("Error updating policy page:", error);
+      res.status(500).json({ message: "Failed to update policy page" });
+    }
+  });
+
+  // Admin: Delete policy page
+  app.delete("/api/admin/policies/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const page = await storage.getPolicyPage(req.params.id);
+      if (!page) {
+        return res.status(404).json({ message: "Policy page not found" });
+      }
+
+      await storage.deletePolicyPage(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting policy page:", error);
+      res.status(500).json({ message: "Failed to delete policy page" });
+    }
+  });
+
   // ============ QUOTATION MODULE ROUTES ============
   
   // Customer routes
