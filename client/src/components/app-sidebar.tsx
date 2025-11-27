@@ -201,13 +201,19 @@ export function AppSidebar() {
     <Sidebar className="border-r border-slate-200/60 bg-white/80 backdrop-blur-xl">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-base font-bold px-4 py-4 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-              <Zap className="w-5 h-5 text-white" />
-            </div>
-            <span className="bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-              WFA Hub
-            </span>
+          <SidebarGroupLabel className="text-base font-bold px-4 py-4">
+            <Link 
+              href="/" 
+              className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+              data-testid="link-wfa-hub-logo"
+            >
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
+              <span className="bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+                WFA Hub
+              </span>
+            </Link>
           </SidebarGroupLabel>
           <SidebarGroupContent className="px-3">
             <SidebarMenu>
