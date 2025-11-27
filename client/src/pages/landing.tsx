@@ -172,14 +172,41 @@ export default function Landing() {
       </main>
 
       <footer className="border-t border-slate-200/60 py-12 px-8 bg-white/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" />
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-lg font-bold text-slate-900">WFA Hub</span>
             </div>
-            <span className="text-lg font-bold text-slate-900">WFA Hub</span>
+            <nav className="flex flex-wrap items-center justify-center gap-6">
+              <a 
+                href="/policy/dieu-khoan-su-dung" 
+                className="text-sm text-slate-600 hover:text-blue-600 transition-colors"
+                data-testid="link-terms"
+              >
+                Điều khoản sử dụng
+              </a>
+              <a 
+                href="/policy/chinh-sach-bao-mat" 
+                className="text-sm text-slate-600 hover:text-blue-600 transition-colors"
+                data-testid="link-privacy"
+              >
+                Chính sách bảo mật
+              </a>
+              <a 
+                href="/policy/lien-he" 
+                className="text-sm text-slate-600 hover:text-blue-600 transition-colors"
+                data-testid="link-contact"
+              >
+                Liên hệ
+              </a>
+            </nav>
           </div>
-          <p className="text-sm text-slate-500">© 2025 WFA Hub. Nền tảng tự động hóa quy trình doanh nghiệp.</p>
+          <div className="text-center pt-6 border-t border-slate-200/60">
+            <p className="text-sm text-slate-500">© 2025 WFA Hub. Nền tảng tự động hóa quy trình doanh nghiệp.</p>
+          </div>
         </div>
       </footer>
     </div>
