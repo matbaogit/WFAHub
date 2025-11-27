@@ -54,11 +54,18 @@ const isAdmin = async (req: any, res: any, next: any) => {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Local Auth
   setupLocalAuth(app);
+
+  // Serve uploaded images as static files
+  const uploadedImagesPath = path.join(process.cwd(), 'attached_assets', 'uploaded_images');
+  if (!fs.existsSync(uploadedImagesPath)) {
+    fs.mkdirSync(uploadedImagesPath, { recursive: true });
+  }
+  app.use('/attached_assets/uploaded_images', (await import('express')).default.static(uploadedImagesPath));
   
   // Setup multer for file uploads (memory storage)
   const upload = multer({ 
     storage: multer.memoryStorage(),
-    limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
+    limits: { fileSize: 2 * 1024 * 1024 } // 2MB limit for images
   });
 
   // Image upload endpoint for TinyMCE editor
