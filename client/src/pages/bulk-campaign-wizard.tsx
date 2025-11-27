@@ -1470,7 +1470,7 @@ export default function BulkCampaignWizard() {
             {/* Left Sidebar - Variables */}
             {isVariablesSidebarOpen && (
               <>
-                <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
+                <ResizablePanel id="step2-variables" order={1} defaultSize={20} minSize={15} maxSize={35}>
                   <div className="h-full p-3 overflow-auto">
                     <VariablePicker 
                       variables={availableVariables} 
@@ -1486,10 +1486,10 @@ export default function BulkCampaignWizard() {
             )}
 
             {/* Right side: Editor + Preview in nested group */}
-            <ResizablePanel defaultSize={isVariablesSidebarOpen ? 80 : 100}>
+            <ResizablePanel id="step2-main" order={2} defaultSize={isVariablesSidebarOpen ? 80 : 100}>
               <ResizablePanelGroup direction="horizontal" className="h-full">
                 {/* Main Editor */}
-                <ResizablePanel defaultSize={isPreviewOpen ? 55 : 100} minSize={30}>
+                <ResizablePanel id="step2-editor" order={1} defaultSize={isPreviewOpen ? 55 : 100} minSize={30}>
                   <div className="h-full p-4 overflow-auto">
                     <Card className="h-full">
                       <CardContent className="pt-6 space-y-4">
@@ -1552,7 +1552,7 @@ export default function BulkCampaignWizard() {
                 {isPreviewOpen && (
                   <>
                     <ResizableHandle withHandle />
-                    <ResizablePanel defaultSize={45} minSize={20} maxSize={60}>
+                    <ResizablePanel id="step2-preview" order={2} defaultSize={45} minSize={20} maxSize={60}>
                       <div className="h-full p-3 overflow-auto">
                         <PreviewPane 
                           htmlContent={quotationHtmlContent}
@@ -1716,7 +1716,7 @@ export default function BulkCampaignWizard() {
             {/* Left Sidebar - Variables */}
             {isVariablesSidebarOpen && (
               <>
-                <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
+                <ResizablePanel id="step3-variables" order={1} defaultSize={20} minSize={15} maxSize={35}>
                   <div className="h-full p-3 overflow-auto">
                     <VariablePicker 
                       variables={availableVariables} 
@@ -1732,10 +1732,10 @@ export default function BulkCampaignWizard() {
             )}
 
             {/* Right side: Editor + Preview in nested group */}
-            <ResizablePanel defaultSize={isVariablesSidebarOpen ? 80 : 100}>
+            <ResizablePanel id="step3-main" order={2} defaultSize={isVariablesSidebarOpen ? 80 : 100}>
               <ResizablePanelGroup direction="horizontal" className="h-full">
                 {/* Main Editor */}
-                <ResizablePanel defaultSize={isPreviewOpen ? 55 : 100} minSize={30}>
+                <ResizablePanel id="step3-editor" order={1} defaultSize={isPreviewOpen ? 55 : 100} minSize={30}>
                   <div className="h-full p-4 overflow-auto">
                     <Card className="h-full">
                       <CardContent className="pt-6 space-y-4">
@@ -1833,7 +1833,7 @@ export default function BulkCampaignWizard() {
                 {isPreviewOpen && (
                   <>
                     <ResizableHandle withHandle />
-                    <ResizablePanel defaultSize={45} minSize={20} maxSize={60}>
+                    <ResizablePanel id="step3-preview" order={2} defaultSize={45} minSize={20} maxSize={60}>
                       <div className="h-full p-3 overflow-auto">
                         <PreviewPane 
                           htmlContent={emailBody}
