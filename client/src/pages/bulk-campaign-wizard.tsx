@@ -2342,7 +2342,7 @@ export default function BulkCampaignWizard() {
                     htmlFor="save-as-template" 
                     className="text-sm font-normal cursor-pointer"
                   >
-                    Lưu mẫu
+                    Lưu mẫu tệp đính kèm
                   </Label>
                 </div>
               )}
