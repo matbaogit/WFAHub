@@ -224,6 +224,13 @@ export const FloatingImage = Image.extend({
 
   addCommands() {
     return {
+      ...this.parent?.(),
+      setFloatingImage: (options: { src: string; alt?: string; title?: string }) => ({ commands }: any) => {
+        return commands.insertContent({
+          type: 'floatingImage',
+          attrs: options,
+        });
+      },
       setImageAlign: (align: string) => ({ commands }: any) => {
         return commands.updateAttributes('floatingImage', { align });
       },

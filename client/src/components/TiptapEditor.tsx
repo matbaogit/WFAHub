@@ -67,7 +67,17 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
       
       try {
         const url = await onImageUpload(file);
-        editor.chain().focus().setImage({ src: url }).run();
+        // Use setFloatingImage for FloatingImage extension or insertContent as fallback
+        const chain = editor.chain().focus();
+        if (typeof (chain as any).setFloatingImage === 'function') {
+          (chain as any).setFloatingImage({ src: url }).run();
+        } else {
+          // Fallback: insert as floatingImage node directly
+          editor.chain().focus().insertContent({
+            type: 'floatingImage',
+            attrs: { src: url },
+          }).run();
+        }
       } catch (error) {
         console.error('Image upload failed:', error);
         alert('Không thể tải ảnh lên. Vui lòng thử lại.');
