@@ -1485,81 +1485,86 @@ export default function BulkCampaignWizard() {
               </>
             )}
 
-            {/* Main Editor - Flexible Width */}
-            <ResizablePanel defaultSize={isPreviewOpen ? 45 : 80} minSize={30}>
-              <div className="h-full p-4 overflow-auto">
-                <Card className="h-full">
-                  <CardContent className="pt-6 space-y-4">
-                    {/* Show template selector only in template mode */}
-                    {step2Mode === 'template' && (
-                      <div className="space-y-2">
-                        <Label htmlFor="template-select">Mẫu tệp đính kèm (tùy chọn)</Label>
-                        <Select
-                          value={selectedTemplateId || ""}
-                          onValueChange={handleTemplateSelect}
-                        >
-                          <SelectTrigger id="template-select" data-testid="select-quotation-template">
-                            <SelectValue placeholder="-- Chọn mẫu để tự động điền --" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {quotationTemplates.map((template) => (
-                              <SelectItem 
-                                key={template.id} 
-                                value={template.id}
-                                data-testid={`option-template-${template.id}`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <FileText className="w-4 h-4" />
-                                  {template.name}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+            {/* Right side: Editor + Preview in nested group */}
+            <ResizablePanel defaultSize={isVariablesSidebarOpen ? 80 : 100}>
+              <ResizablePanelGroup direction="horizontal" className="h-full">
+                {/* Main Editor */}
+                <ResizablePanel defaultSize={isPreviewOpen ? 55 : 100} minSize={30}>
+                  <div className="h-full p-4 overflow-auto">
+                    <Card className="h-full">
+                      <CardContent className="pt-6 space-y-4">
+                        {/* Show template selector only in template mode */}
+                        {step2Mode === 'template' && (
+                          <div className="space-y-2">
+                            <Label htmlFor="template-select">Mẫu tệp đính kèm (tùy chọn)</Label>
+                            <Select
+                              value={selectedTemplateId || ""}
+                              onValueChange={handleTemplateSelect}
+                            >
+                              <SelectTrigger id="template-select" data-testid="select-quotation-template">
+                                <SelectValue placeholder="-- Chọn mẫu để tự động điền --" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {quotationTemplates.map((template) => (
+                                  <SelectItem 
+                                    key={template.id} 
+                                    value={template.id}
+                                    data-testid={`option-template-${template.id}`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <FileText className="w-4 h-4" />
+                                      {template.name}
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
 
-                    <div className="space-y-2">
-                      <Label htmlFor="quotation-html">Nội dung HTML</Label>
-                      <TiptapEditor
-                        editor={editor}
-                        onImageUpload={async (file) => {
-                          const formData = new FormData();
-                          formData.append('file', file);
-                          const response = await fetch('/api/upload-image', {
-                            method: 'POST',
-                            body: formData,
-                            credentials: 'include',
-                          });
-                          if (!response.ok) throw new Error('Upload failed');
-                          const json = await response.json();
-                          return json.location;
-                        }}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Kéo thả biến từ sidebar vào editor hoặc paste nội dung từ Word với định dạng bảng và hình ảnh
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </ResizablePanel>
-
-            {/* Right Sidebar - Preview Panel */}
-            {isPreviewOpen && (
-              <>
-                <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={35} minSize={20} maxSize={50}>
-                  <div className="h-full p-3 overflow-auto">
-                    <PreviewPane 
-                      htmlContent={quotationHtmlContent}
-                      sampleData={sampleData}
-                      title="Xem trước tệp đính kèm"
-                    />
+                        <div className="space-y-2">
+                          <Label htmlFor="quotation-html">Nội dung HTML</Label>
+                          <TiptapEditor
+                            editor={editor}
+                            onImageUpload={async (file) => {
+                              const formData = new FormData();
+                              formData.append('file', file);
+                              const response = await fetch('/api/upload-image', {
+                                method: 'POST',
+                                body: formData,
+                                credentials: 'include',
+                              });
+                              if (!response.ok) throw new Error('Upload failed');
+                              const json = await response.json();
+                              return json.location;
+                            }}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Kéo thả biến từ sidebar vào editor hoặc paste nội dung từ Word với định dạng bảng và hình ảnh
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </ResizablePanel>
-              </>
-            )}
+
+                {/* Preview Panel */}
+                {isPreviewOpen && (
+                  <>
+                    <ResizableHandle withHandle />
+                    <ResizablePanel defaultSize={45} minSize={20} maxSize={60}>
+                      <div className="h-full p-3 overflow-auto">
+                        <PreviewPane 
+                          htmlContent={quotationHtmlContent}
+                          sampleData={sampleData}
+                          title="Xem trước tệp đính kèm"
+                        />
+                      </div>
+                    </ResizablePanel>
+                  </>
+                )}
+              </ResizablePanelGroup>
+            </ResizablePanel>
           </ResizablePanelGroup>
         </div>
       </div>
@@ -1726,117 +1731,122 @@ export default function BulkCampaignWizard() {
               </>
             )}
 
-            {/* Main Editor - Flexible Width */}
-            <ResizablePanel defaultSize={isPreviewOpen ? 45 : 80} minSize={30}>
-              <div className="h-full p-4 overflow-auto">
-                <Card className="h-full">
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email-template-select">Mẫu email (tùy chọn)</Label>
-                      <Select
-                        value={selectedEmailTemplateId}
-                        onValueChange={(value) => {
-                          setSelectedEmailTemplateId(value);
-                          const template = emailTemplates.find((t) => t.id === value);
-                          if (template) {
-                            setEmailSubject(template.subject);
-                            setEmailBody(template.htmlContent);
-                            if (emailEditor && !emailEditor.isDestroyed) {
-                              emailEditor.commands.setContent(template.htmlContent);
-                            }
-                          }
-                        }}
-                      >
-                        <SelectTrigger id="email-template-select" data-testid="select-email-template">
-                          <SelectValue placeholder="-- Chọn mẫu để tự động điền --" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {emailTemplates.map((template) => (
-                            <SelectItem 
-                              key={template.id} 
-                              value={template.id}
-                              data-testid={`option-email-template-${template.id}`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Mail className="w-4 h-4" />
-                                {template.name}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+            {/* Right side: Editor + Preview in nested group */}
+            <ResizablePanel defaultSize={isVariablesSidebarOpen ? 80 : 100}>
+              <ResizablePanelGroup direction="horizontal" className="h-full">
+                {/* Main Editor */}
+                <ResizablePanel defaultSize={isPreviewOpen ? 55 : 100} minSize={30}>
+                  <div className="h-full p-4 overflow-auto">
+                    <Card className="h-full">
+                      <CardContent className="pt-6 space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="email-template-select">Mẫu email (tùy chọn)</Label>
+                          <Select
+                            value={selectedEmailTemplateId}
+                            onValueChange={(value) => {
+                              setSelectedEmailTemplateId(value);
+                              const template = emailTemplates.find((t) => t.id === value);
+                              if (template) {
+                                setEmailSubject(template.subject);
+                                setEmailBody(template.htmlContent);
+                                if (emailEditor && !emailEditor.isDestroyed) {
+                                  emailEditor.commands.setContent(template.htmlContent);
+                                }
+                              }
+                            }}
+                          >
+                            <SelectTrigger id="email-template-select" data-testid="select-email-template">
+                              <SelectValue placeholder="-- Chọn mẫu để tự động điền --" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {emailTemplates.map((template) => (
+                                <SelectItem 
+                                  key={template.id} 
+                                  value={template.id}
+                                  data-testid={`option-email-template-${template.id}`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Mail className="w-4 h-4" />
+                                    {template.name}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="email-subject">Tiêu đề thư</Label>
-                      <Input
-                        ref={emailSubjectRef}
-                        id="email-subject"
-                        value={emailSubject}
-                        onChange={(e) => setEmailSubject(e.target.value)}
-                        onFocus={() => {
-                          setActiveField('subject');
-                          activeFieldRef.current = 'subject';
-                        }}
-                        onBlur={() => {
-                          setTimeout(() => {
-                            setActiveField(null);
-                            activeFieldRef.current = null;
-                          }, 200);
-                        }}
-                        onDrop={handleEmailSubjectDrop}
-                        onDragOver={handleDragOver}
-                        placeholder="Email dành riêng cho {name}"
-                        className="bg-muted/30"
-                        data-testid="input-email-subject"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Kéo thả biến từ sidebar hoặc nhấp đôi khi trường này đang focus
-                      </p>
-                    </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="email-subject">Tiêu đề thư</Label>
+                          <Input
+                            ref={emailSubjectRef}
+                            id="email-subject"
+                            value={emailSubject}
+                            onChange={(e) => setEmailSubject(e.target.value)}
+                            onFocus={() => {
+                              setActiveField('subject');
+                              activeFieldRef.current = 'subject';
+                            }}
+                            onBlur={() => {
+                              setTimeout(() => {
+                                setActiveField(null);
+                                activeFieldRef.current = null;
+                              }, 200);
+                            }}
+                            onDrop={handleEmailSubjectDrop}
+                            onDragOver={handleDragOver}
+                            placeholder="Email dành riêng cho {name}"
+                            className="bg-muted/30"
+                            data-testid="input-email-subject"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Kéo thả biến từ sidebar hoặc nhấp đôi khi trường này đang focus
+                          </p>
+                        </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="email-body">Nội dung thư</Label>
-                      <TiptapEditor
-                        editor={emailEditor}
-                        onImageUpload={async (file) => {
-                          const formData = new FormData();
-                          formData.append('file', file);
-                          const response = await fetch('/api/upload-image', {
-                            method: 'POST',
-                            body: formData,
-                            credentials: 'include',
-                          });
-                          if (!response.ok) throw new Error('Upload failed');
-                          const json = await response.json();
-                          return json.location;
-                        }}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Kéo thả biến từ sidebar vào editor hoặc paste nội dung từ Word với định dạng bảng và hình ảnh
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </ResizablePanel>
-
-            {/* Right Sidebar - Preview Panel */}
-            {isPreviewOpen && (
-              <>
-                <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={35} minSize={20} maxSize={50}>
-                  <div className="h-full p-3 overflow-auto">
-                    <PreviewPane 
-                      htmlContent={emailBody}
-                      sampleData={sampleData}
-                      title="Xem trước email"
-                      subject={emailSubject}
-                    />
+                        <div className="space-y-2">
+                          <Label htmlFor="email-body">Nội dung thư</Label>
+                          <TiptapEditor
+                            editor={emailEditor}
+                            onImageUpload={async (file) => {
+                              const formData = new FormData();
+                              formData.append('file', file);
+                              const response = await fetch('/api/upload-image', {
+                                method: 'POST',
+                                body: formData,
+                                credentials: 'include',
+                              });
+                              if (!response.ok) throw new Error('Upload failed');
+                              const json = await response.json();
+                              return json.location;
+                            }}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Kéo thả biến từ sidebar vào editor hoặc paste nội dung từ Word với định dạng bảng và hình ảnh
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </ResizablePanel>
-              </>
-            )}
+
+                {/* Preview Panel */}
+                {isPreviewOpen && (
+                  <>
+                    <ResizableHandle withHandle />
+                    <ResizablePanel defaultSize={45} minSize={20} maxSize={60}>
+                      <div className="h-full p-3 overflow-auto">
+                        <PreviewPane 
+                          htmlContent={emailBody}
+                          sampleData={sampleData}
+                          title="Xem trước email"
+                          subject={emailSubject}
+                        />
+                      </div>
+                    </ResizablePanel>
+                  </>
+                )}
+              </ResizablePanelGroup>
+            </ResizablePanel>
           </ResizablePanelGroup>
         </div>
       </div>
