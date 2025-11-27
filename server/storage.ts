@@ -15,6 +15,7 @@ import {
   campaignRecipients,
   campaignAttachments,
   systemSettings,
+  policyPages,
   type User,
   type RegisterUser,
   type Template,
@@ -43,6 +44,8 @@ import {
   type CampaignAttachment,
   type InsertCampaignAttachment,
   type SystemSettings,
+  type PolicyPage,
+  type InsertPolicyPage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, inArray } from "drizzle-orm";
@@ -179,6 +182,15 @@ export interface IStorage {
   // System Settings operations
   getSystemSettings(): Promise<SystemSettings | undefined>;
   updateSystemSettings(data: Partial<SystemSettings>): Promise<SystemSettings>;
+  
+  // Policy Pages operations
+  createPolicyPage(page: InsertPolicyPage): Promise<PolicyPage>;
+  getPolicyPage(id: string): Promise<PolicyPage | undefined>;
+  getPolicyPageBySlug(slug: string): Promise<PolicyPage | undefined>;
+  getAllPolicyPages(): Promise<PolicyPage[]>;
+  getPublishedPolicyPages(): Promise<PolicyPage[]>;
+  updatePolicyPage(id: string, data: Partial<PolicyPage>): Promise<PolicyPage>;
+  deletePolicyPage(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1154,6 +1166,47 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updated;
+  }
+
+  // Policy Pages operations
+  async createPolicyPage(page: InsertPolicyPage): Promise<PolicyPage> {
+    const [newPage] = await db.insert(policyPages).values(page).returning();
+    return newPage;
+  }
+
+  async getPolicyPage(id: string): Promise<PolicyPage | undefined> {
+    const [page] = await db.select().from(policyPages).where(eq(policyPages.id, id));
+    return page;
+  }
+
+  async getPolicyPageBySlug(slug: string): Promise<PolicyPage | undefined> {
+    const [page] = await db.select().from(policyPages).where(eq(policyPages.slug, slug));
+    return page;
+  }
+
+  async getAllPolicyPages(): Promise<PolicyPage[]> {
+    return await db.select().from(policyPages).orderBy(policyPages.sortOrder);
+  }
+
+  async getPublishedPolicyPages(): Promise<PolicyPage[]> {
+    return await db
+      .select()
+      .from(policyPages)
+      .where(eq(policyPages.isPublished, 1))
+      .orderBy(policyPages.sortOrder);
+  }
+
+  async updatePolicyPage(id: string, data: Partial<PolicyPage>): Promise<PolicyPage> {
+    const [page] = await db
+      .update(policyPages)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(policyPages.id, id))
+      .returning();
+    return page;
+  }
+
+  async deletePolicyPage(id: string): Promise<void> {
+    await db.delete(policyPages).where(eq(policyPages.id, id));
   }
 }
 

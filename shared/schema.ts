@@ -544,6 +544,30 @@ export const insertCampaignAttachmentSchema = createInsertSchema(campaignAttachm
   uploadedAt: true,
 });
 
+// ============ POLICY PAGES MODULE ============
+
+// Policy pages (public pages editable by admin)
+export const policyPages = pgTable("policy_pages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  title: varchar("title", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull().unique(),
+  content: text("content").notNull(),
+  
+  isPublished: integer("is_published").default(1).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPolicyPageSchema = createInsertSchema(policyPages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // ============ SYSTEM SETTINGS MODULE ============
 
 // System-wide settings (singleton table - only 1 row)
@@ -617,3 +641,7 @@ export type InsertCampaignAttachment = z.infer<typeof insertCampaignAttachmentSc
 // System settings types
 export type SystemSettings = typeof systemSettings.$inferSelect;
 export type InsertSystemSettings = z.infer<typeof insertSystemSettingsSchema>;
+
+// Policy pages types
+export type PolicyPage = typeof policyPages.$inferSelect;
+export type InsertPolicyPage = z.infer<typeof insertPolicyPageSchema>;
