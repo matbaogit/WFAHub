@@ -128,6 +128,12 @@ const adminMenuItems = [
     icon: Server,
   },
   {
+    id: "admin-policies",
+    title: "Trang chính sách",
+    url: "/admin/policies",
+    icon: FileText,
+  },
+  {
     id: "admin-stats",
     title: "Thống kê",
     url: "/admin/stats",
