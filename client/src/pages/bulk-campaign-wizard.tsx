@@ -1706,126 +1706,138 @@ export default function BulkCampaignWizard() {
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Left Sidebar - Variables */}
-          {isVariablesSidebarOpen && (
-            <div className="w-full lg:w-60 flex-shrink-0">
-              <VariablePicker 
-                variables={availableVariables} 
-                title="Biến từ CSV"
-                description="Kéo và thả hoặc nhấp đôi để chèn"
-                sampleData={sampleData}
-                editor={emailEditor}
-              />
-            </div>
-          )}
+        <div className="min-h-[500px]">
+          <ResizablePanelGroup direction="horizontal" className="min-h-[500px] rounded-lg border">
+            {/* Left Sidebar - Variables */}
+            {isVariablesSidebarOpen && (
+              <>
+                <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
+                  <div className="h-full p-3 overflow-auto">
+                    <VariablePicker 
+                      variables={availableVariables} 
+                      title="Biến từ CSV"
+                      description="Kéo và thả hoặc nhấp đôi để chèn"
+                      sampleData={sampleData}
+                      editor={emailEditor}
+                    />
+                  </div>
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+              </>
+            )}
 
-          {/* Main Editor - Flexible Width */}
-          <div className={`flex-1 min-w-0 space-y-4 ${isPreviewOpen ? 'lg:max-w-[60%]' : ''}`}>
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email-template-select">Mẫu email (tùy chọn)</Label>
-                  <Select
-                    value={selectedEmailTemplateId}
-                    onValueChange={(value) => {
-                      setSelectedEmailTemplateId(value);
-                      const template = emailTemplates.find((t) => t.id === value);
-                      if (template) {
-                        setEmailSubject(template.subject);
-                        setEmailBody(template.htmlContent);
-                        // Update email editor content
-                        if (emailEditor && !emailEditor.isDestroyed) {
-                          emailEditor.commands.setContent(template.htmlContent);
-                        }
-                      }
-                    }}
-                  >
-                    <SelectTrigger id="email-template-select" data-testid="select-email-template">
-                      <SelectValue placeholder="-- Chọn mẫu để tự động điền --" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {emailTemplates.map((template) => (
-                        <SelectItem 
-                          key={template.id} 
-                          value={template.id}
-                          data-testid={`option-email-template-${template.id}`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Mail className="w-4 h-4" />
-                            {template.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            {/* Main Editor - Flexible Width */}
+            <ResizablePanel defaultSize={isPreviewOpen ? 45 : 80} minSize={30}>
+              <div className="h-full p-4 overflow-auto">
+                <Card className="h-full">
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email-template-select">Mẫu email (tùy chọn)</Label>
+                      <Select
+                        value={selectedEmailTemplateId}
+                        onValueChange={(value) => {
+                          setSelectedEmailTemplateId(value);
+                          const template = emailTemplates.find((t) => t.id === value);
+                          if (template) {
+                            setEmailSubject(template.subject);
+                            setEmailBody(template.htmlContent);
+                            if (emailEditor && !emailEditor.isDestroyed) {
+                              emailEditor.commands.setContent(template.htmlContent);
+                            }
+                          }
+                        }}
+                      >
+                        <SelectTrigger id="email-template-select" data-testid="select-email-template">
+                          <SelectValue placeholder="-- Chọn mẫu để tự động điền --" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {emailTemplates.map((template) => (
+                            <SelectItem 
+                              key={template.id} 
+                              value={template.id}
+                              data-testid={`option-email-template-${template.id}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-4 h-4" />
+                                {template.name}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email-subject">Tiêu đề thư</Label>
-                  <Input
-                    ref={emailSubjectRef}
-                    id="email-subject"
-                    value={emailSubject}
-                    onChange={(e) => setEmailSubject(e.target.value)}
-                    onFocus={() => {
-                      setActiveField('subject');
-                      activeFieldRef.current = 'subject';
-                    }}
-                    onBlur={() => {
-                      // Delay clearing to allow double-click handler to complete
-                      setTimeout(() => {
-                        setActiveField(null);
-                        activeFieldRef.current = null;
-                      }, 200);
-                    }}
-                    onDrop={handleEmailSubjectDrop}
-                    onDragOver={handleDragOver}
-                    placeholder="Email dành riêng cho {name}"
-                    className="bg-muted/30"
-                    data-testid="input-email-subject"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Kéo thả biến từ sidebar hoặc nhấp đôi khi trường này đang focus
-                  </p>
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email-subject">Tiêu đề thư</Label>
+                      <Input
+                        ref={emailSubjectRef}
+                        id="email-subject"
+                        value={emailSubject}
+                        onChange={(e) => setEmailSubject(e.target.value)}
+                        onFocus={() => {
+                          setActiveField('subject');
+                          activeFieldRef.current = 'subject';
+                        }}
+                        onBlur={() => {
+                          setTimeout(() => {
+                            setActiveField(null);
+                            activeFieldRef.current = null;
+                          }, 200);
+                        }}
+                        onDrop={handleEmailSubjectDrop}
+                        onDragOver={handleDragOver}
+                        placeholder="Email dành riêng cho {name}"
+                        className="bg-muted/30"
+                        data-testid="input-email-subject"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Kéo thả biến từ sidebar hoặc nhấp đôi khi trường này đang focus
+                      </p>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email-body">Nội dung thư</Label>
-                  <TiptapEditor
-                    editor={emailEditor}
-                    onImageUpload={async (file) => {
-                      const formData = new FormData();
-                      formData.append('file', file);
-                      const response = await fetch('/api/upload-image', {
-                        method: 'POST',
-                        body: formData,
-                        credentials: 'include',
-                      });
-                      if (!response.ok) throw new Error('Upload failed');
-                      const json = await response.json();
-                      return json.location;
-                    }}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Kéo thả biến từ sidebar vào editor hoặc paste nội dung từ Word với định dạng bảng và hình ảnh
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email-body">Nội dung thư</Label>
+                      <TiptapEditor
+                        editor={emailEditor}
+                        onImageUpload={async (file) => {
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          const response = await fetch('/api/upload-image', {
+                            method: 'POST',
+                            body: formData,
+                            credentials: 'include',
+                          });
+                          if (!response.ok) throw new Error('Upload failed');
+                          const json = await response.json();
+                          return json.location;
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Kéo thả biến từ sidebar vào editor hoặc paste nội dung từ Word với định dạng bảng và hình ảnh
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </ResizablePanel>
 
-          {/* Right Sidebar - Preview Panel */}
-          {isPreviewOpen && (
-            <div className="w-full lg:w-[38%] flex-shrink-0">
-              <PreviewPane 
-                htmlContent={emailBody}
-                sampleData={sampleData}
-                title="Xem trước email"
-                subject={emailSubject}
-              />
-            </div>
-          )}
+            {/* Right Sidebar - Preview Panel */}
+            {isPreviewOpen && (
+              <>
+                <ResizableHandle withHandle />
+                <ResizablePanel defaultSize={35} minSize={20} maxSize={50}>
+                  <div className="h-full p-3 overflow-auto">
+                    <PreviewPane 
+                      htmlContent={emailBody}
+                      sampleData={sampleData}
+                      title="Xem trước email"
+                      subject={emailSubject}
+                    />
+                  </div>
+                </ResizablePanel>
+              </>
+            )}
+          </ResizablePanelGroup>
         </div>
       </div>
     );
