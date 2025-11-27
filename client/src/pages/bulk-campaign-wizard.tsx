@@ -1094,39 +1094,66 @@ export default function BulkCampaignWizard() {
 
   const selectedTemplate = quotationTemplates.find(t => t.id === selectedTemplateId);
 
+  const handleStepClick = (step: number) => {
+    if (step < currentStep) {
+      setCurrentStep(step);
+    }
+  };
+
   const renderStepIndicator = () => (
     <div className="flex items-center justify-between mb-8">
-      {[1, 2, 3, 4].map((step) => (
-        <div key={step} className="flex items-center flex-1">
-          <div className="flex flex-col items-center">
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
-                step === currentStep
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : step < currentStep
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-muted bg-background text-muted-foreground"
-              }`}
-              data-testid={`step-indicator-${step}`}
+      {[1, 2, 3, 4].map((step) => {
+        const isCompleted = step < currentStep;
+        const isCurrent = step === currentStep;
+        const isClickable = isCompleted;
+        
+        return (
+          <div key={step} className="flex items-center flex-1">
+            <div 
+              className={`flex flex-col items-center ${isClickable ? 'cursor-pointer group' : ''}`}
+              onClick={() => isClickable && handleStepClick(step)}
+              role={isClickable ? "button" : undefined}
+              tabIndex={isClickable ? 0 : undefined}
+              onKeyDown={(e) => {
+                if (isClickable && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault();
+                  handleStepClick(step);
+                }
+              }}
             >
-              {step < currentStep ? <CheckCircle2 className="w-5 h-5" /> : step}
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
+                  isCurrent
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : isCompleted
+                    ? "border-primary bg-primary text-primary-foreground group-hover:scale-110 group-hover:shadow-md"
+                    : "border-muted bg-background text-muted-foreground"
+                }`}
+                data-testid={`step-indicator-${step}`}
+              >
+                {isCompleted ? <CheckCircle2 className="w-5 h-5" /> : step}
+              </div>
+              <span className={`text-xs mt-2 transition-colors ${
+                isClickable 
+                  ? "text-muted-foreground group-hover:text-primary" 
+                  : "text-muted-foreground"
+              }`}>
+                {step === 1 && "Nhập dữ liệu"}
+                {step === 2 && "Mẫu tệp đính kèm"}
+                {step === 3 && "Nội dung email"}
+                {step === 4 && "Xem lại và gửi"}
+              </span>
             </div>
-            <span className="text-xs mt-2 text-muted-foreground">
-              {step === 1 && "Nhập dữ liệu"}
-              {step === 2 && "Mẫu tệp đính kèm"}
-              {step === 3 && "Nội dung email"}
-              {step === 4 && "Xem lại và gửi"}
-            </span>
+            {step < 4 && (
+              <div
+                className={`h-0.5 flex-1 mx-2 ${
+                  step < currentStep ? "bg-primary" : "bg-muted"
+                }`}
+              />
+            )}
           </div>
-          {step < 4 && (
-            <div
-              className={`h-0.5 flex-1 mx-2 ${
-                step < currentStep ? "bg-primary" : "bg-muted"
-              }`}
-            />
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 
