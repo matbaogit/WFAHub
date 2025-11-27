@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Zap, Mail, FileText, Bell, CheckCircle, FileSignature, ArrowRight, Sparkles } from "lucide-react";
+import { Zap, Mail, FileText, Bell, CheckCircle, FileSignature, ArrowRight, Sparkles, User } from "lucide-react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
+  const { isAuthenticated, user } = useAuth();
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
@@ -17,13 +19,34 @@ export default function Landing() {
               WFA Hub
             </span>
           </div>
-          <Button 
-            onClick={() => setLocation('/login')}
-            data-testid="button-login"
-            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300"
-          >
-            Đăng nhập
-          </Button>
+          {isAuthenticated && user ? (
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost"
+                onClick={() => setLocation('/dashboard')}
+                data-testid="button-go-dashboard"
+                className="gap-2"
+              >
+                <User className="w-4 h-4" />
+                {user.username}
+              </Button>
+              <Button 
+                onClick={() => setLocation('/dashboard')}
+                data-testid="button-dashboard"
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300"
+              >
+                Vào Dashboard
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              onClick={() => setLocation('/login')}
+              data-testid="button-login"
+              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300"
+            >
+              Đăng nhập
+            </Button>
+          )}
         </div>
       </header>
 
