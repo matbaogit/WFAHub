@@ -91,10 +91,10 @@ function AppContent() {
 
   const isAdmin = user?.role === "admin";
   
-  // Routes that should not show sidebar/topbar
-  const authRoutes = ["/login", "/register", "/verify-email", "/forgot-password", "/reset-password"];
-  const isAuthRoute = authRoutes.includes(location);
-  const shouldShowLayout = !isLoading && isAuthenticated && !isAuthRoute;
+  // Routes that should not show sidebar/topbar (public pages)
+  const publicRoutes = ["/", "/login", "/register", "/verify-email", "/forgot-password", "/reset-password"];
+  const isPublicRoute = publicRoutes.includes(location);
+  const shouldShowLayout = !isLoading && isAuthenticated && !isPublicRoute;
 
   if (!shouldShowLayout) {
     return (
