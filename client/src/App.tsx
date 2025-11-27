@@ -47,12 +47,12 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       
-      {/* Conditional routes based on auth */}
-      {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
-      ) : (
+      {/* Landing page - always accessible */}
+      <Route path="/" component={Landing} />
+      
+      {/* Protected routes - only when authenticated */}
+      {!isLoading && isAuthenticated && (
         <>
-          <Route path="/" component={Dashboard} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/templates" component={Templates} />
           <Route path="/customers" component={Customers} />
