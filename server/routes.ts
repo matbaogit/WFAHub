@@ -2214,9 +2214,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("[DEBUG] Mapped fields:", mappedFields);
       
       // Create available variables from mapped fields only
+      // Use NORMALIZED column names so they match customData keys
       const availableVariables: Array<{label: string, value: string}> = mappedFields.map(field => ({
-        label: field.columnName,  // Original column name from CSV
-        value: `{${field.fieldName}}`  // Use fieldName as variable name (not normalized)
+        label: field.columnName,  // Original column name from CSV (for display)
+        value: `{${normalizeVariableName(field.columnName)}}`  // Use normalized column name (matches customData keys)
       }));
       
       console.log("[DEBUG] Available variables:", availableVariables);
