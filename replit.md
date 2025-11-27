@@ -6,6 +6,17 @@ WFA Hub is a Vietnamese-language web application providing ready-made automation
 
 ## Recent Changes
 
+**November 27, 2025:**
+- **Policy Pages System**: Implemented public policy pages with admin management
+  - New `policyPages` table for storing policy content (title, slug, content, isPublished)
+  - Public endpoint `GET /api/policies/:slug` for viewing published policies
+  - Admin endpoints for CRUD operations at `/api/admin/policies`
+  - Public policy viewer at `/policy/:slug` - accessible without authentication, no sidebar
+  - Admin management page at `/admin/policies` with TipTap rich text editor
+  - Added "Trang chính sách" menu item to Admin Panel sidebar
+  - Footer links added to Landing page: "Điều khoản sử dụng", "Chính sách bảo mật", "Liên hệ"
+  - SEO-friendly slug-based URLs for public access
+
 **November 25, 2025:**
 - **Campaign Detail HTML Rendering Fix**: Fixed email body display in campaign detail page
   - Changed from plain text display to proper HTML rendering using `dangerouslySetInnerHTML`
