@@ -131,6 +131,7 @@ export default function BulkCampaignWizard() {
   const urlDraftId = params.get('draftId');
 
   const [currentStep, setCurrentStep] = useState<WizardStep>(1);
+  const [highestCompletedStep, setHighestCompletedStep] = useState<number>(0);
   const [campaignName, setCampaignName] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<FilePreviewData | null>(null);
@@ -810,6 +811,29 @@ export default function BulkCampaignWizard() {
             }
           }
 
+          // Calculate highest completed step based on draft data
+          let calculatedHighestStep = 0;
+          
+          // Step 1 is complete if we have recipients
+          if (draft.recipientsData) {
+            const recipientsData = draft.recipientsData as any;
+            if (recipientsData.recipients && Array.isArray(recipientsData.recipients) && recipientsData.recipients.length > 0) {
+              calculatedHighestStep = 1;
+            }
+          }
+          
+          // Step 2 is complete if we have attachment content or explicitly skipped (step2Mode set)
+          if (calculatedHighestStep >= 1 && (draft.attachmentContent || draft.step2Mode)) {
+            calculatedHighestStep = 2;
+          }
+          
+          // Step 3 is complete if we have email subject and body
+          if (calculatedHighestStep >= 2 && (draft.emailSubject || draft.emailBody)) {
+            calculatedHighestStep = 3;
+          }
+          
+          setHighestCompletedStep(calculatedHighestStep);
+
           toast({
             title: "Đã tải bản nháp",
             description: "Chiến dịch đã được khôi phục.",
@@ -948,7 +972,12 @@ export default function BulkCampaignWizard() {
     }
 
     if (currentStep < 4) {
-      setCurrentStep((currentStep + 1) as WizardStep);
+      const nextStep = (currentStep + 1) as WizardStep;
+      setCurrentStep(nextStep);
+      // Update highest completed step if moving to a new high
+      if (currentStep > highestCompletedStep) {
+        setHighestCompletedStep(currentStep);
+      }
     }
   };
 
@@ -1095,7 +1124,8 @@ export default function BulkCampaignWizard() {
   const selectedTemplate = quotationTemplates.find(t => t.id === selectedTemplateId);
 
   const handleStepClick = (step: WizardStep) => {
-    if (step < currentStep) {
+    // Allow clicking on any step up to highestCompletedStep + 1 (can go forward to next uncompleted step)
+    if (step <= highestCompletedStep + 1 && step !== currentStep) {
       setCurrentStep(step);
     }
   };
@@ -1103,9 +1133,11 @@ export default function BulkCampaignWizard() {
   const renderStepIndicator = () => (
     <div className="flex items-center justify-between mb-8">
       {([1, 2, 3, 4] as WizardStep[]).map((step) => {
-        const isCompleted = step < currentStep;
+        // A step is completed if it's within the highest completed step range
+        const isCompleted = step <= highestCompletedStep;
         const isCurrent = step === currentStep;
-        const isClickable = isCompleted;
+        // Allow clicking on completed steps or the next uncompleted step
+        const isClickable = (step <= highestCompletedStep + 1) && step !== currentStep;
         
         return (
           <div key={step} className="flex items-center flex-1">
@@ -1147,7 +1179,7 @@ export default function BulkCampaignWizard() {
             {step < 4 && (
               <div
                 className={`h-0.5 flex-1 mx-2 ${
-                  step < currentStep ? "bg-primary" : "bg-muted"
+                  step <= highestCompletedStep ? "bg-primary" : "bg-muted"
                 }`}
               />
             )}
