@@ -53,6 +53,7 @@ function Router() {
       ) : (
         <>
           <Route path="/" component={Dashboard} />
+          <Route path="/dashboard" component={Dashboard} />
           <Route path="/templates" component={Templates} />
           <Route path="/customers" component={Customers} />
           <Route path="/quotations" component={Quotations} />
