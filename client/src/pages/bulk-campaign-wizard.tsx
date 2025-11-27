@@ -80,6 +80,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "@/components/ui/resizable";
 
 type WizardStep = 1 | 2 | 3 | 4;
 
@@ -1460,88 +1465,102 @@ export default function BulkCampaignWizard() {
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-4">
-          {/* Left Sidebar - Variables */}
-          {isVariablesSidebarOpen && (
-            <div className="w-full lg:w-60 flex-shrink-0">
-              <VariablePicker 
-                variables={availableVariables} 
-                title="Biến từ CSV"
-                description="Kéo và thả hoặc nhấp đôi để chèn"
-                sampleData={sampleData}
-                editor={editor}
-              />
-            </div>
-          )}
-
-          {/* Main Editor - Flexible Width */}
-          <div className={`flex-1 min-w-0 space-y-4 ${isPreviewOpen ? 'lg:max-w-[60%]' : ''}`}>
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                {/* Show template selector only in template mode */}
-                {step2Mode === 'template' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="template-select">Mẫu tệp đính kèm (tùy chọn)</Label>
-                    <Select
-                      value={selectedTemplateId || ""}
-                      onValueChange={handleTemplateSelect}
-                    >
-                      <SelectTrigger id="template-select" data-testid="select-quotation-template">
-                        <SelectValue placeholder="-- Chọn mẫu để tự động điền --" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {quotationTemplates.map((template) => (
-                          <SelectItem 
-                            key={template.id} 
-                            value={template.id}
-                            data-testid={`option-template-${template.id}`}
-                          >
-                            <div className="flex items-center gap-2">
-                              <FileText className="w-4 h-4" />
-                              {template.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+        <div className="min-h-[500px]">
+          <ResizablePanelGroup direction="horizontal" className="min-h-[500px] rounded-lg border">
+            {/* Left Sidebar - Variables */}
+            {isVariablesSidebarOpen && (
+              <>
+                <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
+                  <div className="h-full p-3 overflow-auto">
+                    <VariablePicker 
+                      variables={availableVariables} 
+                      title="Biến từ CSV"
+                      description="Kéo và thả hoặc nhấp đôi để chèn"
+                      sampleData={sampleData}
+                      editor={editor}
+                    />
                   </div>
-                )}
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+              </>
+            )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="quotation-html">Nội dung HTML</Label>
-                  <TiptapEditor
-                    editor={editor}
-                    onImageUpload={async (file) => {
-                      const formData = new FormData();
-                      formData.append('file', file);
-                      const response = await fetch('/api/upload-image', {
-                        method: 'POST',
-                        body: formData,
-                        credentials: 'include',
-                      });
-                      if (!response.ok) throw new Error('Upload failed');
-                      const json = await response.json();
-                      return json.location;
-                    }}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Kéo thả biến từ sidebar vào editor hoặc paste nội dung từ Word với định dạng bảng và hình ảnh
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+            {/* Main Editor - Flexible Width */}
+            <ResizablePanel defaultSize={isPreviewOpen ? 45 : 80} minSize={30}>
+              <div className="h-full p-4 overflow-auto">
+                <Card className="h-full">
+                  <CardContent className="pt-6 space-y-4">
+                    {/* Show template selector only in template mode */}
+                    {step2Mode === 'template' && (
+                      <div className="space-y-2">
+                        <Label htmlFor="template-select">Mẫu tệp đính kèm (tùy chọn)</Label>
+                        <Select
+                          value={selectedTemplateId || ""}
+                          onValueChange={handleTemplateSelect}
+                        >
+                          <SelectTrigger id="template-select" data-testid="select-quotation-template">
+                            <SelectValue placeholder="-- Chọn mẫu để tự động điền --" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {quotationTemplates.map((template) => (
+                              <SelectItem 
+                                key={template.id} 
+                                value={template.id}
+                                data-testid={`option-template-${template.id}`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <FileText className="w-4 h-4" />
+                                  {template.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
 
-          {/* Right Sidebar - Preview Panel */}
-          {isPreviewOpen && (
-            <div className="w-full lg:w-[38%] flex-shrink-0">
-              <PreviewPane 
-                htmlContent={quotationHtmlContent}
-                sampleData={sampleData}
-                title="Xem trước tệp đính kèm"
-              />
-            </div>
-          )}
+                    <div className="space-y-2">
+                      <Label htmlFor="quotation-html">Nội dung HTML</Label>
+                      <TiptapEditor
+                        editor={editor}
+                        onImageUpload={async (file) => {
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          const response = await fetch('/api/upload-image', {
+                            method: 'POST',
+                            body: formData,
+                            credentials: 'include',
+                          });
+                          if (!response.ok) throw new Error('Upload failed');
+                          const json = await response.json();
+                          return json.location;
+                        }}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Kéo thả biến từ sidebar vào editor hoặc paste nội dung từ Word với định dạng bảng và hình ảnh
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </ResizablePanel>
+
+            {/* Right Sidebar - Preview Panel */}
+            {isPreviewOpen && (
+              <>
+                <ResizableHandle withHandle />
+                <ResizablePanel defaultSize={35} minSize={20} maxSize={50}>
+                  <div className="h-full p-3 overflow-auto">
+                    <PreviewPane 
+                      htmlContent={quotationHtmlContent}
+                      sampleData={sampleData}
+                      title="Xem trước tệp đính kèm"
+                    />
+                  </div>
+                </ResizablePanel>
+              </>
+            )}
+          </ResizablePanelGroup>
         </div>
       </div>
     );
