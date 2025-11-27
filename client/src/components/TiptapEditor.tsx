@@ -46,6 +46,8 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
     <EditorContent editor={editor} className={isFullscreen ? "h-full" : ""} />
   );
 
+  const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB
+
   const addImage = async () => {
     if (!onImageUpload) return;
     
@@ -56,11 +58,19 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
       
+      // Check file size (2MB limit)
+      if (file.size > MAX_IMAGE_SIZE) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        alert(`Kích thước ảnh quá lớn (${sizeMB}MB). Vui lòng chọn ảnh nhỏ hơn 2MB.`);
+        return;
+      }
+      
       try {
         const url = await onImageUpload(file);
         editor.chain().focus().setImage({ src: url }).run();
       } catch (error) {
         console.error('Image upload failed:', error);
+        alert('Không thể tải ảnh lên. Vui lòng thử lại.');
       }
     };
     input.click();
@@ -337,7 +347,7 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
           size="sm"
           variant="ghost"
           onClick={addImage}
-          title="Insert Image"
+          title="Chèn ảnh (tối đa 2MB)"
         >
           <ImageIcon className="w-4 h-4" />
         </Button>
@@ -700,7 +710,7 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
                   size="sm"
                   variant="ghost"
                   onClick={addImage}
-                  title="Insert Image"
+                  title="Chèn ảnh (tối đa 2MB)"
                 >
                   <ImageIcon className="w-4 h-4" />
                 </Button>
