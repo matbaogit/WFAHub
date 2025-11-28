@@ -9,12 +9,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Home, Zap, Mail, Layout, Server, Package, UserCheck, BarChart3, History, User as UserIcon, RotateCcw, Share2 } from "lucide-react";
+import { Home, Zap, Mail, Layout, Server, Package, UserCheck, BarChart3, History, User as UserIcon, RotateCcw } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface UserMenuSettingsProps {
@@ -25,7 +23,6 @@ interface UserMenuSettingsProps {
 interface SystemSettings {
   id: string;
   userMenuVisibility: Record<string, boolean>;
-  shareTemplatesWithUsers: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -52,7 +49,6 @@ const DEFAULT_VISIBILITY = USER_MENU_ITEMS.reduce((acc, item) => {
 export function UserMenuSettings({ open, onOpenChange }: UserMenuSettingsProps) {
   const { toast } = useToast();
   const [localVisibility, setLocalVisibility] = useState<Record<string, boolean>>(DEFAULT_VISIBILITY);
-  const [shareTemplates, setShareTemplates] = useState(false);
 
   const { data: systemSettings, isLoading } = useQuery<SystemSettings>({
     queryKey: ['/api/admin/system-settings'],
@@ -62,9 +58,6 @@ export function UserMenuSettings({ open, onOpenChange }: UserMenuSettingsProps) 
   useEffect(() => {
     if (systemSettings?.userMenuVisibility) {
       setLocalVisibility(systemSettings.userMenuVisibility);
-    }
-    if (systemSettings?.shareTemplatesWithUsers !== undefined) {
-      setShareTemplates(systemSettings.shareTemplatesWithUsers === 1);
     }
   }, [systemSettings]);
 
@@ -91,30 +84,6 @@ export function UserMenuSettings({ open, onOpenChange }: UserMenuSettingsProps) 
     },
   });
 
-  const updateShareTemplatesMutation = useMutation({
-    mutationFn: async (share: boolean) => {
-      const res = await apiRequest('PATCH', '/api/admin/system-settings', {
-        shareTemplatesWithUsers: share,
-      });
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/system-settings'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/quotation-templates'] });
-      toast({
-        title: "Đã lưu",
-        description: "Cài đặt chia sẻ mẫu đã được cập nhật",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Lỗi",
-        description: error.message || "Không thể cập nhật cài đặt",
-        variant: "destructive",
-      });
-    },
-  });
-
   const toggleMenuItem = (menuId: string) => {
     const newVisibility = {
       ...localVisibility,
@@ -122,12 +91,6 @@ export function UserMenuSettings({ open, onOpenChange }: UserMenuSettingsProps) 
     };
     setLocalVisibility(newVisibility);
     updateMenuMutation.mutate(newVisibility);
-  };
-
-  const toggleShareTemplates = () => {
-    const newValue = !shareTemplates;
-    setShareTemplates(newValue);
-    updateShareTemplatesMutation.mutate(newValue);
   };
 
   const resetToDefaults = () => {
@@ -173,30 +136,6 @@ export function UserMenuSettings({ open, onOpenChange }: UserMenuSettingsProps) 
                   </div>
                 );
               })}
-              
-              <Separator className="my-4" />
-              
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium flex items-center gap-2">
-                  <Share2 className="w-4 h-4" />
-                  Chia sẻ mẫu đính kèm
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  Cho phép người dùng thường xem và sử dụng các mẫu tệp đính kèm (quotation templates) do admin tạo
-                </p>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="share-templates" className="cursor-pointer">
-                    {shareTemplates ? "Đang bật" : "Đang tắt"}
-                  </Label>
-                  <Switch
-                    id="share-templates"
-                    checked={shareTemplates}
-                    onCheckedChange={toggleShareTemplates}
-                    data-testid="switch-share-templates"
-                    disabled={updateShareTemplatesMutation.isPending}
-                  />
-                </div>
-              </div>
             </>
           )}
         </div>
