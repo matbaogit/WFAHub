@@ -6,6 +6,20 @@ WFA Hub is a Vietnamese-language web application providing ready-made automation
 
 ## Recent Changes
 
+**November 28, 2025:**
+- **Admin Template Sharing Control**: Implemented admin-controlled quotation template sharing with users
+  - New `shareTemplatesWithUsers` field in `systemSettings` table (stored as integer 0/1)
+  - Toggle switch added to "Cài đặt Menu" dialog (UserMenuSettings component)
+  - When enabled: regular users see admin's quotation templates + their own templates
+  - When disabled: regular users only see their own quotation templates
+  - Admin users always see only their own templates (not affected by this setting)
+  - Storage method `getAdminQuotationTemplates()` fetches templates created by admin users
+- **Wizard Step 2 No-Template Mode**: Updated bulk campaign wizard to handle users with no templates
+  - When user has no quotation templates: shows simplified UI with message and direct "Bắt đầu soạn nội dung" button
+  - Skips the template vs custom mode selection when no templates available
+  - Users can still skip attachment step entirely via "vào đây" link
+  - Provides helpful message: "Liên hệ admin để được chia sẻ mẫu"
+
 **November 27, 2025:**
 - **Policy Pages System**: Implemented public policy pages with admin management
   - New `policyPages` table for storing policy content (title, slug, content, isPublished)
