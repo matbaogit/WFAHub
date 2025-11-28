@@ -589,6 +589,9 @@ export const systemSettings = pgTable("system_settings", {
     "account": true
   }'::jsonb`),
   
+  // Share admin templates with regular users
+  shareTemplatesWithUsers: integer("share_templates_with_users").default(1).notNull(),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
