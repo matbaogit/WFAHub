@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Mail, Plus, Edit, Trash2, Power, PowerOff } from "lucide-react";
+import { Mail, Plus, Edit, Trash2, Power, PowerOff, Share2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertEmailTemplateSchema } from "@shared/schema";
@@ -24,6 +25,8 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Image } from '@tiptap/extension-image';
 import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuth } from "@/hooks/useAuth";
 import './tiptap-editor.css';
 
 interface EmailTemplateFormProps {
@@ -161,11 +164,13 @@ function EmailTemplateForm({ form, onSubmit, isPending, onCancel, editor }: Emai
 
 export default function EmailTemplates() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
   const [deletingTemplate, setDeletingTemplate] = useState<EmailTemplate | null>(null);
 
-  const { data: templates, isLoading } = useQuery<EmailTemplate[]>({
+  const { data: templates, isLoading } = useQuery<(EmailTemplate & { isAdminTemplate?: boolean })[]>({
     queryKey: ["/api/email-templates"],
   });
 
@@ -277,6 +282,19 @@ export default function EmailTemplates() {
     },
   });
 
+  const toggleShareMutation = useMutation({
+    mutationFn: async ({ id, isSharedWithUsers }: { id: string; isSharedWithUsers: number }) => {
+      return apiRequest("PATCH", `/api/email-templates/${id}`, { isSharedWithUsers });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/email-templates"] });
+      toast({ title: "Đã cập nhật trạng thái chia sẻ!" });
+    },
+    onError: () => {
+      toast({ title: "Lỗi khi cập nhật chia sẻ", variant: "destructive" });
+    },
+  });
+
   const onSubmit = (data: InsertEmailTemplate) => {
     if (editingTemplate) {
       updateMutation.mutate({ ...data, id: editingTemplate.id });
@@ -377,7 +395,7 @@ export default function EmailTemplates() {
                     <Mail className="w-8 h-8 text-white" />
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
                       <h3 className="text-xl font-bold" data-testid={`text-emailtemplate-name-${template.id}`}>
                         {template.name}
                       </h3>
@@ -397,6 +415,18 @@ export default function EmailTemplates() {
                           Tắt
                         </span>
                       )}
+                      {template.isAdminTemplate && (
+                        <span className="px-3 py-1 rounded-lg bg-gradient-to-r from-blue-500/10 to-blue-600/10 border border-blue-300 text-blue-600 text-xs font-semibold flex items-center gap-1">
+                          <Share2 className="w-3 h-3" />
+                          Từ Admin
+                        </span>
+                      )}
+                      {isAdmin && template.isSharedWithUsers === 1 && (
+                        <span className="px-3 py-1 rounded-lg bg-gradient-to-r from-emerald-500/10 to-emerald-600/10 border border-green-300 text-green-600 text-xs font-semibold flex items-center gap-1">
+                          <Share2 className="w-3 h-3" />
+                          Đã chia sẻ
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">
                       <strong>Tiêu đề:</strong> {template.subject}
@@ -408,25 +438,51 @@ export default function EmailTemplates() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => openEditDialog(template)}
-                    className="rounded-xl"
-                    data-testid={`button-edit-emailtemplate-${template.id}`}
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Sửa
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setDeletingTemplate(template)}
-                    className="rounded-xl border-red-200 text-red-600 hover:bg-red-50"
-                    data-testid={`button-delete-emailtemplate-${template.id}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  {isAdmin && !template.isAdminTemplate && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={template.isSharedWithUsers === 1}
+                            onCheckedChange={(checked) => {
+                              toggleShareMutation.mutate({
+                                id: template.id,
+                                isSharedWithUsers: checked ? 1 : 0
+                              });
+                            }}
+                            disabled={toggleShareMutation.isPending}
+                            data-testid={`switch-share-${template.id}`}
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{template.isSharedWithUsers === 1 ? "Ngừng chia sẻ với người dùng" : "Chia sẻ với người dùng"}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  {!template.isAdminTemplate && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openEditDialog(template)}
+                        className="rounded-xl"
+                        data-testid={`button-edit-emailtemplate-${template.id}`}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Sửa
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setDeletingTemplate(template)}
+                        className="rounded-xl border-red-200 text-red-600 hover:bg-red-50"
+                        data-testid={`button-delete-emailtemplate-${template.id}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </Card>
