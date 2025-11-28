@@ -12,7 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertQuotationTemplateSchema, type QuotationTemplate } from "@shared/schema";
 import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, Eye, FileText, Sparkles } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, FileText, Sparkles, Share2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TiptapEditor } from "@/components/TiptapEditor";
@@ -26,6 +26,8 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Image } from '@tiptap/extension-image';
 import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuth } from "@/hooks/useAuth";
 import './tiptap-editor.css';
 
 const formSchema = insertQuotationTemplateSchema.extend({
@@ -71,10 +73,12 @@ function renderPreview(html: string): string {
 
 export default function QuotationTemplates() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [editingTemplate, setEditingTemplate] = useState<QuotationTemplate | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const { data: templates = [], isLoading } = useQuery<QuotationTemplate[]>({
+  const { data: templates = [], isLoading } = useQuery<(QuotationTemplate & { isAdminTemplate?: boolean })[]>({
     queryKey: ["/api/quotation-templates"],
   });
 
@@ -161,6 +165,19 @@ export default function QuotationTemplates() {
     },
     onError: () => {
       toast({ title: "Lỗi khi xóa mẫu", variant: "destructive" });
+    },
+  });
+
+  const toggleShareMutation = useMutation({
+    mutationFn: async ({ id, isSharedWithUsers }: { id: string; isSharedWithUsers: number }) => {
+      return apiRequest("PATCH", `/api/quotation-templates/${id}`, { isSharedWithUsers });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/quotation-templates"] });
+      toast({ title: "Đã cập nhật trạng thái chia sẻ!" });
+    },
+    onError: () => {
+      toast({ title: "Lỗi khi cập nhật chia sẻ", variant: "destructive" });
     },
   });
 
@@ -413,7 +430,7 @@ export default function QuotationTemplates() {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 flex-wrap">
                       {template.name}
                       {template.isDefault === 1 && (
                         <Badge variant="default" data-testid="badge-default">Mặc định</Badge>
@@ -421,32 +438,70 @@ export default function QuotationTemplates() {
                       {template.isActive === 0 && (
                         <Badge variant="secondary" data-testid="badge-inactive">Không hoạt động</Badge>
                       )}
+                      {template.isAdminTemplate && (
+                        <Badge variant="outline" className="text-blue-600 border-blue-300" data-testid="badge-admin-shared">
+                          <Share2 className="w-3 h-3 mr-1" />
+                          Từ Admin
+                        </Badge>
+                      )}
+                      {isAdmin && template.isSharedWithUsers === 1 && (
+                        <Badge variant="outline" className="text-green-600 border-green-300" data-testid="badge-shared">
+                          <Share2 className="w-3 h-3 mr-1" />
+                          Đã chia sẻ
+                        </Badge>
+                      )}
                     </CardTitle>
                     {template.description && (
                       <CardDescription>{template.description}</CardDescription>
                     )}
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEdit(template)}
-                      data-testid={`button-edit-${template.id}`}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        if (confirm("Bạn có chắc muốn xóa mẫu này?")) {
-                          deleteMutation.mutate(template.id);
-                        }
-                      }}
-                      data-testid={`button-delete-${template.id}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                  <div className="flex items-center gap-2">
+                    {isAdmin && !template.isAdminTemplate && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={template.isSharedWithUsers === 1}
+                              onCheckedChange={(checked) => {
+                                toggleShareMutation.mutate({
+                                  id: template.id,
+                                  isSharedWithUsers: checked ? 1 : 0
+                                });
+                              }}
+                              disabled={toggleShareMutation.isPending}
+                              data-testid={`switch-share-${template.id}`}
+                            />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{template.isSharedWithUsers === 1 ? "Ngừng chia sẻ với người dùng" : "Chia sẻ với người dùng"}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                    {!template.isAdminTemplate && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEdit(template)}
+                          data-testid={`button-edit-${template.id}`}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            if (confirm("Bạn có chắc muốn xóa mẫu này?")) {
+                              deleteMutation.mutate(template.id);
+                            }
+                          }}
+                          data-testid={`button-delete-${template.id}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardHeader>
