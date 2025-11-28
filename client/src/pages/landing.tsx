@@ -160,7 +160,7 @@ export default function Landing() {
             </p>
             <Button 
               size="lg" 
-              onClick={() => window.location.href = '/api/login'}
+              onClick={() => window.location.href = '/login'}
               className="gap-2 h-14 px-10 text-base bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-2xl shadow-blue-500/40 hover:shadow-blue-500/50 hover:scale-105 transition-all duration-300"
               data-testid="button-cta-login"
             >
