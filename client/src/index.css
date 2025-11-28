@@ -353,3 +353,17 @@
     inset: -1px;
   }
 }
+
+/* Gradient Text Animation for Landing Page */
+@keyframes gradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient {
+  animation: gradient 4s ease infinite;
+}
