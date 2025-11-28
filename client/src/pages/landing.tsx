@@ -389,7 +389,7 @@ export default function Landing() {
               variants={fadeInUp}
             >
               <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                Các tính năng sẵn có
+                Các tính năng nổi bật
               </h2>
               <p className="text-lg text-slate-600">
                 Sử dụng ngay các mẫu tự động hóa được thiết kế sẵn
