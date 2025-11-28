@@ -39,13 +39,22 @@ export default function Landing() {
               </Button>
             </div>
           ) : (
-            <Button 
-              onClick={() => setLocation('/login')}
-              data-testid="button-login"
-              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300"
-            >
-              Đăng nhập
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline"
+                onClick={() => setLocation('/register')}
+                data-testid="button-register"
+              >
+                Đăng ký
+              </Button>
+              <Button 
+                onClick={() => setLocation('/login')}
+                data-testid="button-login"
+                className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300"
+              >
+                Đăng nhập
+              </Button>
+            </div>
           )}
         </div>
       </header>
