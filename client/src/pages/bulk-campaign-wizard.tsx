@@ -1423,8 +1423,51 @@ export default function BulkCampaignWizard() {
       }
     }
 
-    // Initial mode selection screen
+    // Check if user has any quotation templates available
+    const hasTemplates = quotationTemplates && quotationTemplates.length > 0;
+
+    // Initial mode selection screen (only show if there are templates to choose from)
     if (step2Mode === null) {
+      // If no templates available, automatically go to custom mode
+      if (!hasTemplates) {
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold mb-2" data-testid="text-step-title">Soạn nội dung đính kèm</h2>
+              <p className="text-sm text-muted-foreground">
+                Kéo thả biến từ thanh bên trái vào khung soạn thảo hoặc dán từ Word. 
+                Nếu không cần đính kèm tệp thì bấm{" "}
+                <button 
+                  onClick={handleNext}
+                  className="text-primary hover:underline font-medium"
+                  data-testid="link-skip-attachment"
+                >
+                  vào đây
+                </button>
+                {" "}để qua bước soạn nội dung thư.
+              </p>
+            </div>
+
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Bạn chưa có mẫu đính kèm nào. Hãy soạn nội dung tùy chỉnh hoặc liên hệ admin để được chia sẻ mẫu.
+              </AlertDescription>
+            </Alert>
+
+            <Button
+              onClick={() => setStep2Mode('custom')}
+              className="w-full"
+              data-testid="button-start-custom-mode"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Bắt đầu soạn nội dung
+            </Button>
+          </div>
+        );
+      }
+
+      // Show mode selection when templates are available
       return (
         <div className="space-y-6">
           <div>

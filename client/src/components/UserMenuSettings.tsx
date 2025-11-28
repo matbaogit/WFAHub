@@ -207,7 +207,7 @@ export function UserMenuSettings({ open, onOpenChange }: UserMenuSettingsProps) 
             variant="outline"
             onClick={resetToDefaults}
             data-testid="button-reset-user-menu-settings"
-            disabled={updateMutation.isPending}
+            disabled={updateMenuMutation.isPending}
           >
             <RotateCcw className="w-4 h-4 mr-2" />
             Hiện tất cả
