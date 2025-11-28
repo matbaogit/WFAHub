@@ -128,6 +128,7 @@ export interface IStorage {
   createQuotationTemplate(template: InsertQuotationTemplate): Promise<QuotationTemplate>;
   getQuotationTemplate(id: string): Promise<QuotationTemplate | undefined>;
   getUserQuotationTemplates(userId: string): Promise<QuotationTemplate[]>;
+  getAdminQuotationTemplates(): Promise<QuotationTemplate[]>;
   updateQuotationTemplate(templateId: string, data: Partial<QuotationTemplate>): Promise<QuotationTemplate>;
   deleteQuotationTemplate(templateId: string): Promise<void>;
   
@@ -715,6 +716,26 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(quotationTemplates)
       .where(eq(quotationTemplates.createdBy, userId))
+      .orderBy(desc(quotationTemplates.createdAt));
+  }
+
+  async getAdminQuotationTemplates(): Promise<QuotationTemplate[]> {
+    // Get quotation templates created by admin users
+    const adminUsers = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.role, 'admin'));
+    
+    const adminUserIds = adminUsers.map(u => u.id);
+    
+    if (adminUserIds.length === 0) {
+      return [];
+    }
+    
+    return await db
+      .select()
+      .from(quotationTemplates)
+      .where(inArray(quotationTemplates.createdBy, adminUserIds))
       .orderBy(desc(quotationTemplates.createdAt));
   }
 

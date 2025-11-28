@@ -730,13 +730,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update system settings (admin only)
   app.patch("/api/admin/system-settings", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const { userMenuVisibility } = req.body;
+      const { userMenuVisibility, shareTemplatesWithUsers } = req.body;
       
-      if (!userMenuVisibility || typeof userMenuVisibility !== 'object') {
-        return res.status(400).json({ message: "userMenuVisibility is required and must be an object" });
+      const updateData: any = {};
+      
+      if (userMenuVisibility !== undefined) {
+        if (typeof userMenuVisibility !== 'object') {
+          return res.status(400).json({ message: "userMenuVisibility must be an object" });
+        }
+        updateData.userMenuVisibility = userMenuVisibility;
       }
       
-      const updated = await storage.updateSystemSettings({ userMenuVisibility });
+      if (shareTemplatesWithUsers !== undefined) {
+        updateData.shareTemplatesWithUsers = shareTemplatesWithUsers ? 1 : 0;
+      }
+      
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
+      
+      const updated = await storage.updateSystemSettings(updateData);
       res.json(updated);
     } catch (error) {
       console.error("Error updating system settings:", error);
@@ -1325,8 +1338,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/quotation-templates", isAuthenticated, async (req: any, res) => {
     try {
-      const templates = await storage.getUserQuotationTemplates(req.user.id);
-      res.json(templates);
+      const userId = req.user.id;
+      const isAdmin = req.user.role === 'admin';
+      
+      // Get user's own templates
+      const userTemplates = await storage.getUserQuotationTemplates(userId);
+      
+      // If user is admin, only return their own templates
+      if (isAdmin) {
+        return res.json(userTemplates);
+      }
+      
+      // For regular users, check if admin templates should be shared
+      const settings = await storage.getSystemSettings();
+      const shareTemplates = settings?.shareTemplatesWithUsers === 1;
+      
+      if (shareTemplates) {
+        // Get admin templates and combine with user templates
+        const adminTemplates = await storage.getAdminQuotationTemplates();
+        
+        // Mark admin templates with a flag and filter out duplicates
+        const adminTemplatesWithFlag = adminTemplates
+          .filter(t => t.createdBy !== userId) // Don't duplicate if user is also admin
+          .map(t => ({ ...t, isAdminTemplate: true }));
+        
+        const userTemplatesWithFlag = userTemplates.map(t => ({ ...t, isAdminTemplate: false }));
+        
+        // Admin templates first, then user templates
+        const combinedTemplates = [...adminTemplatesWithFlag, ...userTemplatesWithFlag];
+        return res.json(combinedTemplates);
+      }
+      
+      // If sharing is disabled, only return user's own templates
+      res.json(userTemplates);
     } catch (error) {
       console.error("Error fetching quotation templates:", error);
       res.status(500).json({ message: "Failed to fetch quotation templates" });
