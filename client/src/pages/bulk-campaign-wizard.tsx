@@ -1676,7 +1676,7 @@ export default function BulkCampaignWizard() {
       e.dataTransfer.dropEffect = "copy";
     };
 
-    // Handle double-click on variable to insert into active field
+    // Handle double-click on variable to insert into active field or TipTap editor
     const handleVariableDoubleClick = (variableValue: string) => {
       // Use ref instead of state to avoid race condition with onBlur
       const currentActiveField = activeFieldRef.current;
@@ -1721,6 +1721,19 @@ export default function BulkCampaignWizard() {
           textarea.focus();
           textarea.setSelectionRange(start + variableValue.length, start + variableValue.length);
         }, 0);
+      } else if (emailEditor && !emailEditor.isDestroyed) {
+        // Fallback: Insert into TipTap editor when no input field is active
+        emailEditor.chain().focus().insertContent(variableValue).run();
+        
+        // Flash effect on editor
+        const editorElement = document.querySelector('.ProseMirror') as HTMLElement;
+        if (editorElement) {
+          editorElement.style.transition = 'background-color 0.3s ease';
+          editorElement.style.backgroundColor = 'hsl(var(--primary) / 0.1)';
+          setTimeout(() => {
+            editorElement.style.backgroundColor = '';
+          }, 300);
+        }
       }
     };
 
