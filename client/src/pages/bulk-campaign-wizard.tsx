@@ -1783,6 +1783,7 @@ export default function BulkCampaignWizard() {
                       description="Kéo và thả hoặc nhấp đôi để chèn"
                       sampleData={sampleData}
                       editor={emailEditor}
+                      onVariableDoubleClick={handleVariableDoubleClick}
                     />
                   </div>
                 </ResizablePanel>
