@@ -1424,10 +1424,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/smtp-config", isAuthenticated, async (req: any, res) => {
     try {
       const config = await storage.getSmtpConfig(req.user.id);
-      if (!config) {
-        return res.status(404).json({ message: "SMTP config not found" });
-      }
-      res.json(config);
+      // Return null instead of 404 to let frontend handle empty state gracefully
+      res.json(config || null);
     } catch (error) {
       console.error("Error fetching SMTP config:", error);
       res.status(500).json({ message: "Failed to fetch SMTP config" });
