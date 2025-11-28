@@ -7,13 +7,15 @@ WFA Hub is a Vietnamese-language web application providing ready-made automation
 ## Recent Changes
 
 **November 28, 2025:**
-- **Admin Template Sharing Control**: Implemented admin-controlled quotation template sharing with users
-  - New `shareTemplatesWithUsers` field in `systemSettings` table (stored as integer 0/1)
-  - Toggle switch added to "Cài đặt Menu" dialog (UserMenuSettings component)
-  - When enabled: regular users see admin's quotation templates + their own templates
-  - When disabled: regular users only see their own quotation templates
-  - Admin users always see only their own templates (not affected by this setting)
-  - Storage method `getAdminQuotationTemplates()` fetches templates created by admin users
+- **Per-Template Visibility Control**: Replaced global template sharing with granular per-template control
+  - New `isSharedWithUsers` integer field (0/1) added to both `quotationTemplates` and `emailTemplates` tables
+  - Each template can be individually shared or hidden from regular users
+  - Toggle switch on each template card (visible to admins only) controls sharing status
+  - Admin templates with `isSharedWithUsers=1` are visible to regular users, marked with "Từ Admin" badge
+  - Regular users cannot edit or delete admin-shared templates
+  - Removed old global `shareTemplatesWithUsers` toggle from UserMenuSettings dialog
+  - Updated API routes to filter templates based on individual `isSharedWithUsers` field
+  - Added storage methods: `getAdminQuotationTemplates()` and `getAdminEmailTemplates()`
 - **Wizard Step 2 No-Template Mode**: Updated bulk campaign wizard to handle users with no templates
   - When user has no quotation templates: shows simplified UI with message and direct "Bắt đầu soạn nội dung" button
   - Skips the template vs custom mode selection when no templates available
