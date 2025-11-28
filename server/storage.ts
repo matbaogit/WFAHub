@@ -121,6 +121,7 @@ export interface IStorage {
   createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
   getEmailTemplate(id: string): Promise<EmailTemplate | undefined>;
   getUserEmailTemplates(userId: string): Promise<EmailTemplate[]>;
+  getAdminEmailTemplates(): Promise<EmailTemplate[]>;
   updateEmailTemplate(templateId: string, data: Partial<EmailTemplate>): Promise<EmailTemplate>;
   deleteEmailTemplate(templateId: string): Promise<void>;
   
@@ -681,6 +682,26 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(emailTemplates)
       .where(eq(emailTemplates.createdBy, userId))
+      .orderBy(desc(emailTemplates.createdAt));
+  }
+
+  async getAdminEmailTemplates(): Promise<EmailTemplate[]> {
+    // Get email templates created by admin users
+    const adminUsers = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.role, 'admin'));
+    
+    const adminUserIds = adminUsers.map(u => u.id);
+    
+    if (adminUserIds.length === 0) {
+      return [];
+    }
+    
+    return await db
+      .select()
+      .from(emailTemplates)
+      .where(inArray(emailTemplates.createdBy, adminUserIds))
       .orderBy(desc(emailTemplates.createdAt));
   }
 

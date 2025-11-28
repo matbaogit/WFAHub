@@ -155,6 +155,7 @@ export const quotationTemplates = pgTable("quotation_templates", {
   
   isActive: integer("is_active").default(1).notNull(),
   isDefault: integer("is_default").default(0).notNull(),
+  isSharedWithUsers: integer("is_shared_with_users").default(0).notNull(),
   
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
@@ -171,6 +172,7 @@ export const emailTemplates = pgTable("email_templates", {
   
   isActive: integer("is_active").default(1).notNull(),
   isDefault: integer("is_default").default(0).notNull(),
+  isSharedWithUsers: integer("is_shared_with_users").default(0).notNull(),
   
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),

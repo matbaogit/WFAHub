@@ -1269,8 +1269,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/email-templates", isAuthenticated, async (req: any, res) => {
     try {
-      const templates = await storage.getUserEmailTemplates(req.user.id);
-      res.json(templates);
+      const userId = req.user.id;
+      const isAdmin = req.user.role === 'admin';
+      
+      // Get user's own templates
+      const userTemplates = await storage.getUserEmailTemplates(userId);
+      
+      // If user is admin, return their own templates (they can see isSharedWithUsers status)
+      if (isAdmin) {
+        return res.json(userTemplates);
+      }
+      
+      // For regular users, get shared templates from admins
+      const adminTemplates = await storage.getAdminEmailTemplates();
+      
+      // Only include admin templates that have isSharedWithUsers = 1
+      const sharedAdminTemplates = adminTemplates
+        .filter(t => t.createdBy !== userId && t.isSharedWithUsers === 1)
+        .map(t => ({ ...t, isAdminTemplate: true }));
+      
+      const userTemplatesWithFlag = userTemplates.map(t => ({ ...t, isAdminTemplate: false }));
+      
+      // Shared admin templates first, then user templates
+      const combinedTemplates = [...sharedAdminTemplates, ...userTemplatesWithFlag];
+      res.json(combinedTemplates);
     } catch (error) {
       console.error("Error fetching email templates:", error);
       res.status(500).json({ message: "Failed to fetch email templates" });
@@ -1344,33 +1366,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get user's own templates
       const userTemplates = await storage.getUserQuotationTemplates(userId);
       
-      // If user is admin, only return their own templates
+      // If user is admin, return their own templates (they can see isSharedWithUsers status)
       if (isAdmin) {
         return res.json(userTemplates);
       }
       
-      // For regular users, check if admin templates should be shared
-      const settings = await storage.getSystemSettings();
-      const shareTemplates = settings?.shareTemplatesWithUsers === 1;
+      // For regular users, get shared templates from admins
+      const adminTemplates = await storage.getAdminQuotationTemplates();
       
-      if (shareTemplates) {
-        // Get admin templates and combine with user templates
-        const adminTemplates = await storage.getAdminQuotationTemplates();
-        
-        // Mark admin templates with a flag and filter out duplicates
-        const adminTemplatesWithFlag = adminTemplates
-          .filter(t => t.createdBy !== userId) // Don't duplicate if user is also admin
-          .map(t => ({ ...t, isAdminTemplate: true }));
-        
-        const userTemplatesWithFlag = userTemplates.map(t => ({ ...t, isAdminTemplate: false }));
-        
-        // Admin templates first, then user templates
-        const combinedTemplates = [...adminTemplatesWithFlag, ...userTemplatesWithFlag];
-        return res.json(combinedTemplates);
-      }
+      // Only include admin templates that have isSharedWithUsers = 1
+      const sharedAdminTemplates = adminTemplates
+        .filter(t => t.createdBy !== userId && t.isSharedWithUsers === 1)
+        .map(t => ({ ...t, isAdminTemplate: true }));
       
-      // If sharing is disabled, only return user's own templates
-      res.json(userTemplates);
+      const userTemplatesWithFlag = userTemplates.map(t => ({ ...t, isAdminTemplate: false }));
+      
+      // Shared admin templates first, then user templates
+      const combinedTemplates = [...sharedAdminTemplates, ...userTemplatesWithFlag];
+      res.json(combinedTemplates);
     } catch (error) {
       console.error("Error fetching quotation templates:", error);
       res.status(500).json({ message: "Failed to fetch quotation templates" });
