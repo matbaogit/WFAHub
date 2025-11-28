@@ -133,6 +133,10 @@ export function VariablePicker({
                           draggable
                           onDragStart={(e) => handleDragStart(e, variable)}
                           onDoubleClick={() => handleDoubleClick(variable)}
+                          onMouseDown={(e) => {
+                            // Prevent input fields from losing focus when clicking on variable
+                            e.preventDefault();
+                          }}
                           className="cursor-grab active:cursor-grabbing"
                           data-testid={`variable-chip-${index}`}
                           title="Kéo thả hoặc nhấp đôi để chèn vào editor"
