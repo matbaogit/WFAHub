@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 import puppeteer from "puppeteer";
 import { execSync } from "child_process";
-import type { SmtpConfig, EmailTemplate, Quotation, Customer } from "@shared/schema";
+import type { SmtpConfig, EmailTemplate, Quotation, Customer, CampaignAttachment } from "@shared/schema";
 import { decryptPassword } from "./utils/encryption";
 
 interface EmailData {
@@ -124,6 +124,7 @@ interface CampaignEmailData {
   body: string;
   smtpConfig: SmtpConfig;
   quotationTemplateHtml?: string;
+  fileAttachments?: CampaignAttachment[]; // User-uploaded file attachments
 }
 
 // Helper function to check if password is encrypted (hex format)
@@ -248,7 +249,7 @@ export async function generateQuotationPDF(
 }
 
 export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> {
-  const { recipientEmail, recipientName, customData, subject, body, smtpConfig, quotationTemplateHtml } = data;
+  const { recipientEmail, recipientName, customData, subject, body, smtpConfig, quotationTemplateHtml, fileAttachments } = data;
 
   // Merge customData into subject and body
   const mergedData = {
@@ -283,8 +284,10 @@ export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> 
     },
   });
 
-  // Generate PDF attachment if quotation template is provided
+  // Collect all attachments
   let attachments: any[] = [];
+  
+  // 1. Generate PDF attachment if quotation template is provided
   if (quotationTemplateHtml) {
     try {
       const pdfBuffer = await generateQuotationPDF(quotationTemplateHtml, mergedData);
@@ -296,6 +299,26 @@ export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> 
     } catch (error) {
       console.error('Failed to generate PDF attachment:', error);
       // Continue sending email without PDF if generation fails
+    }
+  }
+
+  // 2. Add user-uploaded file attachments
+  if (fileAttachments && fileAttachments.length > 0) {
+    for (const file of fileAttachments) {
+      if (file.fileContent) {
+        try {
+          // Decode base64 content back to buffer
+          const fileBuffer = Buffer.from(file.fileContent, 'base64');
+          attachments.push({
+            filename: file.originalName || file.filename,
+            content: fileBuffer,
+            contentType: file.mimeType || 'application/octet-stream',
+          });
+        } catch (error) {
+          console.error(`Failed to attach file ${file.filename}:`, error);
+          // Continue with other attachments if one fails
+        }
+      }
     }
   }
 

@@ -2539,9 +2539,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const attachments = [];
       for (const file of req.files as Express.Multer.File[]) {
-        // In production, save to disk or cloud storage
-        // For now, we'll just save metadata
         const storagePath = `/uploads/campaigns/${campaignId}/${file.originalname}`;
+        
+        // Convert file buffer to base64 for storage
+        const fileContent = file.buffer.toString('base64');
         
         const attachment = await storage.createCampaignAttachment({
           campaignId,
@@ -2550,6 +2551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           storagePath,
           fileSize: file.size,
           mimeType: file.mimetype,
+          fileContent, // Store actual file content as base64
         });
         
         attachments.push(attachment);
@@ -2602,6 +2604,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Get campaign file attachments (user-uploaded files)
+      const campaignAttachments = await storage.getCampaignAttachments(campaignId);
+      console.log(`[Campaign ${campaignId}] Found ${campaignAttachments.length} file attachment(s)`);
+
       // Update campaign status to sending
       await storage.updateBulkCampaign(campaignId, {
         status: "sending",
@@ -2629,7 +2635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           for (const recipient of campaign.recipients) {
             try {
-              // Send email
+              // Send email with all attachments
               await sendCampaignEmail({
                 recipientEmail: recipient.recipientEmail,
                 recipientName: recipient.recipientName || undefined,
@@ -2638,6 +2644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 body: campaign.emailBody || '',
                 smtpConfig,
                 quotationTemplateHtml,
+                fileAttachments: campaignAttachments, // Include user-uploaded file attachments
               });
 
               // Update recipient status to sent

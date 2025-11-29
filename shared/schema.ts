@@ -394,6 +394,7 @@ export const campaignAttachments = pgTable("campaign_attachments", {
   storagePath: varchar("storage_path", { length: 1000 }).notNull(),
   fileSize: integer("file_size").notNull(),
   mimeType: varchar("mime_type", { length: 100 }),
+  fileContent: text("file_content"), // Base64 encoded file content
   
   uploadedAt: timestamp("uploaded_at").defaultNow(),
 });
