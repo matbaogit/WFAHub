@@ -188,6 +188,56 @@ function convertRelativeUrlsToAbsolute(html: string, baseUrl: string): string {
   });
 }
 
+// Interface for inline image attachment
+interface InlineImageAttachment {
+  cid: string;
+  content: Buffer;
+  contentType: string;
+}
+
+// Extract base64 images from HTML and convert to inline CID attachments
+function extractAndConvertBase64Images(html: string): {
+  processedHtml: string;
+  inlineAttachments: InlineImageAttachment[];
+} {
+  const inlineAttachments: InlineImageAttachment[] = [];
+  let imageCounter = 0;
+  
+  // Match base64 image src in img tags: data:image/xxx;base64,xxxxxx
+  const base64Regex = /<img([^>]*?)src=["'](data:image\/([a-zA-Z+]+);base64,([^"']+))["']([^>]*?)>/gi;
+  
+  const processedHtml = html.replace(base64Regex, (match, beforeSrc, fullDataUrl, mimeType, base64Data, afterSrc) => {
+    try {
+      imageCounter++;
+      const cid = `inline-image-${imageCounter}-${Date.now()}`;
+      
+      // Get proper content type
+      let contentType = `image/${mimeType}`;
+      if (mimeType === 'svg+xml') {
+        contentType = 'image/svg+xml';
+      }
+      
+      // Decode base64 to buffer
+      const imageBuffer = Buffer.from(base64Data, 'base64');
+      
+      inlineAttachments.push({
+        cid,
+        content: imageBuffer,
+        contentType,
+      });
+      
+      // Replace base64 URL with cid: reference
+      return `<img${beforeSrc}src="cid:${cid}"${afterSrc}>`;
+    } catch (error) {
+      console.error('Failed to process base64 image:', error);
+      // Return original if processing fails
+      return match;
+    }
+  });
+  
+  return { processedHtml, inlineAttachments };
+}
+
 // Generate PDF from quotation template HTML with merged data
 export async function generateQuotationPDF(
   templateHtml: string,
@@ -260,7 +310,15 @@ export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> 
 
   // Replace {field} and {{field}} placeholders with actual data
   const renderedSubject = mergeVariables(subject, mergedData);
-  const renderedBody = mergeVariables(body, mergedData);
+  let renderedBody = mergeVariables(body, mergedData);
+
+  // Extract base64 images and convert to inline CID attachments
+  const { processedHtml, inlineAttachments } = extractAndConvertBase64Images(renderedBody);
+  renderedBody = processedHtml;
+  
+  if (inlineAttachments.length > 0) {
+    console.log(`[Email] Converted ${inlineAttachments.length} base64 image(s) to CID attachments`);
+  }
 
   // Decrypt SMTP password only if it's in encrypted format (hex:hex:hex)
   let decryptedPassword = smtpConfig.password;
@@ -287,7 +345,18 @@ export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> 
   // Collect all attachments
   let attachments: any[] = [];
   
-  // 1. Generate PDF attachment if quotation template is provided
+  // 1. Add inline image attachments (converted from base64)
+  for (const inlineImg of inlineAttachments) {
+    attachments.push({
+      filename: `image-${inlineImg.cid}.${inlineImg.contentType.split('/')[1] || 'png'}`,
+      content: inlineImg.content,
+      contentType: inlineImg.contentType,
+      cid: inlineImg.cid, // Content-ID for inline display
+      contentDisposition: 'inline', // Mark as inline attachment
+    });
+  }
+  
+  // 2. Generate PDF attachment if quotation template is provided
   if (quotationTemplateHtml) {
     try {
       const pdfBuffer = await generateQuotationPDF(quotationTemplateHtml, mergedData);
@@ -302,7 +371,7 @@ export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> 
     }
   }
 
-  // 2. Add user-uploaded file attachments
+  // 3. Add user-uploaded file attachments
   if (fileAttachments && fileAttachments.length > 0) {
     for (const file of fileAttachments) {
       if (file.fileContent) {
