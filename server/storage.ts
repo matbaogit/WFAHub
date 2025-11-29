@@ -176,6 +176,7 @@ export interface IStorage {
   createCampaignRecipients(recipients: InsertCampaignRecipient[]): Promise<CampaignRecipient[]>;
   getCampaignRecipients(campaignId: string): Promise<CampaignRecipient[]>;
   updateCampaignRecipient(recipientId: string, data: Partial<CampaignRecipient>): Promise<CampaignRecipient>;
+  deleteRecipientsByCampaignId(campaignId: string): Promise<void>;
   
   // Campaign Attachment operations
   createCampaignAttachment(attachment: InsertCampaignAttachment): Promise<CampaignAttachment>;
@@ -1159,6 +1160,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(campaignRecipients.id, recipientId))
       .returning();
     return recipient;
+  }
+
+  async deleteRecipientsByCampaignId(campaignId: string): Promise<void> {
+    await db.delete(campaignRecipients).where(eq(campaignRecipients.campaignId, campaignId));
   }
 
   // Campaign Attachment operations
