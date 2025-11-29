@@ -1,6 +1,8 @@
 import nodemailer from "nodemailer";
 import puppeteer from "puppeteer";
 import { execSync } from "child_process";
+import * as fs from "fs";
+import * as path from "path";
 import type { SmtpConfig, EmailTemplate, Quotation, Customer, CampaignAttachment } from "@shared/schema";
 import { decryptPassword } from "./utils/encryption";
 
@@ -195,18 +197,35 @@ interface InlineImageAttachment {
   contentType: string;
 }
 
-// Extract base64 images from HTML and convert to inline CID attachments
-function extractAndConvertBase64Images(html: string): {
+// Get MIME type from file extension
+function getMimeTypeFromExtension(filePath: string): string {
+  const ext = path.extname(filePath).toLowerCase();
+  const mimeTypes: Record<string, string> = {
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.svg': 'image/svg+xml',
+    '.bmp': 'image/bmp',
+    '.ico': 'image/x-icon',
+  };
+  return mimeTypes[ext] || 'image/png';
+}
+
+// Extract all images (base64 and local file URLs) from HTML and convert to inline CID attachments
+function extractAndConvertImagesToInline(html: string): {
   processedHtml: string;
   inlineAttachments: InlineImageAttachment[];
 } {
   const inlineAttachments: InlineImageAttachment[] = [];
   let imageCounter = 0;
+  let processedHtml = html;
   
-  // Match base64 image src in img tags: data:image/xxx;base64,xxxxxx
+  // 1. Process base64 images: data:image/xxx;base64,xxxxxx
   const base64Regex = /<img([^>]*?)src=["'](data:image\/([a-zA-Z+]+);base64,([^"']+))["']([^>]*?)>/gi;
   
-  const processedHtml = html.replace(base64Regex, (match, beforeSrc, fullDataUrl, mimeType, base64Data, afterSrc) => {
+  processedHtml = processedHtml.replace(base64Regex, (match, beforeSrc, fullDataUrl, mimeType, base64Data, afterSrc) => {
     try {
       imageCounter++;
       const cid = `inline-image-${imageCounter}-${Date.now()}`;
@@ -226,11 +245,46 @@ function extractAndConvertBase64Images(html: string): {
         contentType,
       });
       
-      // Replace base64 URL with cid: reference
+      console.log(`[Email] Converted base64 image to CID: ${cid}`);
       return `<img${beforeSrc}src="cid:${cid}"${afterSrc}>`;
     } catch (error) {
       console.error('Failed to process base64 image:', error);
-      // Return original if processing fails
+      return match;
+    }
+  });
+  
+  // 2. Process local file URLs: /attached_assets/... or attached_assets/...
+  const localFileRegex = /<img([^>]*?)src=["'](\/?(attached_assets\/[^"']+))["']([^>]*?)>/gi;
+  
+  processedHtml = processedHtml.replace(localFileRegex, (match, beforeSrc, fullPath, relativePath, afterSrc) => {
+    try {
+      // Normalize the path (remove leading slash if present)
+      const normalizedPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
+      const absolutePath = path.resolve(process.cwd(), normalizedPath);
+      
+      // Check if file exists
+      if (!fs.existsSync(absolutePath)) {
+        console.warn(`[Email] Local image file not found: ${absolutePath}`);
+        return match;
+      }
+      
+      imageCounter++;
+      const cid = `inline-local-${imageCounter}-${Date.now()}`;
+      
+      // Read file content
+      const imageBuffer = fs.readFileSync(absolutePath);
+      const contentType = getMimeTypeFromExtension(absolutePath);
+      
+      inlineAttachments.push({
+        cid,
+        content: imageBuffer,
+        contentType,
+      });
+      
+      console.log(`[Email] Converted local file to CID: ${absolutePath} -> ${cid}`);
+      return `<img${beforeSrc}src="cid:${cid}"${afterSrc}>`;
+    } catch (error) {
+      console.error('Failed to process local image file:', error);
       return match;
     }
   });
@@ -312,12 +366,12 @@ export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> 
   const renderedSubject = mergeVariables(subject, mergedData);
   let renderedBody = mergeVariables(body, mergedData);
 
-  // Extract base64 images and convert to inline CID attachments
-  const { processedHtml, inlineAttachments } = extractAndConvertBase64Images(renderedBody);
+  // Extract all images (base64 + local files) and convert to inline CID attachments
+  const { processedHtml, inlineAttachments } = extractAndConvertImagesToInline(renderedBody);
   renderedBody = processedHtml;
   
   if (inlineAttachments.length > 0) {
-    console.log(`[Email] Converted ${inlineAttachments.length} base64 image(s) to CID attachments`);
+    console.log(`[Email] Converted ${inlineAttachments.length} image(s) to CID attachments`);
   }
 
   // Decrypt SMTP password only if it's in encrypted format (hex:hex:hex)
