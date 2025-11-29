@@ -292,33 +292,71 @@ function extractAndConvertImagesToInline(html: string): {
   return { processedHtml, inlineAttachments };
 }
 
+// Find a working Chromium path for PDF generation
+async function findChromiumPath(): Promise<string | undefined> {
+  // List of common Chromium paths to try
+  const possiblePaths = [
+    // System chromium (from which command)
+    null, // Will try `which chromium`
+    // Common Nix paths
+    '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium',
+    // Common Linux paths
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    // Snap and flatpak
+    '/snap/bin/chromium',
+  ];
+
+  // Try 'which chromium' first
+  try {
+    const chromiumFromWhich = execSync('which chromium 2>/dev/null').toString().trim();
+    if (chromiumFromWhich && fs.existsSync(chromiumFromWhich)) {
+      console.log(`[PDF] Found chromium via 'which': ${chromiumFromWhich}`);
+      return chromiumFromWhich;
+    }
+  } catch {
+    // Ignore - which command failed
+  }
+
+  // Try other paths
+  for (const chromPath of possiblePaths) {
+    if (chromPath && fs.existsSync(chromPath)) {
+      console.log(`[PDF] Found chromium at: ${chromPath}`);
+      return chromPath;
+    }
+  }
+
+  // Return undefined to let Puppeteer use its bundled Chromium
+  console.log('[PDF] No system chromium found, will use Puppeteer bundled Chromium');
+  return undefined;
+}
+
 // Generate PDF from quotation template HTML with merged data
 export async function generateQuotationPDF(
   templateHtml: string,
   recipientData: Record<string, any>
 ): Promise<Buffer> {
+  console.log('[PDF] Starting PDF generation...');
+  
   // Get base URL for converting relative image paths
   const baseUrl = getBaseUrl();
+  console.log(`[PDF] Base URL for images: ${baseUrl}`);
   
   // Convert relative image URLs to absolute URLs (so Puppeteer can load them)
   const htmlWithAbsoluteUrls = convertRelativeUrlsToAbsolute(templateHtml, baseUrl);
   
   // Replace {field} and {{field}} placeholders with actual data
   const renderedHtml = mergeVariables(htmlWithAbsoluteUrls, recipientData);
+  console.log(`[PDF] Rendered HTML length: ${renderedHtml.length} chars`);
 
-  // Find Chromium executable path
-  let chromiumPath: string;
-  try {
-    chromiumPath = execSync('which chromium').toString().trim();
-  } catch {
-    // Fallback to default path if which command fails
-    chromiumPath = '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium';
-  }
+  // Find Chromium executable path (may return undefined to use bundled)
+  const chromiumPath = await findChromiumPath();
 
-  // Launch headless browser and generate PDF
-  const browser = await puppeteer.launch({
+  // Launch options
+  const launchOptions: any = {
     headless: true,
-    executablePath: chromiumPath,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -329,11 +367,27 @@ export async function generateQuotationPDF(
       '--single-process',
       '--disable-gpu'
     ],
-  });
+  };
 
+  // Only set executablePath if we found a system chromium
+  if (chromiumPath) {
+    launchOptions.executablePath = chromiumPath;
+    console.log(`[PDF] Using system Chromium: ${chromiumPath}`);
+  } else {
+    console.log('[PDF] Using Puppeteer bundled Chromium');
+  }
+
+  let browser;
   try {
+    console.log('[PDF] Launching browser...');
+    browser = await puppeteer.launch(launchOptions);
+    console.log('[PDF] Browser launched successfully');
+
     const page = await browser.newPage();
-    await page.setContent(renderedHtml, { waitUntil: 'networkidle0' });
+    console.log('[PDF] Page created, setting content...');
+    
+    await page.setContent(renderedHtml, { waitUntil: 'networkidle0', timeout: 30000 });
+    console.log('[PDF] Content set, generating PDF...');
     
     const pdfBuffer = await page.pdf({
       format: 'A4',
@@ -346,9 +400,16 @@ export async function generateQuotationPDF(
       },
     });
 
+    console.log(`[PDF] PDF generated successfully, size: ${pdfBuffer.length} bytes`);
     return Buffer.from(pdfBuffer);
+  } catch (error) {
+    console.error('[PDF] Error generating PDF:', error);
+    throw error;
   } finally {
-    await browser.close();
+    if (browser) {
+      await browser.close();
+      console.log('[PDF] Browser closed');
+    }
   }
 }
 
