@@ -2468,6 +2468,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
+      // Delete existing recipients before adding new ones (prevents duplicate accumulation)
+      await storage.deleteRecipientsByCampaignId(campaignId);
+
       const recipients = req.body.recipients.map((r: any) => {
         const recipient: any = {
           campaignId,
