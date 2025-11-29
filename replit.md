@@ -6,6 +6,16 @@ WFA Hub is a Vietnamese-language web application providing ready-made automation
 
 ## Recent Changes
 
+**November 29, 2025:**
+- **Email Attachment Bug Fix**: Fixed critical bug where uploaded file attachments were not being sent with campaign emails
+  - Root cause: File content was not being stored in database, only metadata (filename, path, size) was saved
+  - Added `fileContent` TEXT column to `campaignAttachments` table to store base64-encoded file content
+  - Updated file upload route to convert `file.buffer` to base64 and store in database
+  - Modified `sendCampaignEmail` to accept `fileAttachments` parameter (type: `CampaignAttachment[]`)
+  - Updated campaign sending logic to fetch attachments from database and pass to email service
+  - Email now includes: (1) PDF generated from quotation template (if configured), and (2) all user-uploaded file attachments
+  - Files are decoded from base64 back to buffer before attaching to nodemailer
+
 **November 28, 2025:**
 - **Per-Template Visibility Control**: Replaced global template sharing with granular per-template control
   - New `isSharedWithUsers` integer field (0/1) added to both `quotationTemplates` and `emailTemplates` tables
