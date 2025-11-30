@@ -770,6 +770,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ PDF SETTINGS ROUTES ============
+  
+  // Get PDF generation settings (admin only)
+  app.get("/api/admin/pdf-settings", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getSystemSettings();
+      res.json({
+        pdfGenerationMethod: settings?.pdfGenerationMethod || 'puppeteer',
+        hasPdfcoApiKey: !!(settings?.pdfcoApiKey),
+      });
+    } catch (error) {
+      console.error("Error fetching PDF settings:", error);
+      res.status(500).json({ message: "Failed to fetch PDF settings" });
+    }
+  });
+
+  // Update PDF generation settings (admin only)
+  app.put("/api/admin/pdf-settings", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { pdfGenerationMethod, pdfcoApiKey } = req.body;
+      
+      if (!pdfGenerationMethod || !['puppeteer', 'pdfco'].includes(pdfGenerationMethod)) {
+        return res.status(400).json({ message: "Invalid PDF generation method" });
+      }
+      
+      const updateData: any = {
+        pdfGenerationMethod,
+      };
+      
+      // Encrypt and store API key if provided
+      if (pdfcoApiKey) {
+        updateData.pdfcoApiKey = encryptPassword(pdfcoApiKey);
+      }
+      
+      const updated = await storage.updateSystemSettings(updateData);
+      
+      res.json({
+        success: true,
+        pdfGenerationMethod: updated.pdfGenerationMethod,
+        hasPdfcoApiKey: !!(updated.pdfcoApiKey),
+      });
+    } catch (error) {
+      console.error("Error updating PDF settings:", error);
+      res.status(500).json({ message: "Failed to update PDF settings" });
+    }
+  });
+
   // ============ POLICY PAGES ROUTES ============
   
   // Get all published policy pages (public - no auth required)
@@ -2613,9 +2660,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get system settings for PDF generation method
       const systemSettings = await storage.getSystemSettings();
+      let decryptedPdfcoApiKey: string | undefined;
+      if (systemSettings?.pdfcoApiKey) {
+        try {
+          decryptedPdfcoApiKey = decryptPassword(systemSettings.pdfcoApiKey);
+        } catch (error) {
+          console.error('[Campaign] Failed to decrypt PDF.co API key:', error);
+        }
+      }
       const pdfOptions = {
         method: (systemSettings?.pdfGenerationMethod || 'puppeteer') as 'puppeteer' | 'pdfco',
-        pdfcoApiKey: systemSettings?.pdfcoApiKey || undefined,
+        pdfcoApiKey: decryptedPdfcoApiKey,
       };
       console.log(`[Campaign ${campaignId}] PDF generation method: ${pdfOptions.method}`);
 

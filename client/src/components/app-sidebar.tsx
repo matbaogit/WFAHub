@@ -128,6 +128,12 @@ const adminMenuItems = [
     icon: Server,
   },
   {
+    id: "admin-pdf",
+    title: "Cài đặt PDF",
+    url: "/admin/pdf-settings",
+    icon: FileText,
+  },
+  {
     id: "admin-policies",
     title: "Trang chính sách",
     url: "/admin/policies",

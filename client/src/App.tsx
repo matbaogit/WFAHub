@@ -35,6 +35,7 @@ import AdminUsers from "@/pages/admin/users";
 import AdminTemplates from "@/pages/admin/templates";
 import AdminSystemSmtp from "@/pages/admin/system-smtp";
 import AdminPolicies from "@/pages/admin/policies";
+import AdminPdfSettings from "@/pages/admin/pdf-settings";
 import Policy from "@/pages/policy";
 
 function Router() {
@@ -74,6 +75,7 @@ function Router() {
           <Route path="/admin/users" component={AdminUsers} />
           <Route path="/admin/templates" component={AdminTemplates} />
           <Route path="/admin/system-smtp" component={AdminSystemSmtp} />
+          <Route path="/admin/pdf-settings" component={AdminPdfSettings} />
           <Route path="/admin/policies" component={AdminPolicies} />
           <Route path="/admin/stats" component={AdminDashboard} />
         </>
