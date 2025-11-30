@@ -333,23 +333,68 @@ async function findChromiumPath(): Promise<string | undefined> {
   return undefined;
 }
 
-// Generate PDF from quotation template HTML with merged data
-export async function generateQuotationPDF(
-  templateHtml: string,
-  recipientData: Record<string, any>
+// Generate PDF using PDF.co API
+async function generatePDFWithPdfCo(
+  renderedHtml: string,
+  apiKey: string
 ): Promise<Buffer> {
-  console.log('[PDF] Starting PDF generation...');
+  console.log('[PDF.co] Starting PDF generation via PDF.co API...');
   
-  // Get base URL for converting relative image paths
-  const baseUrl = getBaseUrl();
-  console.log(`[PDF] Base URL for images: ${baseUrl}`);
-  
-  // Convert relative image URLs to absolute URLs (so Puppeteer can load them)
-  const htmlWithAbsoluteUrls = convertRelativeUrlsToAbsolute(templateHtml, baseUrl);
-  
-  // Replace {field} and {{field}} placeholders with actual data
-  const renderedHtml = mergeVariables(htmlWithAbsoluteUrls, recipientData);
-  console.log(`[PDF] Rendered HTML length: ${renderedHtml.length} chars`);
+  try {
+    // PDF.co HTML to PDF endpoint
+    const response = await fetch('https://api.pdf.co/v1/pdf/convert/from/html', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+      },
+      body: JSON.stringify({
+        html: renderedHtml,
+        name: 'quotation.pdf',
+        margins: '20mm 15mm 20mm 15mm', // top right bottom left
+        paperSize: 'A4',
+        orientation: 'Portrait',
+        printBackground: true,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[PDF.co] API error:', response.status, errorText);
+      throw new Error(`PDF.co API error: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    
+    if (result.error) {
+      console.error('[PDF.co] API returned error:', result.message);
+      throw new Error(`PDF.co error: ${result.message}`);
+    }
+
+    // PDF.co returns a URL to the generated PDF, we need to download it
+    const pdfUrl = result.url;
+    console.log('[PDF.co] PDF generated, downloading from:', pdfUrl);
+
+    const pdfResponse = await fetch(pdfUrl);
+    if (!pdfResponse.ok) {
+      throw new Error(`Failed to download PDF from PDF.co: ${pdfResponse.status}`);
+    }
+
+    const pdfBuffer = Buffer.from(await pdfResponse.arrayBuffer());
+    console.log(`[PDF.co] PDF downloaded successfully, size: ${pdfBuffer.length} bytes`);
+    
+    return pdfBuffer;
+  } catch (error) {
+    console.error('[PDF.co] Error generating PDF:', error);
+    throw error;
+  }
+}
+
+// Generate PDF using Puppeteer (local Chromium)
+async function generatePDFWithPuppeteer(
+  renderedHtml: string
+): Promise<Buffer> {
+  console.log('[PDF] Starting PDF generation with Puppeteer...');
 
   // Find Chromium executable path (may return undefined to use bundled)
   const chromiumPath = await findChromiumPath();
@@ -410,6 +455,45 @@ export async function generateQuotationPDF(
       await browser.close();
       console.log('[PDF] Browser closed');
     }
+  }
+}
+
+// PDF generation options
+export interface PdfGenerationOptions {
+  method: 'puppeteer' | 'pdfco';
+  pdfcoApiKey?: string;
+}
+
+// Main function: Generate PDF from quotation template HTML with merged data
+// Supports two methods: 'puppeteer' (local Chromium) or 'pdfco' (PDF.co API)
+export async function generateQuotationPDF(
+  templateHtml: string,
+  recipientData: Record<string, any>,
+  options?: PdfGenerationOptions
+): Promise<Buffer> {
+  console.log('[PDF] Starting PDF generation...');
+  
+  // Get base URL for converting relative image paths
+  const baseUrl = getBaseUrl();
+  console.log(`[PDF] Base URL for images: ${baseUrl}`);
+  
+  // Convert relative image URLs to absolute URLs
+  const htmlWithAbsoluteUrls = convertRelativeUrlsToAbsolute(templateHtml, baseUrl);
+  
+  // Replace {field} and {{field}} placeholders with actual data
+  const renderedHtml = mergeVariables(htmlWithAbsoluteUrls, recipientData);
+  console.log(`[PDF] Rendered HTML length: ${renderedHtml.length} chars`);
+
+  // Choose PDF generation method based on options
+  const method = options?.method || 'puppeteer';
+  console.log(`[PDF] Using generation method: ${method}`);
+
+  if (method === 'pdfco' && options?.pdfcoApiKey) {
+    // Use PDF.co API
+    return generatePDFWithPdfCo(renderedHtml, options.pdfcoApiKey);
+  } else {
+    // Default to Puppeteer (local Chromium)
+    return generatePDFWithPuppeteer(renderedHtml);
   }
 }
 
