@@ -595,6 +595,12 @@ export const systemSettings = pgTable("system_settings", {
   // Share admin templates with regular users
   shareTemplatesWithUsers: integer("share_templates_with_users").default(1).notNull(),
   
+  // PDF generation method: 'puppeteer' (local) or 'pdfco' (PDF.co API)
+  pdfGenerationMethod: varchar("pdf_generation_method", { length: 20 }).default("puppeteer").notNull(),
+  
+  // PDF.co API key (encrypted)
+  pdfcoApiKey: text("pdfco_api_key"),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
