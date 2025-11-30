@@ -6,6 +6,17 @@ WFA Hub is a Vietnamese-language web application providing ready-made automation
 
 ## Recent Changes
 
+**November 30, 2025:**
+- **Configurable PDF Generation Method**: Implemented admin-configurable PDF generation for email campaigns
+  - Two methods available: Puppeteer (local Chromium) and PDF.co API (cloud-based)
+  - New Admin Panel page at `/admin/pdf-settings` for configuration
+  - `pdfGenerationMethod` and `pdfcoApiKey` fields added to `systemSettings` table
+  - API key encrypted using AES-256-GCM before storage
+  - `generatePDFWithPdfCo()` function uses PDF.co's HTML-to-PDF endpoint
+  - Enhanced `generatePDFWithPuppeteer()` with auto-detection of Chromium paths
+  - Campaign sending automatically uses configured method from system settings
+  - Useful for production servers without Chromium installed
+
 **November 29, 2025:**
 - **Email Attachment Bug Fix**: Fixed critical bug where uploaded file attachments were not being sent with campaign emails
   - Root cause: File content was not being stored in database, only metadata (filename, path, size) was saved
@@ -130,7 +141,8 @@ Preferred communication style: Simple, everyday language.
 **Core Services:**
 - **Neon Serverless PostgreSQL:** Managed database.
 - **Replit Deployments:** Hosting platform.
-- **Puppeteer:** Used for server-side PDF generation from HTML templates.
+- **Puppeteer:** Used for server-side PDF generation from HTML templates (requires Chromium).
+- **PDF.co API (Optional):** Cloud-based HTML-to-PDF conversion, useful for servers without Chromium.
 
 **Key NPM Packages:**
 - `@neondatabase/serverless`: PostgreSQL client.
