@@ -2611,6 +2611,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const campaignAttachments = await storage.getCampaignAttachments(campaignId);
       console.log(`[Campaign ${campaignId}] Found ${campaignAttachments.length} file attachment(s)`);
 
+      // Get system settings for PDF generation method
+      const systemSettings = await storage.getSystemSettings();
+      const pdfOptions = {
+        method: (systemSettings?.pdfGenerationMethod || 'puppeteer') as 'puppeteer' | 'pdfco',
+        pdfcoApiKey: systemSettings?.pdfcoApiKey || undefined,
+      };
+      console.log(`[Campaign ${campaignId}] PDF generation method: ${pdfOptions.method}`);
+
       // Update campaign status to sending
       await storage.updateBulkCampaign(campaignId, {
         status: "sending",
@@ -2647,7 +2655,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 body: campaign.emailBody || '',
                 smtpConfig,
                 quotationTemplateHtml,
-                fileAttachments: campaignAttachments, // Include user-uploaded file attachments
+                fileAttachments: campaignAttachments,
+                pdfOptions, // PDF generation options from system settings
               });
 
               // Update recipient status to sent

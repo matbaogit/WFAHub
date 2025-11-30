@@ -126,7 +126,8 @@ interface CampaignEmailData {
   body: string;
   smtpConfig: SmtpConfig;
   quotationTemplateHtml?: string;
-  fileAttachments?: CampaignAttachment[]; // User-uploaded file attachments
+  fileAttachments?: CampaignAttachment[];
+  pdfOptions?: PdfGenerationOptions;
 }
 
 // Helper function to check if password is encrypted (hex format)
@@ -498,7 +499,7 @@ export async function generateQuotationPDF(
 }
 
 export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> {
-  const { recipientEmail, recipientName, customData, subject, body, smtpConfig, quotationTemplateHtml, fileAttachments } = data;
+  const { recipientEmail, recipientName, customData, subject, body, smtpConfig, quotationTemplateHtml, fileAttachments, pdfOptions } = data;
 
   // Merge customData into subject and body
   const mergedData = {
@@ -558,12 +559,13 @@ export async function sendCampaignEmail(data: CampaignEmailData): Promise<void> 
   // 2. Generate PDF attachment if quotation template is provided
   if (quotationTemplateHtml) {
     try {
-      const pdfBuffer = await generateQuotationPDF(quotationTemplateHtml, mergedData);
+      const pdfBuffer = await generateQuotationPDF(quotationTemplateHtml, mergedData, pdfOptions);
       attachments.push({
         filename: `Bao_Gia_${recipientName || 'KhachHang'}.pdf`,
         content: pdfBuffer,
         contentType: 'application/pdf',
       });
+      console.log(`[Email] PDF attachment generated successfully`);
     } catch (error) {
       console.error('Failed to generate PDF attachment:', error);
       // Continue sending email without PDF if generation fails
