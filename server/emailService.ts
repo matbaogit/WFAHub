@@ -377,6 +377,12 @@ async function convertAllImagesToBase64(html: string, baseUrl: string): Promise<
     return null;
   }
   
+  // Helper to extract relative path from URL containing attached_assets
+  const extractAttachedAssetsPath = (url: string): string | null => {
+    const pathMatch = url.match(/\/?(attached_assets\/[^\s"']+)/);
+    return pathMatch ? pathMatch[1] : null;
+  };
+  
   for (const match of matches) {
     const [fullMatch, beforeSrc, src, afterSrc] = match;
     
@@ -390,49 +396,55 @@ async function convertAllImagesToBase64(html: string, baseUrl: string): Promise<
       let imageBuffer: Buffer | null = null;
       let mimeType = 'image/png';
       
-      // Case 1: Local file path (attached_assets/... or /attached_assets/...)
-      if (src.includes('attached_assets/') || src.startsWith('/attached_assets/')) {
-        const relativePath = src.replace(/^\//, ''); // Remove leading slash
-        const absolutePath = path.resolve(process.cwd(), relativePath);
-        
-        if (fs.existsSync(absolutePath)) {
-          imageBuffer = fs.readFileSync(absolutePath);
-          mimeType = getMimeTypeFromExtension(absolutePath);
-          console.log(`[PDF.co] Converted local file to base64: ${absolutePath}`);
+      // Case 1: Absolute URL (http:// or https://) - CHECK THIS FIRST
+      if (src.startsWith('http://') || src.startsWith('https://')) {
+        // Check if this URL contains attached_assets - try to read locally first
+        const localPath = extractAttachedAssetsPath(src);
+        if (localPath) {
+          const absolutePath = path.resolve(process.cwd(), localPath);
+          if (fs.existsSync(absolutePath)) {
+            imageBuffer = fs.readFileSync(absolutePath);
+            mimeType = getMimeTypeFromExtension(absolutePath);
+            console.log(`[PDF.co] Converted URL with attached_assets to local file: ${absolutePath}`);
+          } else {
+            // Try fetching from the original URL
+            console.log(`[PDF.co] Local file not found for URL, fetching remotely: ${src}`);
+            const result = await tryFetchImage([src]);
+            if (result) {
+              imageBuffer = result.buffer;
+              mimeType = result.mimeType;
+            }
+          }
         } else {
-          // File not on local disk - try fetching from baseUrl (production server)
-          console.log(`[PDF.co] Local file not found: ${absolutePath}, trying remote fetch...`);
-          const remoteUrls = [
-            baseUrl + '/' + relativePath, // Try with baseUrl
-            baseUrl + src, // Try with original path
-          ];
-          const result = await tryFetchImage(remoteUrls);
+          // Regular remote URL - just fetch it
+          const result = await tryFetchImage([src]);
           if (result) {
             imageBuffer = result.buffer;
             mimeType = result.mimeType;
-          } else {
-            console.warn(`[PDF.co] Could not fetch image from any source, removing from PDF: ${src}`);
-            // Remove the image tag entirely to avoid broken image icon
-            processedHtml = processedHtml.replace(fullMatch, '');
-            continue;
           }
         }
-      }
-      // Case 2: Absolute URL (http:// or https://)
-      else if (src.startsWith('http://') || src.startsWith('https://')) {
-        const result = await tryFetchImage([src]);
-        if (result) {
-          imageBuffer = result.buffer;
-          mimeType = result.mimeType;
-        } else {
-          console.warn(`[PDF.co] Failed to fetch remote image, removing: ${src}`);
+        
+        if (!imageBuffer) {
+          console.warn(`[PDF.co] Failed to process remote image, removing: ${src}`);
           processedHtml = processedHtml.replace(fullMatch, '');
           continue;
         }
       }
-      // Case 3: Relative URL starting with /
+      // Case 2: Local file path starting with attached_assets/ (no leading slash)
+      else if (src.startsWith('attached_assets/')) {
+        const absolutePath = path.resolve(process.cwd(), src);
+        if (fs.existsSync(absolutePath)) {
+          imageBuffer = fs.readFileSync(absolutePath);
+          mimeType = getMimeTypeFromExtension(absolutePath);
+          console.log(`[PDF.co] Converted local path to base64: ${absolutePath}`);
+        } else {
+          console.warn(`[PDF.co] Local file not found, removing: ${absolutePath}`);
+          processedHtml = processedHtml.replace(fullMatch, '');
+          continue;
+        }
+      }
+      // Case 3: Relative URL starting with / (including /attached_assets/...)
       else if (src.startsWith('/')) {
-        // Try as local file first
         const localPath = path.resolve(process.cwd(), src.slice(1));
         if (fs.existsSync(localPath)) {
           imageBuffer = fs.readFileSync(localPath);
