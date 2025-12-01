@@ -885,7 +885,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const apiKey = decryptPassword(settings.pdfcoApiKey);
       
-      // Sample HTML for testing
+      // Sample HTML for testing - includes an image to test image conversion
+      // Using a publicly accessible test image
+      const testImageUrl = 'https://via.placeholder.com/200x100/2563eb/ffffff?text=WFA+Hub';
+      
       const testHtml = `
         <!DOCTYPE html>
         <html>
@@ -896,11 +899,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             h1 { color: #2563eb; }
             .info { background: #f0f9ff; padding: 20px; border-radius: 8px; margin-top: 20px; }
             .success { color: #16a34a; font-weight: bold; }
+            .image-test { margin: 20px 0; padding: 15px; border: 2px dashed #94a3b8; border-radius: 8px; text-align: center; }
+            .image-test img { max-width: 100%; height: auto; border-radius: 4px; }
           </style>
         </head>
         <body>
           <h1>PDF.co Test - WFA Hub</h1>
           <p class="success">PDF được tạo thành công từ PDF.co API!</p>
+          
+          <div class="image-test">
+            <p><strong>Kiểm tra hình ảnh:</strong></p>
+            <img src="${testImageUrl}" alt="Test Image" />
+            <p style="font-size: 12px; color: #64748b; margin-top: 10px;">
+              Nếu hình ảnh hiển thị bên trên, tích hợp hình ảnh hoạt động tốt!
+            </p>
+          </div>
+          
           <div class="info">
             <p><strong>Thời gian tạo:</strong> ${new Date().toLocaleString('vi-VN')}</p>
             <p><strong>Phương thức:</strong> PDF.co HTML to PDF API</p>
@@ -910,65 +924,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         </html>
       `;
       
-      // Call PDF.co API to generate PDF
-      const response = await fetch('https://api.pdf.co/v1/pdf/convert/from/html', {
-        method: 'POST',
-        headers: {
-          'x-api-key': apiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          html: testHtml,
-          name: 'test-pdfco.pdf',
-          margins: '20px 20px 20px 20px',
-          paperSize: 'A4',
-          orientation: 'Portrait',
-        }),
+      // Use the generateQuotationPDF function which includes image conversion
+      const { generateQuotationPDF } = await import("./emailService");
+      
+      const pdfBuffer = await generateQuotationPDF(testHtml, {}, {
+        method: 'pdfco',
+        pdfcoApiKey: apiKey
       });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("PDF.co generate test failed:", response.status, errorText);
-        return res.json({ 
-          success: false, 
-          message: "Không thể tạo PDF. Kiểm tra lại API Key." 
-        });
-      }
-      
-      const data = await response.json();
-      
-      if (data.error) {
-        console.error("PDF.co API error:", data.message);
-        return res.json({ 
-          success: false, 
-          message: data.message || "Lỗi từ PDF.co API" 
-        });
-      }
-      
-      // Download the PDF from URL
-      const pdfResponse = await fetch(data.url);
-      if (!pdfResponse.ok) {
-        return res.json({ 
-          success: false, 
-          message: "Không thể tải file PDF từ PDF.co" 
-        });
-      }
-      
-      const pdfBuffer = await pdfResponse.arrayBuffer();
-      const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
+      const pdfBase64 = pdfBuffer.toString('base64');
       
       res.json({ 
         success: true, 
         message: "Tạo PDF thành công!",
         pdfBase64,
-        filename: 'test-pdfco.pdf',
-        creditsRemaining: data.remainingCredits
+        filename: 'test-pdfco.pdf'
       });
     } catch (error) {
       console.error("Error testing PDF generation:", error);
       res.status(500).json({ 
         success: false, 
-        message: "Lỗi khi tạo PDF test. Vui lòng thử lại." 
+        message: `Lỗi khi tạo PDF test: ${error instanceof Error ? error.message : 'Unknown error'}` 
       });
     }
   });

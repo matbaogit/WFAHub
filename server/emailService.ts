@@ -334,6 +334,130 @@ async function findChromiumPath(): Promise<string | undefined> {
   return undefined;
 }
 
+// Convert all images in HTML to base64 data URLs for PDF.co compatibility
+async function convertAllImagesToBase64(html: string, baseUrl: string): Promise<string> {
+  let processedHtml = html;
+  
+  // Regular expression to match all img tags with src attribute
+  const imgRegex = /<img([^>]*?)src=["']([^"']+)["']([^>]*?)>/gi;
+  
+  // Collect all matches first
+  const matches: RegExpExecArray[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = imgRegex.exec(html)) !== null) {
+    matches.push(match);
+  }
+  
+  console.log(`[PDF.co] Found ${matches.length} image(s) to process`);
+  
+  for (const match of matches) {
+    const [fullMatch, beforeSrc, src, afterSrc] = match;
+    
+    try {
+      // Skip if already base64
+      if (src.startsWith('data:')) {
+        console.log(`[PDF.co] Image already base64, skipping`);
+        continue;
+      }
+      
+      let imageBuffer: Buffer | null = null;
+      let mimeType = 'image/png';
+      
+      // Case 1: Local file path (attached_assets/...)
+      if (src.includes('attached_assets/') || src.startsWith('/attached_assets/')) {
+        const relativePath = src.replace(/^\//, ''); // Remove leading slash
+        const absolutePath = path.resolve(process.cwd(), relativePath);
+        
+        if (fs.existsSync(absolutePath)) {
+          imageBuffer = fs.readFileSync(absolutePath);
+          mimeType = getMimeTypeFromExtension(absolutePath);
+          console.log(`[PDF.co] Converted local file to base64: ${absolutePath}`);
+        } else {
+          console.warn(`[PDF.co] Local file not found: ${absolutePath}`);
+          continue;
+        }
+      }
+      // Case 2: Absolute URL (http:// or https://)
+      else if (src.startsWith('http://') || src.startsWith('https://')) {
+        try {
+          console.log(`[PDF.co] Fetching remote image: ${src}`);
+          const response = await fetch(src, { 
+            headers: { 'User-Agent': 'Mozilla/5.0' },
+            signal: AbortSignal.timeout(10000) // 10 second timeout
+          });
+          
+          if (response.ok) {
+            const arrayBuffer = await response.arrayBuffer();
+            imageBuffer = Buffer.from(arrayBuffer);
+            
+            // Get content type from response or guess from URL
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.startsWith('image/')) {
+              mimeType = contentType.split(';')[0];
+            } else {
+              mimeType = getMimeTypeFromExtension(src);
+            }
+            console.log(`[PDF.co] Fetched remote image successfully: ${src}`);
+          } else {
+            console.warn(`[PDF.co] Failed to fetch remote image (${response.status}): ${src}`);
+            continue;
+          }
+        } catch (fetchError) {
+          console.warn(`[PDF.co] Error fetching remote image: ${src}`, fetchError);
+          continue;
+        }
+      }
+      // Case 3: Relative URL starting with /
+      else if (src.startsWith('/')) {
+        // Try as local file first
+        const localPath = path.resolve(process.cwd(), src.slice(1));
+        if (fs.existsSync(localPath)) {
+          imageBuffer = fs.readFileSync(localPath);
+          mimeType = getMimeTypeFromExtension(localPath);
+          console.log(`[PDF.co] Converted relative path to base64: ${localPath}`);
+        } else {
+          // Try to fetch from server
+          const absoluteUrl = baseUrl + src;
+          try {
+            console.log(`[PDF.co] Fetching from server: ${absoluteUrl}`);
+            const response = await fetch(absoluteUrl, { 
+              headers: { 'User-Agent': 'Mozilla/5.0' },
+              signal: AbortSignal.timeout(10000)
+            });
+            
+            if (response.ok) {
+              const arrayBuffer = await response.arrayBuffer();
+              imageBuffer = Buffer.from(arrayBuffer);
+              mimeType = getMimeTypeFromExtension(src);
+              console.log(`[PDF.co] Fetched from server successfully`);
+            } else {
+              console.warn(`[PDF.co] Failed to fetch from server (${response.status}): ${absoluteUrl}`);
+              continue;
+            }
+          } catch (fetchError) {
+            console.warn(`[PDF.co] Error fetching from server: ${absoluteUrl}`, fetchError);
+            continue;
+          }
+        }
+      }
+      
+      // Convert to base64 and replace in HTML
+      if (imageBuffer) {
+        const base64 = imageBuffer.toString('base64');
+        const dataUrl = `data:${mimeType};base64,${base64}`;
+        const newImgTag = `<img${beforeSrc}src="${dataUrl}"${afterSrc}>`;
+        processedHtml = processedHtml.replace(fullMatch, newImgTag);
+        console.log(`[PDF.co] Replaced image with base64 (${Math.round(base64.length / 1024)}KB)`);
+      }
+    } catch (error) {
+      console.error(`[PDF.co] Error processing image ${src}:`, error);
+      // Continue with other images
+    }
+  }
+  
+  return processedHtml;
+}
+
 // Generate PDF using PDF.co API
 async function generatePDFWithPdfCo(
   renderedHtml: string,
@@ -342,6 +466,14 @@ async function generatePDFWithPdfCo(
   console.log('[PDF.co] Starting PDF generation via PDF.co API...');
   
   try {
+    // Get base URL for relative paths
+    const baseUrl = getBaseUrl();
+    
+    // Convert all images to base64 before sending to PDF.co
+    console.log('[PDF.co] Converting images to base64...');
+    const htmlWithBase64Images = await convertAllImagesToBase64(renderedHtml, baseUrl);
+    console.log(`[PDF.co] HTML prepared, length: ${htmlWithBase64Images.length} chars`);
+    
     // PDF.co HTML to PDF endpoint
     const response = await fetch('https://api.pdf.co/v1/pdf/convert/from/html', {
       method: 'POST',
@@ -350,7 +482,7 @@ async function generatePDFWithPdfCo(
         'x-api-key': apiKey,
       },
       body: JSON.stringify({
-        html: renderedHtml,
+        html: htmlWithBase64Images,
         name: 'quotation.pdf',
         margins: '20mm 15mm 20mm 15mm', // top right bottom left
         paperSize: 'A4',
