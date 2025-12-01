@@ -871,6 +871,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test PDF generation with PDF.co (admin only)
+  app.post("/api/admin/pdf-settings/test-generate", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getSystemSettings();
+      
+      if (!settings?.pdfcoApiKey) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Chưa cấu hình PDF.co API Key" 
+        });
+      }
+      
+      const apiKey = decryptPassword(settings.pdfcoApiKey);
+      
+      // Sample HTML for testing
+      const testHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; }
+            h1 { color: #2563eb; }
+            .info { background: #f0f9ff; padding: 20px; border-radius: 8px; margin-top: 20px; }
+            .success { color: #16a34a; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <h1>PDF.co Test - WFA Hub</h1>
+          <p class="success">PDF được tạo thành công từ PDF.co API!</p>
+          <div class="info">
+            <p><strong>Thời gian tạo:</strong> ${new Date().toLocaleString('vi-VN')}</p>
+            <p><strong>Phương thức:</strong> PDF.co HTML to PDF API</p>
+            <p>Đây là file PDF test để xác nhận tích hợp PDF.co hoạt động bình thường.</p>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      // Call PDF.co API to generate PDF
+      const response = await fetch('https://api.pdf.co/v1/pdf/convert/from/html', {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          html: testHtml,
+          name: 'test-pdfco.pdf',
+          margins: '20px 20px 20px 20px',
+          paperSize: 'A4',
+          orientation: 'Portrait',
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("PDF.co generate test failed:", response.status, errorText);
+        return res.json({ 
+          success: false, 
+          message: "Không thể tạo PDF. Kiểm tra lại API Key." 
+        });
+      }
+      
+      const data = await response.json();
+      
+      if (data.error) {
+        console.error("PDF.co API error:", data.message);
+        return res.json({ 
+          success: false, 
+          message: data.message || "Lỗi từ PDF.co API" 
+        });
+      }
+      
+      // Download the PDF from URL
+      const pdfResponse = await fetch(data.url);
+      if (!pdfResponse.ok) {
+        return res.json({ 
+          success: false, 
+          message: "Không thể tải file PDF từ PDF.co" 
+        });
+      }
+      
+      const pdfBuffer = await pdfResponse.arrayBuffer();
+      const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
+      
+      res.json({ 
+        success: true, 
+        message: "Tạo PDF thành công!",
+        pdfBase64,
+        filename: 'test-pdfco.pdf',
+        creditsRemaining: data.remainingCredits
+      });
+    } catch (error) {
+      console.error("Error testing PDF generation:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Lỗi khi tạo PDF test. Vui lòng thử lại." 
+      });
+    }
+  });
+
   // ============ POLICY PAGES ROUTES ============
   
   // Get all published policy pages (public - no auth required)
