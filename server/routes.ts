@@ -885,9 +885,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const apiKey = decryptPassword(settings.pdfcoApiKey);
       
-      // Sample HTML for testing - includes an image to test image conversion
-      // Using a publicly accessible test image
-      const testImageUrl = 'https://via.placeholder.com/200x100/2563eb/ffffff?text=WFA+Hub';
+      // Sample HTML for testing - includes a base64 image to test rendering
+      // Using inline SVG as base64 to avoid network issues
+      const testImageBase64 = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzI1NjNlYiIgcng9IjgiLz4KICA8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZm9udC13ZWlnaHQ9ImJvbGQiPldGQSBIdWI8L3RleHQ+Cjwvc3ZnPgo=';
       
       const testHtml = `
         <!DOCTYPE html>
@@ -909,7 +909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           <div class="image-test">
             <p><strong>Kiểm tra hình ảnh:</strong></p>
-            <img src="${testImageUrl}" alt="Test Image" />
+            <img src="${testImageBase64}" alt="WFA Hub Logo" style="width: 200px; height: 100px;" />
             <p style="font-size: 12px; color: #64748b; margin-top: 10px;">
               Nếu hình ảnh hiển thị bên trên, tích hợp hình ảnh hoạt động tốt!
             </p>
