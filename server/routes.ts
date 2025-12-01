@@ -839,7 +839,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Test API by calling PDF.co account balance endpoint
-      const response = await fetch('https://api.pdf.co/v1/account/credits/balance', {
+      const response = await fetch('https://api.pdf.co/v1/account/credit/balance', {
         method: 'GET',
         headers: {
           'x-api-key': testApiKey,
