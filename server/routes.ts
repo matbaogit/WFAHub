@@ -817,6 +817,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test PDF.co API key (admin only)
+  app.post("/api/admin/pdf-settings/test", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { apiKey } = req.body;
+      
+      // If no API key provided, try to use existing one from settings
+      let testApiKey = apiKey;
+      if (!testApiKey) {
+        const settings = await storage.getSystemSettings();
+        if (settings?.pdfcoApiKey) {
+          testApiKey = decryptPassword(settings.pdfcoApiKey);
+        }
+      }
+      
+      if (!testApiKey) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Không có API Key để test. Vui lòng nhập API Key." 
+        });
+      }
+      
+      // Test API by calling PDF.co account balance endpoint
+      const response = await fetch('https://api.pdf.co/v1/account/credits/balance', {
+        method: 'GET',
+        headers: {
+          'x-api-key': testApiKey,
+        },
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("PDF.co API test failed:", response.status, errorText);
+        return res.json({ 
+          success: false, 
+          message: "API Key không hợp lệ hoặc đã hết hạn" 
+        });
+      }
+      
+      const data = await response.json();
+      
+      res.json({ 
+        success: true, 
+        message: `Kết nối thành công! Số credits còn lại: ${data.credits || 'N/A'}`,
+        credits: data.credits
+      });
+    } catch (error) {
+      console.error("Error testing PDF.co API:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Lỗi khi test API. Vui lòng thử lại." 
+      });
+    }
+  });
+
   // ============ POLICY PAGES ROUTES ============
   
   // Get all published policy pages (public - no auth required)
