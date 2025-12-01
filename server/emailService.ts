@@ -350,6 +350,33 @@ async function convertAllImagesToBase64(html: string, baseUrl: string): Promise<
   
   console.log(`[PDF.co] Found ${matches.length} image(s) to process`);
   
+  // Helper function to try fetching an image with multiple fallback URLs
+  async function tryFetchImage(urls: string[]): Promise<{ buffer: Buffer; mimeType: string } | null> {
+    for (const url of urls) {
+      try {
+        console.log(`[PDF.co] Trying to fetch: ${url}`);
+        const response = await fetch(url, { 
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+          signal: AbortSignal.timeout(10000)
+        });
+        
+        if (response.ok) {
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          const contentType = response.headers.get('content-type');
+          const mimeType = (contentType && contentType.startsWith('image/')) 
+            ? contentType.split(';')[0] 
+            : getMimeTypeFromExtension(url);
+          console.log(`[PDF.co] Successfully fetched from: ${url}`);
+          return { buffer, mimeType };
+        }
+      } catch (err) {
+        console.log(`[PDF.co] Failed to fetch ${url}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      }
+    }
+    return null;
+  }
+  
   for (const match of matches) {
     const [fullMatch, beforeSrc, src, afterSrc] = match;
     
@@ -363,7 +390,7 @@ async function convertAllImagesToBase64(html: string, baseUrl: string): Promise<
       let imageBuffer: Buffer | null = null;
       let mimeType = 'image/png';
       
-      // Case 1: Local file path (attached_assets/...)
+      // Case 1: Local file path (attached_assets/... or /attached_assets/...)
       if (src.includes('attached_assets/') || src.startsWith('/attached_assets/')) {
         const relativePath = src.replace(/^\//, ''); // Remove leading slash
         const absolutePath = path.resolve(process.cwd(), relativePath);
@@ -373,37 +400,33 @@ async function convertAllImagesToBase64(html: string, baseUrl: string): Promise<
           mimeType = getMimeTypeFromExtension(absolutePath);
           console.log(`[PDF.co] Converted local file to base64: ${absolutePath}`);
         } else {
-          console.warn(`[PDF.co] Local file not found: ${absolutePath}`);
-          continue;
+          // File not on local disk - try fetching from baseUrl (production server)
+          console.log(`[PDF.co] Local file not found: ${absolutePath}, trying remote fetch...`);
+          const remoteUrls = [
+            baseUrl + '/' + relativePath, // Try with baseUrl
+            baseUrl + src, // Try with original path
+          ];
+          const result = await tryFetchImage(remoteUrls);
+          if (result) {
+            imageBuffer = result.buffer;
+            mimeType = result.mimeType;
+          } else {
+            console.warn(`[PDF.co] Could not fetch image from any source, removing from PDF: ${src}`);
+            // Remove the image tag entirely to avoid broken image icon
+            processedHtml = processedHtml.replace(fullMatch, '');
+            continue;
+          }
         }
       }
       // Case 2: Absolute URL (http:// or https://)
       else if (src.startsWith('http://') || src.startsWith('https://')) {
-        try {
-          console.log(`[PDF.co] Fetching remote image: ${src}`);
-          const response = await fetch(src, { 
-            headers: { 'User-Agent': 'Mozilla/5.0' },
-            signal: AbortSignal.timeout(10000) // 10 second timeout
-          });
-          
-          if (response.ok) {
-            const arrayBuffer = await response.arrayBuffer();
-            imageBuffer = Buffer.from(arrayBuffer);
-            
-            // Get content type from response or guess from URL
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.startsWith('image/')) {
-              mimeType = contentType.split(';')[0];
-            } else {
-              mimeType = getMimeTypeFromExtension(src);
-            }
-            console.log(`[PDF.co] Fetched remote image successfully: ${src}`);
-          } else {
-            console.warn(`[PDF.co] Failed to fetch remote image (${response.status}): ${src}`);
-            continue;
-          }
-        } catch (fetchError) {
-          console.warn(`[PDF.co] Error fetching remote image: ${src}`, fetchError);
+        const result = await tryFetchImage([src]);
+        if (result) {
+          imageBuffer = result.buffer;
+          mimeType = result.mimeType;
+        } else {
+          console.warn(`[PDF.co] Failed to fetch remote image, removing: ${src}`);
+          processedHtml = processedHtml.replace(fullMatch, '');
           continue;
         }
       }
@@ -418,24 +441,13 @@ async function convertAllImagesToBase64(html: string, baseUrl: string): Promise<
         } else {
           // Try to fetch from server
           const absoluteUrl = baseUrl + src;
-          try {
-            console.log(`[PDF.co] Fetching from server: ${absoluteUrl}`);
-            const response = await fetch(absoluteUrl, { 
-              headers: { 'User-Agent': 'Mozilla/5.0' },
-              signal: AbortSignal.timeout(10000)
-            });
-            
-            if (response.ok) {
-              const arrayBuffer = await response.arrayBuffer();
-              imageBuffer = Buffer.from(arrayBuffer);
-              mimeType = getMimeTypeFromExtension(src);
-              console.log(`[PDF.co] Fetched from server successfully`);
-            } else {
-              console.warn(`[PDF.co] Failed to fetch from server (${response.status}): ${absoluteUrl}`);
-              continue;
-            }
-          } catch (fetchError) {
-            console.warn(`[PDF.co] Error fetching from server: ${absoluteUrl}`, fetchError);
+          const result = await tryFetchImage([absoluteUrl]);
+          if (result) {
+            imageBuffer = result.buffer;
+            mimeType = result.mimeType;
+          } else {
+            console.warn(`[PDF.co] Could not fetch relative URL, removing: ${src}`);
+            processedHtml = processedHtml.replace(fullMatch, '');
             continue;
           }
         }
@@ -451,7 +463,8 @@ async function convertAllImagesToBase64(html: string, baseUrl: string): Promise<
       }
     } catch (error) {
       console.error(`[PDF.co] Error processing image ${src}:`, error);
-      // Continue with other images
+      // Remove broken image to avoid broken icon in PDF
+      processedHtml = processedHtml.replace(fullMatch, '');
     }
   }
   
