@@ -29,39 +29,55 @@ export function VariablePicker({
 }: VariablePickerProps) {
   
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, variable: Variable) => {
+    // Set drag data
     e.dataTransfer.effectAllowed = "copy";
+    e.dataTransfer.dropEffect = "copy";
     e.dataTransfer.setData("text/plain", variable.value);
+    e.dataTransfer.setData("text", variable.value);
     e.dataTransfer.setData("application/json", JSON.stringify(variable));
+    
+    // Visual feedback on the source element
+    const target = e.currentTarget;
+    target.style.opacity = '0.5';
     
     // Create custom drag preview
     const dragPreview = document.createElement('div');
     dragPreview.className = 'variable-drag-preview';
     dragPreview.style.cssText = `
-      position: absolute;
-      top: -9999px;
-      left: -9999px;
-      padding: 12px 20px;
+      position: fixed;
+      top: -1000px;
+      left: -1000px;
+      padding: 8px 16px;
       background: hsl(var(--primary));
       color: white;
-      border-radius: 8px;
-      font-family: monospace;
-      font-size: 16px;
+      border-radius: 6px;
+      font-family: ui-monospace, monospace;
+      font-size: 14px;
       font-weight: 600;
-      box-shadow: 0 8px 24px -4px hsl(var(--primary) / 0.4);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       pointer-events: none;
       white-space: nowrap;
-      z-index: 9999;
+      z-index: 99999;
     `;
     dragPreview.textContent = variable.value;
     document.body.appendChild(dragPreview);
     
-    // Set custom drag image with offset
-    e.dataTransfer.setDragImage(dragPreview, 0, 0);
+    // Set custom drag image
+    try {
+      e.dataTransfer.setDragImage(dragPreview, 20, 20);
+    } catch (err) {
+      // Fallback if setDragImage fails
+      console.log('setDragImage fallback');
+    }
     
-    // Clean up after drag starts
-    setTimeout(() => {
-      document.body.removeChild(dragPreview);
-    }, 0);
+    // Clean up drag preview element after a short delay
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (document.body.contains(dragPreview)) {
+          document.body.removeChild(dragPreview);
+        }
+      }, 100);
+    });
   };
 
   // Handle double-click to insert variable into editor or custom field
@@ -130,14 +146,15 @@ export function VariablePicker({
                     <Tooltip key={index}>
                       <TooltipTrigger asChild>
                         <div
-                          draggable
+                          draggable="true"
                           onDragStart={(e) => handleDragStart(e, variable)}
-                          onDoubleClick={() => handleDoubleClick(variable)}
-                          onMouseDown={(e) => {
-                            // Prevent input fields from losing focus when clicking on variable
-                            e.preventDefault();
+                          onDragEnd={(e) => {
+                            // Cleanup after drag ends
+                            e.currentTarget.style.opacity = '1';
                           }}
-                          className="cursor-grab active:cursor-grabbing"
+                          onDoubleClick={() => handleDoubleClick(variable)}
+                          className="cursor-grab active:cursor-grabbing select-none"
+                          style={{ touchAction: 'none' }}
                           data-testid={`variable-chip-${index}`}
                           title="Kéo thả hoặc nhấp đôi để chèn vào editor"
                         >

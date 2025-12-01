@@ -142,9 +142,24 @@ export function TiptapEditor({ editor, onImageUpload }: TiptapEditorProps) {
 
   const handleDrop = (e: React.DragEvent) => {
     const variable = e.dataTransfer?.getData('text/plain');
-    if (variable && variable.startsWith('{') && variable.endsWith('}')) {
+    // Support both {variable} and {{variable}} formats
+    const isSingleBrace = variable && variable.startsWith('{') && variable.endsWith('}');
+    const isDoubleBrace = variable && variable.startsWith('{{') && variable.endsWith('}}');
+    
+    if (isSingleBrace || isDoubleBrace) {
       e.preventDefault();
+      e.stopPropagation();
       editor.chain().focus().insertContent(variable).run();
+      
+      // Visual feedback
+      const editorElement = document.querySelector('.ProseMirror') as HTMLElement;
+      if (editorElement) {
+        editorElement.style.transition = 'background-color 0.3s ease';
+        editorElement.style.backgroundColor = 'hsl(var(--primary) / 0.1)';
+        setTimeout(() => {
+          editorElement.style.backgroundColor = '';
+        }, 300);
+      }
     }
     setIsDragOver(false);
   };
