@@ -27,7 +27,30 @@ import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import { VariablePicker } from "@/components/VariablePicker";
 import './tiptap-editor.css';
+
+const EMAIL_VARIABLES = [
+  { label: "Số báo giá", value: "{{quotationNumber}}" },
+  { label: "Tên công ty", value: "{{companyName}}" },
+  { label: "Tên khách hàng", value: "{{customerName}}" },
+  { label: "Công ty khách hàng", value: "{{customerCompany}}" },
+  { label: "Tổng tiền", value: "{{total}}" },
+  { label: "Danh sách hàng", value: "{{items}}" },
+  { label: "Có hiệu lực đến", value: "{{validUntil}}" },
+  { label: "Ghi chú", value: "{{notes}}" },
+];
+
+const EMAIL_SAMPLE_DATA: Record<string, string> = {
+  quotationNumber: "BG-2024-001",
+  companyName: "Công ty ABC",
+  customerName: "Nguyễn Văn A",
+  customerCompany: "Công ty XYZ",
+  total: "50,000,000 ₫",
+  items: "Dịch vụ tư vấn, Thiết kế website",
+  validUntil: "31/12/2024",
+  notes: "Báo giá có hiệu lực trong 30 ngày.",
+};
 
 interface EmailTemplateFormProps {
   form: any;
@@ -79,26 +102,34 @@ function EmailTemplateForm({ form, onSubmit, isPending, onCancel, editor }: Emai
             <FormItem>
               <FormLabel>Nội dung HTML</FormLabel>
               <FormControl>
-                <div data-testid="editor-emailtemplate-htmlcontent">
-                  <TiptapEditor
-                    editor={editor}
-                    onImageUpload={async (file) => {
-                      const formData = new FormData();
-                      formData.append('file', file);
-                      const response = await fetch('/api/upload-image', {
-                        method: 'POST',
-                        body: formData,
-                      });
-                      const data = await response.json();
-                      return data.url;
-                    }}
-                  />
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-4" data-testid="editor-emailtemplate-htmlcontent">
+                  <div className="lg:col-span-3">
+                    <TiptapEditor
+                      editor={editor}
+                      onImageUpload={async (file) => {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        const response = await fetch('/api/upload-image', {
+                          method: 'POST',
+                          body: formData,
+                        });
+                        const data = await response.json();
+                        return data.url;
+                      }}
+                    />
+                  </div>
+                  <div className="lg:col-span-1">
+                    <VariablePicker
+                      variables={EMAIL_VARIABLES}
+                      title="Biến có sẵn"
+                      description="Kéo thả hoặc nhấp đôi để chèn biến vào editor"
+                      sampleData={EMAIL_SAMPLE_DATA}
+                      editor={editor}
+                    />
+                  </div>
                 </div>
               </FormControl>
               <FormMessage />
-              <p className="text-xs text-muted-foreground">
-                Hỗ trợ HTML và biến động: {`{{quotationNumber}}, {{customerName}}, {{total}}, {{items}}`}
-              </p>
             </FormItem>
           )}
         />
