@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, FileText, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
+import { Loader2, FileText, CheckCircle2, AlertCircle, ExternalLink, Zap } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
@@ -47,6 +47,36 @@ export default function AdminPdfSettings() {
       toast({
         title: "Lỗi",
         description: error.message || "Không thể lưu cài đặt PDF",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const testApiMutation = useMutation({
+    mutationFn: async (testApiKey?: string) => {
+      const res = await apiRequest("POST", "/api/admin/pdf-settings/test", { 
+        apiKey: testApiKey || undefined 
+      });
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        toast({
+          title: "Test thành công",
+          description: data.message,
+        });
+      } else {
+        toast({
+          title: "Test thất bại",
+          description: data.message,
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể test API",
         variant: "destructive",
       });
     },
@@ -171,18 +201,37 @@ export default function AdminPdfSettings() {
             </RadioGroup>
 
             {method === 'pdfco' && (
-              <div className="space-y-2 p-4 bg-slate-50 rounded-lg border">
+              <div className="space-y-3 p-4 bg-slate-50 rounded-lg border">
                 <Label htmlFor="apiKey">
                   PDF.co API Key {settings?.hasPdfcoApiKey ? "(để trống nếu không đổi)" : "*"}
                 </Label>
-                <Input
-                  id="apiKey"
-                  type="password"
-                  placeholder={settings?.hasPdfcoApiKey ? "••••••••" : "Nhập API Key từ PDF.co"}
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  data-testid="input-pdfco-api-key"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="apiKey"
+                    type="password"
+                    placeholder={settings?.hasPdfcoApiKey ? "••••••••" : "Nhập API Key từ PDF.co"}
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    data-testid="input-pdfco-api-key"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => testApiMutation.mutate(apiKey || undefined)}
+                    disabled={testApiMutation.isPending || (!apiKey && !settings?.hasPdfcoApiKey)}
+                    data-testid="button-test-api"
+                  >
+                    {testApiMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4 mr-1" />
+                        Test API
+                      </>
+                    )}
+                  </Button>
+                </div>
                 <p className="text-xs text-slate-500">
                   Lấy API Key tại: Settings → API Key trong dashboard PDF.co
                 </p>
