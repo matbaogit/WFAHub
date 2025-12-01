@@ -28,7 +28,19 @@ import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import { VariablePicker } from "@/components/VariablePicker";
 import './tiptap-editor.css';
+
+const QUOTATION_VARIABLES = [
+  { label: "Số báo giá", value: "{{quotationNumber}}" },
+  { label: "Tên công ty", value: "{{companyName}}" },
+  { label: "Tên khách hàng", value: "{{customerName}}" },
+  { label: "Công ty khách hàng", value: "{{customerCompany}}" },
+  { label: "Tổng tiền", value: "{{total}}" },
+  { label: "Danh sách hàng", value: "{{items}}" },
+  { label: "Có hiệu lực đến", value: "{{validUntil}}" },
+  { label: "Ghi chú", value: "{{notes}}" },
+];
 
 const formSchema = insertQuotationTemplateSchema.extend({
   name: z.string().min(1, "Tên mẫu không được để trống"),
@@ -297,20 +309,31 @@ export default function QuotationTemplates() {
                         <FormItem>
                           <FormLabel>Nội dung HTML</FormLabel>
                           <FormControl>
-                            <div data-testid="editor-html-content">
-                              <TiptapEditor
-                                editor={editor}
-                                onImageUpload={async (file) => {
-                                  const formData = new FormData();
-                                  formData.append('file', file);
-                                  const response = await fetch('/api/upload-image', {
-                                    method: 'POST',
-                                    body: formData,
-                                  });
-                                  const data = await response.json();
-                                  return data.url;
-                                }}
-                              />
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4" data-testid="editor-html-content">
+                              <div className="lg:col-span-3">
+                                <TiptapEditor
+                                  editor={editor}
+                                  onImageUpload={async (file) => {
+                                    const formData = new FormData();
+                                    formData.append('file', file);
+                                    const response = await fetch('/api/upload-image', {
+                                      method: 'POST',
+                                      body: formData,
+                                    });
+                                    const data = await response.json();
+                                    return data.url;
+                                  }}
+                                />
+                              </div>
+                              <div className="lg:col-span-1">
+                                <VariablePicker
+                                  variables={QUOTATION_VARIABLES}
+                                  title="Biến có sẵn"
+                                  description="Kéo thả hoặc nhấp đôi để chèn biến vào editor"
+                                  sampleData={SAMPLE_DATA}
+                                  editor={editor}
+                                />
+                              </div>
                             </div>
                           </FormControl>
                           <FormMessage />
