@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, FileText, CheckCircle2, AlertCircle, ExternalLink, Zap } from "lucide-react";
+import { Loader2, FileText, CheckCircle2, AlertCircle, ExternalLink, Zap, Download } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
@@ -77,6 +77,53 @@ export default function AdminPdfSettings() {
       toast({
         title: "Lỗi",
         description: error.message || "Không thể test API",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const testGenerateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/pdf-settings/test-generate", {});
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      if (data.success && data.pdfBase64) {
+        // Convert base64 to blob and download
+        const byteCharacters = atob(data.pdfBase64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = data.filename || 'test-pdfco.pdf';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        toast({
+          title: "Tạo PDF thành công!",
+          description: `File đã được tải về. Credits còn lại: ${data.creditsRemaining || 'N/A'}`,
+        });
+      } else {
+        toast({
+          title: "Tạo PDF thất bại",
+          description: data.message,
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể tạo PDF test",
         variant: "destructive",
       });
     },
@@ -235,6 +282,34 @@ export default function AdminPdfSettings() {
                 <p className="text-xs text-slate-500">
                   Lấy API Key tại: Settings → API Key trong dashboard PDF.co
                 </p>
+                
+                {settings?.hasPdfcoApiKey && (
+                  <div className="pt-3 border-t mt-3">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => testGenerateMutation.mutate()}
+                      disabled={testGenerateMutation.isPending}
+                      className="w-full"
+                      data-testid="button-test-generate-pdf"
+                    >
+                      {testGenerateMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Đang tạo PDF...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4 mr-2" />
+                          Test Tạo PDF (tải về file mẫu)
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-slate-500 mt-2 text-center">
+                      Tạo file PDF mẫu để kiểm tra tích hợp PDF.co hoạt động đúng
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
