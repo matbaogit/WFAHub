@@ -152,12 +152,6 @@ export function VariablePicker({
                             // Cleanup after drag ends
                             e.currentTarget.style.opacity = '1';
                           }}
-                          onMouseDown={(e) => {
-                            // Prevent input fields from losing focus when clicking on variable
-                            // This is essential for double-click insertion to work
-                            // Note: This does NOT prevent drag-and-drop from working
-                            e.preventDefault();
-                          }}
                           onDoubleClick={() => handleDoubleClick(variable)}
                           className="cursor-grab active:cursor-grabbing select-none"
                           style={{ touchAction: 'none' }}

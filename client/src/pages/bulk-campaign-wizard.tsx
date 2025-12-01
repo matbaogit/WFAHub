@@ -155,6 +155,7 @@ export default function BulkCampaignWizard() {
   const [showCreditDialog, setShowCreditDialog] = useState(false);
   const [activeField, setActiveField] = useState<'subject' | 'body' | null>(null);
   const activeFieldRef = useRef<'subject' | 'body' | null>(null);
+  const lastFocusedFieldRef = useRef<'subject' | 'body' | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(true);
   const [isVariablesSidebarOpen, setIsVariablesSidebarOpen] = useState(true);
   const [isSmtpDialogOpen, setIsSmtpDialogOpen] = useState(false);
@@ -1721,10 +1722,11 @@ export default function BulkCampaignWizard() {
 
     // Handle double-click on variable to insert into active field or TipTap editor
     const handleVariableDoubleClick = (variableValue: string) => {
-      // Use ref instead of state to avoid race condition with onBlur
-      const currentActiveField = activeFieldRef.current;
+      // Use lastFocusedFieldRef because activeFieldRef might be null after blur
+      // lastFocusedFieldRef remembers the last focused field even after it loses focus
+      const targetField = activeFieldRef.current || lastFocusedFieldRef.current;
       
-      if (currentActiveField === 'subject' && emailSubjectRef.current) {
+      if (targetField === 'subject' && emailSubjectRef.current) {
         const input = emailSubjectRef.current;
         const start = input.selectionStart || 0;
         const end = input.selectionEnd || 0;
@@ -1744,7 +1746,7 @@ export default function BulkCampaignWizard() {
           input.focus();
           input.setSelectionRange(start + variableValue.length, start + variableValue.length);
         }, 0);
-      } else if (currentActiveField === 'body' && emailBodyRef.current) {
+      } else if (targetField === 'body' && emailBodyRef.current) {
         const textarea = emailBodyRef.current;
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
@@ -1901,6 +1903,7 @@ export default function BulkCampaignWizard() {
                             onFocus={() => {
                               setActiveField('subject');
                               activeFieldRef.current = 'subject';
+                              lastFocusedFieldRef.current = 'subject';
                             }}
                             onBlur={() => {
                               setTimeout(() => {
